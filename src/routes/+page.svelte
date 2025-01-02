@@ -90,57 +90,58 @@
 </script>
 
 <div class="flex h-screen flex-col items-center gap-4 pt-24">
-	<div class="flex flex-col items-center gap-2">
-		<Label class="text-6xl">Bliptext</Label>
-		<Label class="text-lg"
-			>A wiki where you can edit <span class="text-primary">one word</span> every 5 minutes.</Label
-		>
+	<!-- Hero section -->
+	<div class="pointer-events-none flex select-none flex-col items-center gap-4">
+		<Label class="text-7xl font-bold" style="font-family: 'LinLibertine'">Bliptext</Label>
+		<Label class="text-xl">
+			A wiki where you can edit <span class="text-primary">one word</span> every 5 minutes.
+		</Label>
 	</div>
 
 	<LogoBlink />
 
-	<div class="w-full max-w-md px-4">
-		<div class="flex gap-2">
+	<!-- Search functionality -->
+	<div class="w-full max-w-xl px-4">
+		<div class="flex gap-3">
 			<div
 				class="relative flex flex-1 [&:has(input:focus-visible)>button]:ring-1 [&:has(input:focus-visible)>button]:ring-ring"
 			>
-				<Input type="search" placeholder="Dogs..." class="w-full rounded-r-none" />
-				<Button variant="outline" class="rounded-l-none border-l-0">
-					<Search class="h-4 w-4" />
+				<Input type="search" placeholder="Dogs..." class="h-12 w-full rounded-r-none text-lg" />
+				<Button variant="outline" class="h-12 rounded-l-none border-l-0">
+					<Search class="h-5 w-5" />
 				</Button>
 			</div>
-			<TooltipButton icon={Sparkles} tooltipText="View random article" />
+			<TooltipButton icon={Sparkles} tooltipText="View random article" buttonClass="h-12" />
 		</div>
 	</div>
 
 	<Separator class="my-6" />
 
-	<div class="rounded-lg border p-4 transition-colors hover:bg-muted">
-		<div class="text-sm text-foreground flex flex-col items-center justify-center gap-1">
-			<div class="flex items-center gap-1">
-				Bliptext is a project by
-				<a href="https://youtube.com/facedevstuff" class="inline-flex items-center">
-					<span class="font-bold bg-primary/50 px-2 py-1 rounded-md flex items-center">
-						<img
-							src="/images/facedev.png"
-							alt="FaceDev"
-							class="mr-1 size-4 rounded-full"
-						/>
-						FaceDev
-					</span>
-				</a>
-			</div>
-			<span>Check out my other projects!</span>
+	<!-- Author -->
+	<div class="rounded-lg border p-4">
+		<div class="flex items-center justify-center gap-1 text-sm text-foreground">
+			Bliptext is a project by
+			<a href="https://youtube.com/facedevstuff" class="inline-flex items-center">
+				<span class="flex items-center rounded-md bg-primary/50 px-2 py-1 font-bold">
+					<img src="/images/facedev.png" alt="FaceDev" class="mr-1 size-4 rounded-full" />
+					FaceDev
+				</span>
+			</a>
 		</div>
 	</div>
 
+	<!-- Project list -->
 	<div class="grid w-full max-w-[100rem] grid-cols-5 gap-4 px-4">
 		{#each categories as item}
 			<a
 				href={item.href}
-				class="flex items-start gap-4 rounded-lg border p-4 no-underline transition-colors hover:bg-muted"
+				class="group flex items-start gap-4 rounded-lg border p-4 no-underline transition-colors hover:bg-muted"
 			>
-				<img src={item.icon} alt={item.title} class="size-6 text-primary" />
+				<img
+					src={item.icon}
+					alt={item.title}
+					class="size-6 text-primary transition-transform group-hover:scale-105"
+				/>
 				<div>
 					<h3 class="font-semibold text-foreground">{item.title}</h3>
 					<p class="text-sm text-muted-foreground">{item.desc}</p>

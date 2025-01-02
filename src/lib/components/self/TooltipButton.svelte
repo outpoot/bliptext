@@ -7,8 +7,8 @@
 
 <Tooltip.Provider>
 	<Tooltip.Root>
-		<Tooltip.Trigger class={buttonClass}>
-			<Button {variant}>
+		<Tooltip.Trigger>
+			<Button {variant} class={buttonClass}>
 				<!-- svelte5 fuck sake -->
 				{@const Icon = icon}
 				<Icon class="h-4 w-4" />
