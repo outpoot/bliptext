@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'LinLibertine';
-  src: url('/fonts/LinLibertine_R.ttf') format('truetype');
+  src: url('/fonts/LinLibertine_R.woff2') format('woff2');
 }
 
 @layer base {
