@@ -60,3 +60,52 @@ export const flyAndScale = (
 		easing: cubicOut
 	};
 };
+
+export function getWordAtIndex(content: string, index: number): string {
+    const words = content.split(/\s+/);
+    return words[index] || '';
+}
+
+export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
+    const words = content.split(/\s+/);
+    if (index >= 0 && index < words.length) {
+        words[index] = newWord;
+    }
+    return words.join(' ');
+}
+
+export function slugify(text: string): string {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+}
+
+export function fuzzySearch(text: string, query: string): number {
+    const textLower = text.toLowerCase();
+    const queryLower = query.toLowerCase();
+    let score = 0;
+    let lastIndex = -1;
+
+    // Check each character in query
+    for (const char of queryLower) {
+        const index = textLower.indexOf(char, lastIndex + 1);
+        if (index === -1) return 0;
+        
+        // Give higher score for consecutive matches and matches after spaces
+        score += 1 + (
+            lastIndex === index - 1 ? 2 : // Consecutive
+            textLower[index - 1] === ' ' ? 1.5 : // After space
+            0
+        );
+        
+        lastIndex = index;
+    }
+
+    // Bonus for matching from the start
+    if (textLower.startsWith(queryLower)) {
+        score *= 2;
+    }
+
+    return score;
+}

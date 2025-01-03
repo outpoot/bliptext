@@ -1,13 +1,11 @@
 <script lang="ts">
 	import LogoBlink from '$lib/components/self/LogoBlink.svelte';
-	import TooltipButton from '$lib/components/self/TooltipButton.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Separator } from '$lib/components/ui/separator';
-	import { Search, Sparkles } from 'lucide-svelte';
-	import { fade, slide } from 'svelte/transition';
+
+	import { fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
+	import SearchBar from '$lib/components/self/SearchBar.svelte';
 
 	let isProjectsVisible = $state(false);
 	let isHeaderCentered = $state(true);
@@ -121,23 +119,7 @@
 
 				<LogoBlink />
 
-				<div class="w-full max-w-xl">
-					<div class="flex gap-3">
-						<div
-							class="relative flex flex-1 [&:has(input:focus-visible)>button]:ring-1 [&:has(input:focus-visible)>button]:ring-ring"
-						>
-							<Input
-								type="search"
-								placeholder="Dogs..."
-								class="h-12 w-full rounded-r-none text-lg"
-							/>
-							<Button variant="outline" class="h-12 rounded-l-none border-l-0">
-								<Search class="h-5 w-5" />
-							</Button>
-						</div>
-						<TooltipButton icon={Sparkles} tooltipText="View random article" buttonClass="h-12" />
-					</div>
-				</div>
+				<SearchBar class="h-12 w-full max-w-xl" includeRandom={true} />
 
 				<Separator class="w-full max-w-2xl" />
 
