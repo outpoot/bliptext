@@ -17,7 +17,8 @@ export async function GET({ params }) {
 
         const history = await db.query.revisions.findMany({
             where: eq(revisions.articleId, article.id),
-            orderBy: [desc(revisions.createdAt)]
+            orderBy: [desc(revisions.createdAt)],
+            limit: 200
         });
 
         return json({ history, article });

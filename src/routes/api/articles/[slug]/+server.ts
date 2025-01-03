@@ -8,13 +8,7 @@ export async function GET({ params }) {
 
     try {
         const article = await db.query.articles.findFirst({
-            where: eq(articles.slug, slug),
-            with: {
-                revisions: {
-                    limit: 1,
-                    orderBy: (revisions, { desc }) => [desc(revisions.createdAt)]
-                }
-            }
+            where: eq(articles.slug, slug)
         });
 
         if (!article) {

@@ -16,6 +16,7 @@ export async function GET({ url }) {
         const results = allArticles
             .map(article => ({
                 ...article,
+                content: article.content.slice(0, 200),
                 score: Math.max(
                     fuzzySearch(article.title, query),
                     fuzzySearch(article.content.slice(0, 200), query) * 0.5

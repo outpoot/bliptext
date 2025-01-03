@@ -8,7 +8,24 @@
 	let { data } = $props<{ data: { article: Article | null } }>();
 
 	let content = $state(data.article?.content ?? '');
-	let words = $derived(content.split(/\s+/));
+
+	interface WordItem {
+		word: string;
+		index: number;
+	}
+
+	let wordsArray: WordItem[] = $state([]);
+
+	$effect(() => {
+		const words = content.split(/\s+/);
+		wordsArray = words.map(
+			(word: string, index: number): WordItem => ({
+				word,
+				index
+			})
+		);
+	});
+
 	let selectedWord = $state('');
 	let selectedIndex = $state(-1);
 	let isEditing = $state(false);
@@ -41,6 +58,32 @@
 			isEditing = false;
 		}
 	}
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (!wordsArray.length) return;
+
+		switch (e.key) {
+			case 'ArrowLeft':
+				e.preventDefault();
+				if (selectedIndex > 0) {
+					selectedIndex = selectedIndex - 1;
+					selectedWord = wordsArray[selectedIndex].word;
+				}
+				break;
+			case 'ArrowRight':
+				e.preventDefault();
+				if (selectedIndex < wordsArray.length - 1) {
+					selectedIndex = selectedIndex + 1;
+					selectedWord = wordsArray[selectedIndex].word;
+				}
+				break;
+			case 'Enter':
+				if (selectedIndex !== -1) {
+					handleWordUpdate();
+				}
+				break;
+		}
+	}
 </script>
 
 {#if data.article}
@@ -61,6 +104,7 @@
 					oninput={(e) => (selectedWord = e.currentTarget.value)}
 					placeholder="Select a word to edit"
 					disabled={selectedIndex === -1}
+					onkeydown={handleKeyDown}
 				/>
 			</div>
 			<Button
@@ -71,20 +115,22 @@
 			</Button>
 		</div>
 
-		<div class="prose prose-neutral dark:prose-invert max-w-none">
-			{#each words as word, i}
-				<button
-					type="button"
-					class="inline-block cursor-pointer rounded px-1 py-0.5 hover:bg-muted {selectedIndex === i
-						? 'bg-primary/20'
-						: ''}"
-					onclick={() => handleWordClick(word, i)}
-					onkeydown={(e) => e.key === 'Enter' && handleWordClick(word, i)}
+		<article
+			class="prose prose-neutral dark:prose-invert max-w-none"
+			aria-label="Article content editor"
+		>
+			{#each wordsArray as { word, index } (index)}
+				<Button
+					variant="ghost"
+					class="inline-block h-auto px-1 py-0.5 {selectedIndex === index ? 'bg-primary/20' : ''}"
+					data-index={index}
+					onclick={() => handleWordClick(word, index)}
+					aria-current={selectedIndex === index ? 'true' : undefined}
 				>
 					{word}
-				</button>
+				</Button>
 			{/each}
-		</div>
+		</article>
 	</div>
 {:else}
 	<div class="container mx-auto py-8">
