@@ -5,7 +5,7 @@ export const articles = pgTable('articles', {
 	id: uuid('id').defaultRandom().primaryKey(),
 	title: varchar('title', { length: 255 }).notNull(),
 	slug: varchar('slug', { length: 255 }).notNull().unique(),
-	content: text('content').notNull(),
+	content: varchar('content', { length: 100_000 }).notNull(),
 	currentRevision: uuid('current_revision').references((): any => revisions.id),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
