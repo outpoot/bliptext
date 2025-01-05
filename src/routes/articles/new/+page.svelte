@@ -5,16 +5,22 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import { Clock } from 'lucide-svelte';
+	import Clock from 'lucide-svelte/icons/clock';
 	import { slugify } from '$lib/utils';
+
 	import Markdown from 'svelte-exmarkdown';
 	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
+	import type { Plugin } from 'svelte-exmarkdown';
+	import rehypeHighlight from 'rehype-highlight';
+	import 'highlight.js/styles/github-dark.css';
 
 	let title = $state('');
 	let content = $state('');
 	let isSubmitting = $state(false);
 	let activeTab = $state('edit');
-	const plugins = [gfmPlugin()];
+
+	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
+	const plugins: Plugin[] = [gfmPlugin(), highlightPlugin];
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -76,10 +82,9 @@
 						</time>
 					</div>
 				</div>
-
-				<article class="prose prose-neutral dark:prose-invert max-w-none">
+				<div class="markdown-content">
 					<Markdown md={content || '# No content yet'} {plugins} />
-				</article>
+				</div>
 			</div>
 		</Tabs.Content>
 	</Tabs.Root>

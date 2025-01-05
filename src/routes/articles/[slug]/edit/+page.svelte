@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import { ArrowLeft } from 'lucide-svelte';
+	import ArrowLeft from 'lucide-svelte/icons/arrow-left';
 	import type { Article } from '$lib/server/db/schema';
 
 	let { data } = $props<{ data: { article: Article | null } }>();

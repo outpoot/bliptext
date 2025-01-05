@@ -2,7 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import { Search, Sparkles } from 'lucide-svelte';
+
+	import Search from 'lucide-svelte/icons/search';
+	import Sparkles from 'lucide-svelte/icons/sparkles';
+	
 	import TooltipButton from './TooltipButton.svelte';
 
 	let searchQuery = $state('');

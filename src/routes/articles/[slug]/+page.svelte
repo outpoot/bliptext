@@ -1,14 +1,24 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowLeft, Clock, History } from 'lucide-svelte';
+	
+	import ArrowLeft from 'lucide-svelte/icons/arrow-left';
+	import Clock from 'lucide-svelte/icons/clock';
+	import History from 'lucide-svelte/icons/history';
+
 	import type { Article } from '$lib/server/db/schema';
+
+	import type { Plugin } from 'svelte-exmarkdown';
 	import Markdown from 'svelte-exmarkdown';
 	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
+	import rehypeHighlight from 'rehype-highlight';
+	import 'highlight.js/styles/github-dark.css';
 
 	let { data } = $props<{ data: { article: Article } }>();
 	let date = $state(new Date(data.article.updatedAt));
+
 	// https://ssssota.github.io/svelte-exmarkdown/docs/04-skip-render
-	const plugins = [gfmPlugin()];
+	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
+	const plugins: Plugin[] = [gfmPlugin(), highlightPlugin];
 
 	function goBack() {
 		history.back();
@@ -37,7 +47,7 @@
 		</div>
 	</div>
 
-	<article class="prose prose-neutral dark:prose-invert max-w-none">
+	<div class="markdown-content">
 		<Markdown md={data.article.content} {plugins} />
-	</article>
+	</div>
 </div>

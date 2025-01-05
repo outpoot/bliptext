@@ -2,7 +2,9 @@
     import { page } from '$app/state';
     import { Button } from '$lib/components/ui/button';
     import { Label } from '$lib/components/ui/label';
-    import { ArrowLeft } from 'lucide-svelte';
+
+    import ArrowLeft from 'lucide-svelte/icons/arrow-left';
+    
     import type { Article } from '$lib/server/db/schema';
 
     let query = $derived(page.url.searchParams.get('q') || '');

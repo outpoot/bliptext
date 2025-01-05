@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowLeft } from 'lucide-svelte';
+	import ArrowLeft from 'lucide-svelte/icons/arrow-left';
 	import type { Article, Revision } from '$lib/server/db/schema';
 
 	let { data } = $props<{ data: { article: Article; history: Revision[] } }>();

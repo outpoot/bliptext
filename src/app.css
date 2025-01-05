@@ -77,11 +77,12 @@
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
   }
 
-  /* Move scrollbar styles into @layer base */
+  /* Scrollbar styles */
   html {
     overflow-y: scroll;
   }
@@ -104,8 +105,151 @@
   ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(155, 155, 155, 0.7);
   }
+
+  /* Markdown Typography */
+  .markdown-content {
+    @apply mx-auto;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3,
+  .markdown-content h4,
+  .markdown-content h5,
+  .markdown-content h6 {
+    @apply font-medium tracking-tight;
+  }
+
+  .markdown-content h1 {
+    @apply text-4xl font-bold mb-4 mt-6;
+  }
+
+  .markdown-content h2 {
+    @apply text-3xl mb-3 mt-5;
+  }
+
+  .markdown-content h3 {
+    @apply text-2xl mb-2 mt-4;
+  }
+
+  .markdown-content h4 {
+    @apply text-xl mb-2 mt-4;
+  }
+
+  .markdown-content h5 {
+    @apply text-lg mb-2 mt-3;
+  }
+
+  .markdown-content h6 {
+    @apply text-base mb-2 mt-3;
+  }
+
+  .markdown-content p {
+    @apply leading-7 [&:not(:first-child)]:mt-3;
+  }
+
+  .markdown-content blockquote {
+    @apply mt-3 border-l-2 pl-6 italic text-muted-foreground;
+  }
+
+  /* Lists */
+  .markdown-content ul {
+    @apply my-3 ml-6 list-disc [&>li]:mt-1;
+  }
+
+  .markdown-content ol {
+    @apply my-3 ml-6 list-decimal [&>li]:mt-1;
+  }
+
+  /* Code blocks - buggy, we can't apply the targetted tag to it, so it's global */
+  pre {
+    @apply p-4 rounded-lg bg-muted overflow-x-auto;
+  }
+
+  code {
+    @apply relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm;
+  }
+
+  /* Links */
+  .markdown-content a {
+    @apply text-primary hover:underline underline-offset-4;
+  }
+
+  /* Tables */
+  .markdown-content table {
+    @apply w-full my-3 border-collapse text-sm;
+  }
+
+  .markdown-content thead {
+    @apply border-b;
+  }
+
+  .markdown-content th {
+    @apply text-left font-medium p-2 pt-0 pb-2;
+  }
+
+  .markdown-content tr {
+    @apply border-b;
+  }
+
+  .markdown-content td {
+    @apply p-2;
+  }
+
+  /* Definition lists */
+  .markdown-content dl {
+    @apply my-3;
+  }
+
+  .markdown-content dt {
+    @apply font-medium mt-2;
+  }
+
+  .markdown-content dd {
+    @apply ml-4 mt-1;
+  }
+
+  /* Figures */
+  .markdown-content figure {
+    @apply my-3;
+  }
+
+  .markdown-content figcaption {
+    @apply text-sm text-muted-foreground mt-1 text-center;
+  }
+
+  .markdown-content img {
+    @apply rounded-lg max-w-full h-auto max-h-[70vh] object-contain mx-auto;
+  }
+
+  /* Horizontal rule */
+  .markdown-content hr {
+    @apply my-4 border-t border-border;
+  }
+
+  /* Inline elements */
+  .markdown-content strong {
+    @apply font-semibold;
+  }
+
+  .markdown-content em {
+    @apply italic;
+  }
+
+  .markdown-content mark {
+    @apply bg-accent text-accent-foreground px-1 rounded;
+  }
+
+  .markdown-content small {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .markdown-content kbd {
+    @apply px-2 py-1 text-xs font-semibold bg-muted rounded border;
+  }
 }
 
+/* Search input cancel button */
 input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
   height: 1em;
