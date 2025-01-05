@@ -4,14 +4,17 @@
 	import type { Article } from '$lib/server/db/schema';
 
 	let { data } = $props<{ data: { article: Article } }>();
-
 	let date = $state(new Date(data.article.updatedAt));
+
+	function goBack() {
+		history.back();
+	}
 </script>
 
 <div class="container mx-auto py-8">
 	<div class="mb-8 flex items-center justify-between">
 		<div class="flex items-center gap-4">
-			<Button variant="ghost" href="/" class="p-2">
+			<Button variant="ghost" href="/" class="p-2" onclick={goBack}>
 				<ArrowLeft class="h-5 w-5" />
 			</Button>
 			<h1 class="text-3xl font-bold">{data.article.title}</h1>
@@ -22,15 +25,17 @@
 			<time datetime={date.toISOString()}>
 				{date.toLocaleDateString()}
 			</time>
-            <Button variant="ghost" href={`${data.article.slug}/edit`} class="ml-4">Edit</Button>
-            <Button variant="ghost" href={`${data.article.slug}/history`}>
-                <History class="mr-2 h-4 w-4" />
-                History
-            </Button>
+			<Button variant="ghost" href={`${data.article.slug}/edit`} class="ml-4">Edit</Button>
+			<Button variant="ghost" href={`${data.article.slug}/history`}>
+				<History class="mr-2 h-4 w-4" />
+				History
+			</Button>
 		</div>
 	</div>
 
-	<article class="prose prose-neutral dark:prose-invert max-w-none">
+	<article
+		class="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-line leading-loose"
+	>
 		{data.article.content}
 	</article>
 </div>

@@ -25,7 +25,7 @@
 				<SearchBar class="max-w-md flex-1" />
 
 				<nav class="ml-4 flex items-center gap-4">
-					<a href="/random" class="text-sm text-muted-foreground hover:text-foreground">Random</a>
+					<a href="/articles/new" class="text-sm text-muted-foreground hover:text-foreground">New</a>
 					<a href="/categories" class="text-sm text-muted-foreground hover:text-foreground"
 						>Categories</a
 					>
