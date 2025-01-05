@@ -7,11 +7,14 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Clock } from 'lucide-svelte';
 	import { slugify } from '$lib/utils';
+	import Markdown from 'svelte-exmarkdown';
+	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
 
 	let title = $state('');
 	let content = $state('');
 	let isSubmitting = $state(false);
 	let activeTab = $state('edit');
+	const plugins = [gfmPlugin()];
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -38,7 +41,7 @@
 <div class="container mx-auto py-8">
 	<h1 class="mb-8 text-3xl font-bold">Create New Article</h1>
 
-	<Tabs.Root value={activeTab} onValueChange={(value: string) => (activeTab = value)} >
+	<Tabs.Root value={activeTab} onValueChange={(value: string) => (activeTab = value)}>
 		<Tabs.List>
 			<Tabs.Trigger value="edit">Edit</Tabs.Trigger>
 			<Tabs.Trigger value="preview">Preview</Tabs.Trigger>
@@ -74,10 +77,8 @@
 					</div>
 				</div>
 
-				<article
-					class="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-line leading-loose"
-				>
-					{content || 'No content yet'}
+				<article class="prose prose-neutral dark:prose-invert max-w-none">
+					<Markdown md={content || '# No content yet'} {plugins} />
 				</article>
 			</div>
 		</Tabs.Content>

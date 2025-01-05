@@ -2,9 +2,13 @@
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft, Clock, History } from 'lucide-svelte';
 	import type { Article } from '$lib/server/db/schema';
+	import Markdown from 'svelte-exmarkdown';
+	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
 
 	let { data } = $props<{ data: { article: Article } }>();
 	let date = $state(new Date(data.article.updatedAt));
+	// https://ssssota.github.io/svelte-exmarkdown/docs/04-skip-render
+	const plugins = [gfmPlugin()];
 
 	function goBack() {
 		history.back();
@@ -33,9 +37,7 @@
 		</div>
 	</div>
 
-	<article
-		class="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-line leading-loose"
-	>
-		{data.article.content}
+	<article class="prose prose-neutral dark:prose-invert max-w-none">
+		<Markdown md={data.article.content} {plugins} />
 	</article>
 </div>
