@@ -52,6 +52,7 @@
 		"postgres": "^3.4.4",
 		"rehype-highlight": "^7.0.1",
 		"rehype-katex": "^7.0.1",
+		"remark-html": "^16.0.1",
 		"remark-math": "^6.0.0",
 		"svelte-exmarkdown": "^4.0.2"
 	}

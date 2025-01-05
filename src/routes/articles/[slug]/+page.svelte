@@ -12,13 +12,22 @@
 	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
 	import rehypeHighlight from 'rehype-highlight';
 	import 'highlight.js/styles/github-dark.css';
+	import WikiBox from '$lib/components/self/WikiBox.svelte';
 
 	let { data } = $props<{ data: { article: Article } }>();
 	let date = $state(new Date(data.article.updatedAt));
 
 	// https://ssssota.github.io/svelte-exmarkdown/docs/04-skip-render
 	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
-	const plugins: Plugin[] = [gfmPlugin(), highlightPlugin];
+	const plugins: Plugin[] = [
+		gfmPlugin(),
+		highlightPlugin,
+		{
+			renderer: {
+				h1: WikiBox
+			}
+		}
+	];
 
 	function goBack() {
 		history.back();

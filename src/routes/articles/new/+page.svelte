@@ -14,13 +14,26 @@
 	import rehypeHighlight from 'rehype-highlight';
 	import 'highlight.js/styles/github-dark.css';
 
+	import WikiBox from '$lib/components/self/WikiBox.svelte';
+
+	const defaultContent = `# [A dog | i.imgur.com/XgbZdeA.jpeg | An image of a dog.]
+Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivorous) mammal that typically has a long snout, an acute sense of smell, non-retractile claws, and a barking, howling, or whining voice. It is widely kept as a pet or for work or field sports. Dogs are known for their **loyalty** and **companionship**.`;
+
 	let title = $state('');
-	let content = $state('');
+	let content = $state(defaultContent);
 	let isSubmitting = $state(false);
 	let activeTab = $state('edit');
 
 	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
-	const plugins: Plugin[] = [gfmPlugin(), highlightPlugin];
+	const plugins: Plugin[] = [
+		gfmPlugin(),
+		highlightPlugin,
+		{
+			renderer: {
+				h1: WikiBox
+			}
+		}
+	];
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
