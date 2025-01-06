@@ -108,7 +108,7 @@
 
   /* Markdown Typography */
   .markdown-content {
-    @apply mx-auto;
+    @apply mx-auto relative;
   }
 
   .markdown-content h1,
@@ -142,6 +142,30 @@
 
   .markdown-content h6 {
     @apply text-base mb-2 mt-3;
+  }
+
+  /* Wikipedia-style image boxes */
+  .markdown-content .wiki-image-box {
+    @apply float-right clear-right ml-4 mb-6 bg-card border rounded-lg overflow-hidden max-w-[250px];
+  }
+
+  .markdown-content .wiki-image-box img {
+    @apply w-full h-auto max-h-none object-cover rounded-none m-0;
+  }
+
+  .markdown-content .wiki-image-box figcaption {
+    @apply p-3 text-sm border-t bg-muted/50;
+  }
+
+  /* Text content */
+  .markdown-content p {
+    @apply leading-7 [&:not(:first-child)]:mt-3 max-w-[120ch];
+  }
+
+  /* Clear float after content */
+  .markdown-content::after {
+    content: '';
+    @apply block clear-both;
   }
 
   .markdown-content p {

@@ -52,6 +52,6 @@
 	}
 
 	.wiki-content {
-		@apply mt-2 text-muted-foreground;
+		@apply text-muted-foreground;
 	}
 </style>
