@@ -44,7 +44,7 @@
 
 <style>
 	.wiki-image-box {
-		@apply float-right clear-right mb-6 ml-6 max-w-sm overflow-hidden rounded-lg border bg-card;
+		@apply float-right clear-right mb-6 ml-4 max-w-[250px] overflow-hidden rounded-lg border bg-card;
 	}
 
 	figcaption {

@@ -24,6 +24,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 	let isSubmitting = $state(false);
 	let activeTab = $state('edit');
 
+	// https://ssssota.github.io/svelte-exmarkdown/docs/04-skip-render
 	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
 	const plugins: Plugin[] = [
 		gfmPlugin(),
@@ -96,7 +97,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 					</div>
 				</div>
 				<div class="markdown-content">
-					<Markdown md={content || '# No content yet'} {plugins} />
+					<Markdown md={content} {plugins} />
 				</div>
 			</div>
 		</Tabs.Content>
