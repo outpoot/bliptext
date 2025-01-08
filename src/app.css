@@ -293,3 +293,9 @@ input[type="search"]:focus::-webkit-search-cancel-button {
 input[type="search"].dark::-webkit-search-cancel-button {
   filter: invert(1);
 }
+
+@layer utilities {
+  .container-2xl {
+    @apply max-w-[1600px];
+  }
+}

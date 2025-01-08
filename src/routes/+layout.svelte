@@ -14,21 +14,29 @@
 {:else}
 	<div class="flex min-h-screen flex-col">
 		<header class="border-b">
-			<div class="container mx-auto flex h-16 items-center px-4">
+			<div class="container-2xl mx-auto flex h-16 items-center justify-between px-4">
 				<a href="/" class="flex items-center gap-2">
 					<img src="/images/logo.svg" alt="Bliptext" class="h-8 w-8" />
 					<Label class="text-2xl font-bold" style="font-family: 'LinLibertine'">Bliptext</Label>
 				</a>
 
-				<Separator orientation="vertical" class="mx-4 h-6" />
+				<div class="flex-1 px-16">
+					<SearchBar class="max-w-2xl mx-auto" />
+				</div>
 
-				<SearchBar class="max-w-md flex-1" />
-
-				<nav class="ml-4 flex items-center gap-4">
-					<a href="/articles/new" class="text-sm text-muted-foreground hover:text-foreground">New</a>
-					<a href="/categories" class="text-sm text-muted-foreground hover:text-foreground"
-						>Categories</a
+				<nav class="flex items-center gap-2">
+					<a 
+						href="/articles/new" 
+						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
 					>
+						New
+					</a>
+					<a 
+						href="/categories" 
+						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+					>
+						Categories
+					</a>
 				</nav>
 			</div>
 		</header>
