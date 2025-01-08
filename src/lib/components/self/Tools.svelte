@@ -1,17 +1,36 @@
 <script lang="ts">
-	import Separator from '../ui/separator/separator.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import Separator from '../ui/separator/separator.svelte';
+	import PageInfo from './PageInfo.svelte';
 
 	import Pen from 'lucide-svelte/icons/pen';
 	import History from 'lucide-svelte/icons/history';
 	import Link from 'lucide-svelte/icons/link';
+	import Check from 'lucide-svelte/icons/check';
 	import Download from 'lucide-svelte/icons/download';
 	import Info from 'lucide-svelte/icons/info';
 
-	let { slug, content, title } = $props<{ slug: string; content: string; title: string }>();
-	let isCollapsed = $state(false);
+	import type { Article } from '$lib/server/db/schema';
+	let { article } = $props<{ article: Article }>();
+	let { title, slug, content } = article;
 
-	function downloadMarkdown() {
+	let isCollapsed = $state(false);
+	let showPageInfo = $state(false);
+	let showCopyCheck = $state(false);
+
+	$effect(() => {
+		if (showCopyCheck) {
+			setTimeout(() => (showCopyCheck = false), 2000);
+		}
+	});
+
+	function handleCopy() {
+		navigator.clipboard.writeText(window.location.href);
+		showCopyCheck = true;
+	}
+
+	// this function is so seductive oh lord
+	function handleDownload() {
 		const header = `<!--
         This is an informative header that provides metadata about the article. It will not get rendered when the markdown file is viewed in a markdown viewer.
         
@@ -34,20 +53,6 @@
 		window.URL.revokeObjectURL(url);
 		document.body.removeChild(a);
 	}
-
-	const tools = [
-		{ icon: Pen, text: 'Edit', href: `${slug}/edit` },
-		{ icon: History, text: 'History', href: `${slug}/history` },
-		{
-			icon: Link,
-			text: 'Copy link',
-			action: () => {
-				navigator.clipboard.writeText(window.location.href);
-			}
-		},
-		{ icon: Download, text: 'Download', action: downloadMarkdown },
-		{ icon: Info, text: 'Page information', href: `${slug}/info` }
-	];
 </script>
 
 <div class="sticky top-4">
@@ -60,19 +65,44 @@
 
 	<Separator class="mb-2" />
 
-	<div class="space-y-1 overflow-hidden text-sm {isCollapsed ? 'h-0' : ''}">
-		{#each tools as { icon: Icon, text, href, action }}
-			{#if href}
-				<Button variant="ghost" class="w-full justify-start" {href}>
-					<Icon class="mr-2 h-4 w-4" />
-					{text}
-				</Button>
+	<div class="space-y-1 overflow-hidden text-sm" class:h-0={isCollapsed}>
+		<Button variant="ghost" class="w-full justify-start" href={`${slug}/edit`}>
+			<Pen class="mr-2 h-4 w-4" /> Edit
+		</Button>
+		<Button variant="ghost" class="w-full justify-start" href={`${slug}/history`}>
+			<History class="mr-2 h-4 w-4" /> History
+		</Button>
+		<Button variant="ghost" class="w-full justify-start" onclick={handleCopy}>
+			{#if showCopyCheck}
+				<Check class="copy-check mr-2 h-4 w-4" /> Copied!
 			{:else}
-				<Button variant="ghost" class="w-full justify-start" onclick={action}>
-					<Icon class="mr-2 h-4 w-4" />
-					{text}
-				</Button>
+				<Link class="mr-2 h-4 w-4" /> Copy link
 			{/if}
-		{/each}
+		</Button>
+		<Button variant="ghost" class="w-full justify-start" onclick={handleDownload}>
+			<Download class="mr-2 h-4 w-4" /> Download
+		</Button>
+		<Button variant="ghost" class="w-full justify-start" onclick={() => (showPageInfo = true)}>
+			<Info class="mr-2 h-4 w-4" /> Page information
+		</Button>
 	</div>
 </div>
+
+<PageInfo {article} bind:open={showPageInfo} />
+
+<style>
+	:global(.copy-check) {
+		animation: pop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+	}
+	@keyframes pop {
+		0% {
+			transform: scale(0.8);
+		}
+		50% {
+			transform: scale(1.1);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+</style>
