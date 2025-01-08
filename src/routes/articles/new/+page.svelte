@@ -15,6 +15,7 @@
 	import 'highlight.js/styles/github-dark.css';
 
 	import WikiBox from '$lib/components/self/WikiBox.svelte';
+	import Summary from '$lib/components/self/Summary.svelte';
 
 	const defaultContent = `# [A dog | i.imgur.com/XgbZdeA.jpeg | An image of a dog.]
 Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivorous) mammal that typically has a long snout, an acute sense of smell, non-retractile claws, and a barking, howling, or whining voice. It is widely kept as a pet or for work or field sports. Dogs are known for their **loyalty** and **companionship**.`;
@@ -31,7 +32,9 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 		highlightPlugin,
 		{
 			renderer: {
-				h1: WikiBox
+				h1: WikiBox,
+				// @ts-ignore
+				p: Summary
 			}
 		}
 	];

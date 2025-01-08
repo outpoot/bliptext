@@ -14,9 +14,9 @@
 	import WikiBox from '$lib/components/self/WikiBox.svelte';
 	import TableOfContents from '$lib/components/self/TableOfContents.svelte';
 	import Tools from '$lib/components/self/Tools.svelte';
+	import Summary from '$lib/components/self/Summary.svelte';
 
 	let { data } = $props<{ data: { article: Article } }>();
-	let date = $state(new Date(data.article.updatedAt));
 
 	// https://ssssota.github.io/svelte-exmarkdown/docs/04-skip-render
 	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
@@ -25,7 +25,9 @@
 		highlightPlugin,
 		{
 			renderer: {
-				h1: WikiBox
+				h1: WikiBox,
+				// @ts-ignore
+				p: Summary
 			}
 		}
 	];
