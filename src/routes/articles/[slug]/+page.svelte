@@ -36,34 +36,36 @@
 </script>
 
 <div class="container mx-auto py-8">
-	<div class="flex gap-8">
-		<TableOfContents content={data.article.content} title={data.article.title} />
+    <div class="flex gap-6">
+        <div class="w-64 pt-16">
+            <TableOfContents content={data.article.content} title={data.article.title} />
+        </div>
+        
+        <div class="flex-1">
+            <div class="mb-8 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <Button variant="ghost" href="/" class="p-2" onclick={goBack}>
+                        <ArrowLeft class="h-5 w-5" />
+                    </Button>
+                    <h1 id="title" class="text-3xl font-bold">{data.article.title}</h1>
+                </div>
 
-		<div class="flex-1">
-			<div class="mb-8 flex items-center justify-between">
-				<div class="flex items-center gap-4">
-					<Button variant="ghost" href="/" class="p-2" onclick={goBack}>
-						<ArrowLeft class="h-5 w-5" />
-					</Button>
-					<h1 id="title" class="text-3xl font-bold">{data.article.title}</h1>
-				</div>
+                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock class="h-4 w-4" />
+                    <time datetime={date.toISOString()}>
+                        {date.toLocaleDateString()}
+                    </time>
+                    <Button variant="ghost" href={`${data.article.slug}/edit`} class="ml-4">Edit</Button>
+                    <Button variant="ghost" href={`${data.article.slug}/history`}>
+                        <History class="mr-2 h-4 w-4" />
+                        History
+                    </Button>
+                </div>
+            </div>
 
-				<div class="flex items-center gap-2 text-sm text-muted-foreground">
-					<Clock class="h-4 w-4" />
-					<time datetime={date.toISOString()}>
-						{date.toLocaleDateString()}
-					</time>
-					<Button variant="ghost" href={`${data.article.slug}/edit`} class="ml-4">Edit</Button>
-					<Button variant="ghost" href={`${data.article.slug}/history`}>
-						<History class="mr-2 h-4 w-4" />
-						History
-					</Button>
-				</div>
-			</div>
-
-			<div class="markdown-content">
-				<Markdown md={data.article.content} {plugins} />
-			</div>
-		</div>
-	</div>
+            <div class="markdown-content">
+                <Markdown md={data.article.content} {plugins} />
+            </div>
+        </div>
+    </div>
 </div>
