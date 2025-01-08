@@ -50,7 +50,7 @@
 		</div>
 
 		<div class="w-64 pt-16">
-			<Tools slug={data.article.slug} />
+			<Tools slug={data.article.slug} content={data.article.content} title={data.article.title} />
 		</div>
 	</div>
 </div>
