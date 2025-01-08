@@ -123,33 +123,42 @@ This renders:
 </script>
 
 {#if isSummary}
-	<Card class="max-w-2xl overflow-hidden">
-		<div class="flex">
-			{#if imageDetails}
-				<div class="w-1/3">
-					<img src={imageDetails.src} alt={imageDetails.alt} class="h-full w-full object-cover" />
+	<Card
+		class="float-right clear-right mb-6 ml-4 max-w-sm overflow-hidden rounded-lg border bg-card"
+	>
+		{#if imageDetails}
+			<img src={imageDetails.src} alt={imageDetails.alt} class="summary-image" />
+		{/if}
+		<CardContent class="space-y-2 p-4">
+			{#each infoItems as { label, content }}
+				<div class="flex gap-2">
+					<span class="min-w-24 font-bold">{label}</span>
+					<span class="flex-1">
+						{#each content as part}
+							{#if part.type === 'link'}
+								<a href={part.href} class="text-primary hover:underline">{part.value}</a>
+							{:else}
+								{part.value}
+							{/if}
+						{/each}
+					</span>
 				</div>
-			{/if}
-			<CardContent class="flex-1 space-y-2 p-4 {imageDetails ? 'w-2/3' : 'w-full'}">
-				{#each infoItems as { label, content }}
-					<div class="flex gap-2">
-						<span class="min-w-24 font-bold">{label}</span>
-						<span class="flex-1">
-							{#each content as part}
-								{#if part.type === 'link'}
-									<a href={part.href} class="text-primary hover:underline">{part.value}</a>
-								{:else}
-									{part.value}
-								{/if}
-							{/each}
-						</span>
-					</div>
-				{/each}
-			</CardContent>
-		</div>
+			{/each}
+		</CardContent>
 	</Card>
 {:else}
 	<p>
 		{@render children?.()}
 	</p>
 {/if}
+
+<style>
+	.summary-box {
+		@apply mb-6 ml-4 max-w-[250px] overflow-hidden rounded-lg border bg-card;
+	}
+
+	.summary-image {
+		@apply w-full object-contain;
+		@apply max-h-[400px];
+	}
+</style>
