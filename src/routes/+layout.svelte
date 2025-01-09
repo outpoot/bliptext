@@ -2,8 +2,15 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { Label } from '$lib/components/ui/label';
-	import { Separator } from '$lib/components/ui/separator';
 	import SearchBar from '$lib/components/self/SearchBar.svelte';
+	import { signIn } from '$lib/auth-client';
+
+	async function handleSignIn() {
+		await signIn.social({
+			provider: 'discord',
+			callbackURL: '/home'
+		});
+	}
 
 	let { children } = $props();
 	let isHomePage = $derived(page.url.pathname === '/');
@@ -21,22 +28,28 @@
 				</a>
 
 				<div class="flex-1 px-16">
-					<SearchBar class="max-w-2xl mx-auto" />
+					<SearchBar class="mx-auto max-w-2xl" />
 				</div>
 
 				<nav class="flex items-center gap-2">
-					<a 
-						href="/articles/new" 
+					<a
+						href="/articles/new"
 						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
 					>
 						New
 					</a>
-					<a 
-						href="/categories" 
+					<a
+						href="/categories"
 						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
 					>
 						Categories
 					</a>
+					<button
+						onclick={handleSignIn}
+						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+					>
+						Sign in
+					</button>
 				</nav>
 			</div>
 		</header>
