@@ -1,21 +1,15 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Tabs from '$lib/components/ui/tabs';
-	import Clock from 'lucide-svelte/icons/clock';
+
 	import { slugify } from '$lib/utils';
 
-	import Markdown from 'svelte-exmarkdown';
-	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
-	import type { Plugin } from 'svelte-exmarkdown';
-	import rehypeHighlight from 'rehype-highlight';
-	import 'highlight.js/styles/github-dark.css';
-
-	import WikiBox from '$lib/components/self/WikiBox.svelte';
-	import Summary from '$lib/components/self/Summary.svelte';
+	import MarkdownViewer from '$lib/components/self/MarkdownViewer.svelte';
 
 	const defaultContent = `# [A dog | i.imgur.com/XgbZdeA.jpeg | An image of a dog.]
 Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivorous) mammal that typically has a long snout, an acute sense of smell, non-retractile claws, and a barking, howling, or whining voice. It is widely kept as a pet or for work or field sports. Dogs are known for their **loyalty** and **companionship**.`;
@@ -24,20 +18,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 	let content = $state(defaultContent);
 	let isSubmitting = $state(false);
 	let activeTab = $state('edit');
-
-	// https://ssssota.github.io/svelte-exmarkdown/docs/04-skip-render
-	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
-	const plugins: Plugin[] = [
-		gfmPlugin(),
-		highlightPlugin,
-		{
-			renderer: {
-				h1: WikiBox,
-				// @ts-ignore
-				p: Summary
-			}
-		}
-	];
+	let renderKey = $state(0);
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -59,12 +40,19 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 			isSubmitting = false;
 		}
 	}
+
+	function handleTabChange(value: string) {
+		activeTab = value;
+		if (value === 'preview') {
+			renderKey++;
+		}
+	}
 </script>
 
-<div class="container mx-auto py-8">
+<div class="container-2xl mx-auto py-8">
 	<h1 class="mb-8 text-3xl font-bold">Create New Article</h1>
 
-	<Tabs.Root value={activeTab} onValueChange={(value: string) => (activeTab = value)}>
+	<Tabs.Root value={activeTab} onValueChange={handleTabChange}>
 		<Tabs.List>
 			<Tabs.Trigger value="edit">Edit</Tabs.Trigger>
 			<Tabs.Trigger value="preview">Preview</Tabs.Trigger>
@@ -90,18 +78,14 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 
 		<Tabs.Content value="preview">
 			<div class="pt-4">
-				<div class="mb-8 flex items-center justify-between">
-					<h1 class="text-3xl font-bold">{title || 'Untitled Article'}</h1>
-					<div class="flex items-center gap-2 text-sm text-muted-foreground">
-						<Clock class="h-4 w-4" />
-						<time datetime={new Date().toISOString()}>
-							{new Date().toLocaleDateString()}
-						</time>
-					</div>
-				</div>
-				<div class="markdown-content">
-					<Markdown md={content} {plugins} />
-				</div>
+				{#key renderKey}
+					<MarkdownViewer
+						{content}
+						title={title || 'Untitled Article'}
+						article={{ title, content }}
+						showHeader={true}
+					/>
+				{/key}
 			</div>
 		</Tabs.Content>
 	</Tabs.Root>

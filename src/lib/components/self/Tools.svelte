@@ -11,7 +11,10 @@
 	import Info from 'lucide-svelte/icons/info';
 
 	import type { Article } from '$lib/server/db/schema';
-	let { article } = $props<{ article: Article }>();
+	let { article, isEditPage = false } = $props<{
+		article: Article;
+		isEditPage?: boolean;
+	}>();
 	let { title, slug, content } = article;
 
 	let isCollapsed = $state(false);
@@ -66,8 +69,13 @@
 	<Separator class="mb-2" />
 
 	<div class="space-y-1 overflow-hidden text-sm" class:h-0={isCollapsed}>
-		<Button variant="ghost" class="w-full justify-start" href={`${slug}/edit`}>
-			<Pen class="mr-2 h-4 w-4" /> Edit
+		<Button
+			variant="ghost"
+			class="w-full justify-start"
+			href={isEditPage ? `../${slug}` : `${slug}/edit`}
+		>
+			<Pen class="mr-2 h-4 w-4" />
+			{isEditPage ? 'View original' : 'Edit'}
 		</Button>
 		<Button variant="ghost" class="w-full justify-start" href={`${slug}/history`}>
 			<History class="mr-2 h-4 w-4" /> History
