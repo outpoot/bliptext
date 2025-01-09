@@ -4,6 +4,7 @@
 	import ArrowLeft from 'lucide-svelte/icons/arrow-left';
 	import type { Article } from '$lib/server/db/schema';
 	import MarkdownViewer from '$lib/components/self/MarkdownViewer.svelte';
+	import FloatingWord from '$lib/components/self/FloatingWord.svelte';
 
 	let { data } = $props<{ data: { article: Article | null } }>();
 
@@ -29,6 +30,29 @@
 	let selectedWord = $state('');
 	let selectedIndex = $state(-1);
 	let isEditing = $state(false);
+
+	let mouseX = $state(0);
+	let mouseY = $state(0);
+	let showFloatingWord = $state(false);
+	let hoveredWord = $state('');
+
+	function handleMouseMove(e: MouseEvent) {
+		mouseX = e.clientX;
+		mouseY = e.clientY;
+	}
+
+	function handleInputKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Enter' && selectedWord) {
+			showFloatingWord = true;
+		} else if (e.key === 'Escape') {
+			showFloatingWord = false;
+		}
+	}
+
+	function handleWordHover(word: string) {
+		hoveredWord = word;
+		console.log('Hovering over:', word);
+	}
 
 	function handleWordClick(word: string, index: number) {
 		selectedWord = word;
@@ -58,43 +82,40 @@
 			isEditing = false;
 		}
 	}
-
-	function handleKeyDown(e: KeyboardEvent) {
-		if (!wordsArray.length) return;
-
-		switch (e.key) {
-			case 'ArrowLeft':
-				e.preventDefault();
-				if (selectedIndex > 0) {
-					selectedIndex = selectedIndex - 1;
-					selectedWord = wordsArray[selectedIndex].word;
-				}
-				break;
-			case 'ArrowRight':
-				e.preventDefault();
-				if (selectedIndex < wordsArray.length - 1) {
-					selectedIndex = selectedIndex + 1;
-					selectedWord = wordsArray[selectedIndex].word;
-				}
-				break;
-			case 'Enter':
-				if (selectedIndex !== -1) {
-					handleWordUpdate();
-				}
-				break;
-		}
-	}
 </script>
+
+<svelte:window on:mousemove={handleMouseMove} />
 
 {#if data.article}
 	<div class="container-2xl mx-auto py-8">
+		<div class="flex-1 mb-8">
+			<Input
+				value={selectedWord}
+				oninput={(e) => (selectedWord = e.currentTarget.value)}
+				onkeydown={handleInputKeyDown}
+				placeholder="Select a word to edit"
+			/>
+			{#if hoveredWord}
+				<p class="text-sm text-muted-foreground mt-2">Hovering: {hoveredWord}</p>
+			{/if}
+		</div>
+
 		<MarkdownViewer
 			content={data.article.content}
 			title={data.article.title}
 			article={data.article}
 			showHeader={true}
 			isEditPage={true}
+			onWordHover={handleWordHover}
 		/>
+
+		{#if showFloatingWord && selectedWord}
+			<FloatingWord
+				word={selectedWord}
+				x={mouseX + 10}
+				y={mouseY + 10}
+			/>
+		{/if}
 	</div>
 {:else}
 	<div class="container mx-auto py-8">
