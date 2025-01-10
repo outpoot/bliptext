@@ -1,4 +1,4 @@
-import { error } from "@sveltejs/kit";
+import { error, type Cookies } from "@sveltejs/kit";
 import * as jose from "jose";
 import { user, authTokens } from './db/schema';
 import { db } from './db';
@@ -91,5 +91,25 @@ export async function decodeJwt(authCookie: string | undefined) {
         return payload;
     } catch (error) {
         return
+    }
+}
+
+export async function getUserFromRequest(request: Request, cookies: Cookies) {
+    const authHeader = request.headers.get('Authorization');
+    const cookieToken = cookies.get('_TOKEN__DO_NOT_SHARE');
+    const token = authHeader ? authHeader.replace('Bearer ', '') : cookieToken;
+
+    if (!token) {
+        throw error(401, 'Unauthorized');
+    }
+
+    try {
+        const { payload, user } = await verifyAuthJWT(token);
+        if (!payload || payload.exp < new Date().getTime()) {
+            throw error(401, 'Token expired');
+        }
+        return user;
+    } catch {
+        throw error(401, 'Invalid token');
     }
 }

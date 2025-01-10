@@ -111,7 +111,11 @@
 		>
 			<div class="flex w-full flex-col items-center gap-6">
 				<div class="pointer-events-none flex select-none flex-col items-center gap-4">
-					<Label class="text-7xl font-bold" style="font-family: 'LinLibertine'">Bliptext</Label>
+					<a href="/home" class="pointer-events-auto no-underline">
+						<Label class="cursor-pointer text-7xl font-bold" style="font-family: 'LinLibertine'"
+							>Bliptext</Label
+						>
+					</a>
 					<Label class="text-sm sm:text-xl">
 						A wiki where you can edit <span class="text-primary">one word</span> every 5 minutes.
 					</Label>

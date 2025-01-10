@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { client } from '$lib/auth-client';
 	import { currentUser } from '$lib/stores/user';
 </script>
 

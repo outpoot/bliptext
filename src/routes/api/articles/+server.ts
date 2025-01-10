@@ -4,8 +4,11 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';
 import { slugify } from '$lib/utils';
+import { getUserFromRequest } from '$lib/server/jwt';
+import type { RequestHandler } from './$types';
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request, cookies }) => {
+    const user = await getUserFromRequest(request, cookies);
     const { title, content } = await request.json();
 
     if (!title || !content) {
@@ -19,13 +22,13 @@ export async function POST({ request }) {
             .values({
                 title,
                 content,
-                slug
+                slug,
+                createdBy: user.id
             })
             .returning();
 
         return json(article);
     } catch (error) {
-        console.log(error)
         return json({ error: 'Failed to create article' }, { status: 500 });
     }
 }
