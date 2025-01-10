@@ -1,12 +1,19 @@
 import { pgTable, text, timestamp, uuid, varchar, integer, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-export const users = pgTable('users', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	username: varchar('username', { length: 255 }).notNull().unique(),
-	email: varchar('email', { length: 255 }).notNull().unique(),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull()
+export const user = pgTable("user", {
+	// needed for better-auth
+	id: text("id").primaryKey(),
+	name: text('name').notNull(),
+	email: text('email').notNull().unique(),
+	emailVerified: boolean('email_verified').notNull(),
+	image: text('image'),
+	createdAt: timestamp('created_at').notNull(),
+	updatedAt: timestamp('updated_at').notNull(),
+	// custom fields
+	articlesCount: integer('articles_count').default(0).notNull(),
+	revisionCount: integer('revision_count').default(0).notNull(),
+	isAdmin: boolean('is_admin').default(false).notNull()
 });
 
 export const articles = pgTable('articles', {
@@ -15,6 +22,8 @@ export const articles = pgTable('articles', {
 	slug: varchar('slug', { length: 255 }).notNull().unique(),
 	content: varchar('content', { length: 100_000 }).notNull(),
 	currentRevision: uuid('current_revision').references((): any => revisions.id),
+
+	createdBy: text('created_by').references(() => user.id).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
@@ -25,21 +34,12 @@ export const revisions = pgTable('revisions', {
 	content: text('content').notNull(),
 	wordChanged: varchar('word_changed', { length: 255 }).notNull(),
 	wordIndex: integer('word_index').notNull(),
-	createdBy: uuid('created_by').references(() => users.id).notNull(),
+
+	createdBy: text('created_by').references(() => user.id).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 // auth
-
-export const user = pgTable("user", {
-	id: text("id").primaryKey(),
-	name: text('name').notNull(),
-	email: text('email').notNull().unique(),
-	emailVerified: boolean('email_verified').notNull(),
-	image: text('image'),
-	createdAt: timestamp('created_at').notNull(),
-	updatedAt: timestamp('updated_at').notNull()
-});
 
 export const session = pgTable("session", {
 	id: text("id").primaryKey(),
@@ -77,6 +77,16 @@ export const verification = pgTable("verification", {
 	updatedAt: timestamp('updated_at')
 });
 
+export const authTokens = pgTable('auth_tokens', {
+    token: varchar('token', { length: 32 }).primaryKey(),
+    userId: text('user_id').references(() => user.id).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+
+	ip: text('ip').notNull(),
+	userAgent: text('user_agent').notNull()
+});
+
 // relations
 export const articlesRelations = relations(articles, ({ many }) => ({
 	revisions: many(revisions)
@@ -87,13 +97,13 @@ export const revisionsRelations = relations(revisions, ({ one }) => ({
 		fields: [revisions.articleId],
 		references: [articles.id]
 	}),
-	creator: one(users, {
+	creator: one(user, {
 		fields: [revisions.createdBy],
-		references: [users.id]
+		references: [user.id]
 	})
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(user, ({ many }) => ({
 	revisions: many(revisions)
 }));
 

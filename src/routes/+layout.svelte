@@ -3,7 +3,11 @@
 	import { page } from '$app/state';
 	import { Label } from '$lib/components/ui/label';
 	import SearchBar from '$lib/components/self/SearchBar.svelte';
-	import { signIn } from '$lib/auth-client';
+	import { signIn, client } from '$lib/auth-client';
+	import { onMount } from 'svelte';
+    import { currentUser } from '$lib/stores/user';
+
+	const session = client.useSession();
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -14,6 +18,20 @@
 
 	let { children } = $props();
 	let isHomePage = $derived(page.url.pathname === '/');
+
+	onMount(async () => {
+		const meResponse = await fetch('/api/me');
+		
+		if (meResponse.ok) {
+			const userData = await meResponse.json();
+			currentUser.set(userData);
+		} else {
+			await fetch('/api/account', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+	});
 </script>
 
 {#if isHomePage}
@@ -44,12 +62,20 @@
 					>
 						Categories
 					</a>
-					<button
-						onclick={handleSignIn}
-						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-					>
-						Sign in
-					</button>
+					{#if $currentUser}
+						<a
+							href="/profile"
+							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+							>@{$currentUser.name}</a
+						>
+					{:else}
+						<button
+							onclick={handleSignIn}
+							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+						>
+							Sign in
+						</button>
+					{/if}
 				</nav>
 			</div>
 		</header>

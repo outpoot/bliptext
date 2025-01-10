@@ -9,6 +9,6 @@ export const load = (async ({ fetch, params }) => {
     }
 
     const article = await response.json();
-    console.log(article);
+
     return { article };
 }) satisfies PageLoad;

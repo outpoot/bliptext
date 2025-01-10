@@ -1,9 +1,8 @@
 <script lang="ts">
-    import { client } from "$lib/auth-client";
-
-const session = client.useSession();
+	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 </script>
 
-<div class="flex items-center justify-center min-h-screen">
-    <h1>hi {$session.data?.user.name}</h1>
+<div class="container mx-auto py-8">
+	<h1 class="mb-8 text-3xl font-bold">Home</h1>
 </div>
