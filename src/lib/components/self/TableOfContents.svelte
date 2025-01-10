@@ -2,8 +2,14 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import Separator from '../ui/separator/separator.svelte';
+	import { Input } from '../ui/input';
 
-	let { content, title } = $props<{ content: string; title: string }>();
+	let { content, title, wordInput, inputProps } = $props<{
+		content: string;
+		title: string;
+		wordInput: boolean;
+		inputProps?: any;
+	}>();
 	let isCollapsed = $state(false);
 
 	let items = $state<{ id: string; level: number; text: string }[]>([]);
@@ -109,7 +115,11 @@
 
 	<Separator class="mb-2" />
 
-	<div class="space-y-1 overflow-hidden text-sm {isCollapsed ? 'h-0' : 'max-h-[calc(100vh-10rem)] overflow-y-auto'}">
+	<div
+		class="space-y-1 overflow-hidden text-sm {isCollapsed
+			? 'h-0'
+			: 'max-h-[calc(100vh-10rem)] overflow-y-auto'}"
+	>
 		{#each items as { id, level, text }}
 			<button
 				class="block w-full truncate text-left hover:text-primary
@@ -121,4 +131,14 @@
 			</button>
 		{/each}
 	</div>
+
+	<Separator class="mb-2 mt-2" />
+
+	{#if wordInput}
+		<Input
+			{...inputProps}
+			placeholder="Type a single word to edit..."
+			class="mt-4 border-2 border-primary p-6 text-lg"
+		/>
+	{/if}
 </div>
