@@ -3,11 +3,9 @@
 	import { page } from '$app/state';
 	import { Label } from '$lib/components/ui/label';
 	import SearchBar from '$lib/components/self/SearchBar.svelte';
-	import { signIn, client } from '$lib/auth-client';
+	import { signIn } from '$lib/auth-client';
 	import { onMount } from 'svelte';
     import { currentUser } from '$lib/stores/user';
-
-	const session = client.useSession();
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -20,16 +18,14 @@
 	let isHomePage = $derived(page.url.pathname === '/');
 
 	onMount(async () => {
-		const meResponse = await fetch('/api/me');
+		const response = await fetch('/api/me');
 		
-		if (meResponse.ok) {
-			const userData = await meResponse.json();
+		if (response.ok) {
+			const userData = await response.json();
+			console.log(userData)
 			currentUser.set(userData);
 		} else {
-			await fetch('/api/account', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' }
-			});
+			// TODO: show error via toast
 		}
 	});
 </script>
@@ -40,9 +36,9 @@
 	<div class="flex min-h-screen flex-col">
 		<header class="border-b">
 			<div class="container-2xl mx-auto flex h-16 items-center justify-between px-4">
-				<a href="/" class="flex items-center gap-2">
+				<a href="/home" class="flex items-center gap-2 cursor-pointer">
 					<img src="/images/logo.svg" alt="Bliptext" class="h-8 w-8" />
-					<Label class="text-2xl font-bold" style="font-family: 'LinLibertine'">Bliptext</Label>
+					<Label class="text-2xl font-bold cursor-pointer" style="font-family: 'LinLibertine'">Bliptext</Label>
 				</a>
 
 				<div class="flex-1 px-16">

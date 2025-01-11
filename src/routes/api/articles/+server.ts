@@ -4,14 +4,19 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';
 import { slugify } from '$lib/utils';
-import { getUserFromRequest } from '$lib/server/jwt';
 import type { RequestHandler } from './$types';
+import { auth } from '$lib/auth';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-    const user = await getUserFromRequest(request, cookies);
+    const session = await auth.api.getSession({
+        headers: request.headers
+    })
+
+    const userId = session?.user.id;
+
     const { title, content } = await request.json();
 
-    if (!title || !content) {
+    if (!title || !content || !userId) {
         return json({ error: 'Title and content are required' }, { status: 400 });
     }
 
@@ -23,7 +28,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
                 title,
                 content,
                 slug,
-                createdBy: user.id
+                createdBy: userId
             })
             .returning();
 
