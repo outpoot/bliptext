@@ -1,7 +1,10 @@
 import type { ServerWebSocket } from "bun";
 import Redis from "ioredis";
+import dotenv from "dotenv";
+import path from "path";
 
-const redis = new Redis(process.env.REDIS_URL!!);
+dotenv.config({ path: path.join(__dirname, "../../.env") });
+const redis = new Redis(process.env.REDIS_URL!);
 
 export type WebSocketData = {
     currentArticle?: string;
@@ -26,7 +29,11 @@ redis.on("message", async (channel, msg) => {
     }
 });
 
-Bun.serve<WebSocketData>({
+redis.on('error', function (error) {
+    console.dir(error)
+})
+
+const server = Bun.serve<WebSocketData>({
     port: process.env.PORT || 3000,
     async fetch(request, server) {
         const url = new URL(request.url);
@@ -76,7 +83,7 @@ Bun.serve<WebSocketData>({
                     break;
 
                 default:
-                    console.log("Recieved unknown event type " + data.type);
+                    console.log("Received unknown event type " + data.type);
             }
         },
         close: async (ws) => {
@@ -84,3 +91,5 @@ Bun.serve<WebSocketData>({
         },
     },
 });
+
+console.log(`WebSocket server is running on port ${server.port}`);

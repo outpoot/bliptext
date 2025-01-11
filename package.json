@@ -50,6 +50,7 @@
 		"@types/node": "^22.10.5",
 		"better-auth": "^1.1.10",
 		"crypto": "^1.0.1",
+		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.33.0",
 		"highlight.js": "^11.11.1",
 		"ioredis": "^5.4.2",

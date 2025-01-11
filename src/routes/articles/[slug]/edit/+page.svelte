@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { Input } from '$lib/components/ui/input';
 	import type { Article } from '$lib/server/db/schema';
 	import MarkdownViewer from '$lib/components/self/MarkdownViewer.svelte';
 	import FloatingWord from '$lib/components/self/FloatingWord.svelte';
 	import TableOfContents from '$lib/components/self/TableOfContents.svelte';
 	import Tools from '$lib/components/self/Tools.svelte';
+	import { onMount } from 'svelte';
 
 	let { data } = $props<{ data: { article: Article | null } }>();
+	let ws: WebSocket | null = $state(null);
 
 	let content = $state(data.article?.content ?? '');
 
@@ -59,6 +60,42 @@
 		selectedWord = '';
 		showFloatingWord = false;
 	}
+
+	function getCookie(name: string) {
+		const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+		return match ? match[2] : null;
+	}
+
+	onMount(() => {
+		const token = getCookie('better-auth.session_token');
+		if (!token || !data.article) return;
+
+		// Connect to WebSocket
+		ws = new WebSocket(`ws://localhost:3000?token=${token}`);
+
+		ws.addEventListener('open', () => {
+			ws?.send(
+				JSON.stringify({
+					type: 'set_article',
+					article: data.article?.id
+				})
+			);
+		});
+
+		ws.addEventListener('message', (event) => {
+			const data = JSON.parse(event.data);
+			console.log(data);
+			if (data.type === 'word_hover') {
+				const { content: newContent } = data.data;
+				content = newContent;
+			}
+		});
+
+		return () => {
+			ws?.close();
+			ws = null;
+		};
+	});
 </script>
 
 <svelte:window onmousemove={handleMouseMove} />
@@ -89,7 +126,6 @@
 					showHeader={true}
 					showSidebars={false}
 					isEditPage={true}
-					onWordHover={() => {}}
 					onWordChange={handleWordChanged}
 					{selectedWord}
 				/>

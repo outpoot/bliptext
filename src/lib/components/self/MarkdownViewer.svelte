@@ -6,9 +6,9 @@
 	import rehypeHighlight from 'rehype-highlight';
 	import 'highlight.js/styles/github-dark.css';
 
+	// Components
 	import WikiBox from '$lib/components/self/WikiBox.svelte';
 	import Summary from '$lib/components/self/Summary.svelte';
-
 	import TableOfContents from './TableOfContents.svelte';
 	import Tools from './Tools.svelte';
 	import { Separator } from '$lib/components/ui/separator';
@@ -22,9 +22,8 @@
 		showHeader = false,
 		isEditPage = false,
 		article = { title, content },
-		onWordHover = () => {},
 		onWordChange,
-		selectedWord = '' // Add this prop
+		selectedWord = ''
 	} = $props<{
 		content: string;
 		title?: string;
@@ -32,15 +31,14 @@
 		showHeader?: boolean;
 		isEditPage?: boolean;
 		article?: Partial<Article>;
-		onWordHover?: (word: string) => void;
 		selectedWord?: string;
 		onWordChange: (data: { oldWord: string; newWord: string }) => void;
 	}>();
 
-	const highlightPlugin: Plugin = { rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] };
+	// Plugin configuration
 	const plugins: Plugin[] = [
 		gfmPlugin(),
-		highlightPlugin,
+		{ rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] },
 		{
 			renderer: {
 				h1: WikiBox,
@@ -50,23 +48,23 @@
 		}
 	];
 
+	// State management
 	let selectedElement: HTMLElement | null = $state(null);
 	let showSubmitButton = $state(false);
 	let submitButtonPosition = $state({ x: 0, y: 0 });
+	let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
+	const wordIndicesMap = new Map<HTMLElement, number>();
 
+	// Word manipulation functions
 	function replaceWord(oldWord: string, newWord: string, element: HTMLElement) {
 		element.classList.remove('selected', 'shake');
 		element.classList.add('word-exit');
 
-		// Sequence the animations
 		setTimeout(() => {
 			element.textContent = newWord;
 			element.classList.remove('word-exit');
 			element.classList.add('word-enter');
-
-			setTimeout(() => {
-				element.classList.remove('word-enter');
-			}, 500);
+			setTimeout(() => element.classList.remove('word-enter'), 500);
 		}, 300);
 
 		showSubmitButton = false;
@@ -74,16 +72,86 @@
 		onWordChange?.({ oldWord, newWord });
 	}
 
+	async function handleHover(word: string, element: HTMLElement) {
+		if (!selectedWord || !article?.slug) return;
+
+		const actualIndex = wordIndicesMap.get(element);
+		if (actualIndex === undefined) return;
+
+		try {
+			const response = await fetch(`/api/articles/${article.slug}/hover`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ wordIndex: actualIndex, newWord: selectedWord })
+			});
+
+			if (!response.ok) throw new Error('Hover update failed');
+
+			const data = await response.json();
+			console.log('Hover preview:', data);
+		} catch (error) {
+			console.error('Failed to send hover update:', error);
+		}
+	}
+
+	// Event handlers
+	function handleElementHover(element: HTMLElement, word: string) {
+		if (!selectedWord) return;
+		element.classList.add('shake');
+		hoverTimeout = setTimeout(() => handleHover(word, element), 500);
+	}
+
+	function handleElementLeave(element: HTMLElement) {
+		element.classList.remove('shake');
+		if (hoverTimeout) {
+			clearTimeout(hoverTimeout);
+			hoverTimeout = null;
+		}
+	}
+
+	function handleElementClick(element: HTMLElement) {
+		if (!selectedWord) return;
+		if (selectedElement) selectedElement.classList.remove('selected');
+
+		selectedElement = element;
+		element.classList.add('selected');
+
+		const rect = element.getBoundingClientRect();
+		submitButtonPosition = { x: rect.left, y: rect.top - 40 };
+		showSubmitButton = true;
+	}
+
+	// Text processing
+	function createWordSpan(word: string, contentWords: string[]): HTMLSpanElement {
+		const span = document.createElement('span');
+		span.textContent = word;
+		span.className = 'hv';
+
+		const actualIndex = contentWords.findIndex((w: string, idx: number) => {
+			if (Array.from(wordIndicesMap.values()).includes(idx)) return false;
+			if (w.startsWith('[')) {
+				const closingBracket = w.indexOf(']');
+				return closingBracket !== -1 ? w.substring(1, closingBracket) === word : false;
+			}
+			return w === word;
+		});
+
+		if (actualIndex !== -1) {
+			wordIndicesMap.set(span, actualIndex);
+		}
+
+		span.addEventListener('mouseenter', () => handleElementHover(span, word));
+		span.addEventListener('mouseleave', () => handleElementLeave(span));
+		span.addEventListener('click', () => handleElementClick(span));
+
+		return span;
+	}
+
 	function wrapTextNodes(element: Element) {
-		// find all the text nodes in the element
+		const contentWords = content.split(/\s+/);
 		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
 			acceptNode: (node) => {
-				// skip empty text nodes or those that are only whitespace
-				if (!node.textContent?.trim()) {
-					return NodeFilter.FILTER_REJECT;
-				}
-				// skip if parent is already hv
-				if (node.parentElement?.classList.contains('hv')) {
+				if (!node.textContent?.trim() || node.parentElement?.classList.contains('hv')) {
 					return NodeFilter.FILTER_REJECT;
 				}
 				return NodeFilter.FILTER_ACCEPT;
@@ -92,72 +160,47 @@
 
 		const nodes: Text[] = [];
 		let node;
-		while ((node = walker.nextNode())) {
-			nodes.push(node as Text);
-		}
+		while ((node = walker.nextNode())) nodes.push(node as Text);
 
-		// process in reverse to avoid affecting the walker
 		nodes.reverse().forEach((textNode) => {
-			const words = textNode.textContent?.split(/\s+/) ?? [];
-			const fragment = document.createDocumentFragment();
+			const isInLink = textNode.parentElement?.tagName === 'A';
+			if (isInLink) {
+				const span = createWordSpan(textNode.textContent || '', contentWords);
+				textNode.parentNode?.replaceChild(span, textNode);
+			} else {
+				const words = textNode.textContent?.split(/\s+/) ?? [];
+				const fragment = document.createDocumentFragment();
 
-			words.forEach((word, i) => {
-				const span = document.createElement('span');
-				span.textContent = word;
-				span.className = 'hv';
-
-				span.addEventListener('mouseenter', () => {
-					if (!selectedWord) return;
-
-					onWordHover(word);
-					span.classList.add('shake');
-				});
-				span.addEventListener('mouseleave', () => span.classList.remove('shake'));
-
-				span.addEventListener('click', (e) => {
-					if (!selectedWord) return;
-					if (selectedElement) selectedElement.classList.remove('selected');
-
-					selectedElement = span;
-					span.classList.add('selected');
-
-					const rect = span.getBoundingClientRect();
-					submitButtonPosition = {
-						x: rect.left,
-						y: rect.top - 40
-					};
-					showSubmitButton = true;
-				});
-
-				fragment.appendChild(span);
-				if (i < words.length - 1) {
+				words.forEach((word) => {
+					if (!word.trim()) return;
+					const span = createWordSpan(word, contentWords);
+					fragment.appendChild(span);
 					fragment.appendChild(document.createTextNode(' '));
-				}
-			});
+				});
 
-			textNode.parentNode?.replaceChild(fragment, textNode);
+				textNode.parentNode?.replaceChild(fragment, textNode);
+			}
 		});
 	}
 
+	// Side effects
 	$effect(() => {
 		if (!isEditPage) return;
 
 		const content = document.querySelector('.markdown-content');
 		if (!content) return;
 
-		// Prevent link clicks in edit mode
-		const links = content.querySelectorAll('a');
-		links.forEach((link) => {
-			link.addEventListener('click', (e) => {
-				e.preventDefault();
-			});
-		});
+		wordIndicesMap.clear();
 
-		const textContainers = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li'); // editable elements
-		textContainers.forEach(wrapTextNodes);
+		content
+			.querySelectorAll('a')
+			.forEach((link) => link.addEventListener('click', (e) => e.preventDefault()));
+
+		content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li').forEach(wrapTextNodes);
 	});
 </script>
 
+<!-- Template -->
 {#if showSidebars}
 	<div class="flex gap-6">
 		<div class="w-64 pt-16">
@@ -172,7 +215,6 @@
 				</div>
 				<Separator class="mb-8" />
 			{/if}
-
 			<div class="markdown-content">
 				<Markdown md={content} {plugins} />
 			</div>
@@ -191,7 +233,6 @@
 			</div>
 			<Separator class="mb-8" />
 		{/if}
-
 		<div class="markdown-content">
 			<Markdown md={content} {plugins} />
 		</div>
@@ -204,7 +245,7 @@
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 		onclick={() => {
 			replaceWord(selectedElement?.textContent ?? '', selectedWord, selectedElement!);
-			selectedWord = ''; // Reset the selected word
+			selectedWord = '';
 		}}
 	>
 		Replace
@@ -227,19 +268,6 @@
 		animation: shake 0.5s linear infinite;
 	}
 
-	@keyframes shake {
-		0%,
-		100% {
-			transform: translateX(0);
-		}
-		25% {
-			transform: translateX(-1px) rotate(-1deg);
-		}
-		75% {
-			transform: translateX(1px) rotate(1deg);
-		}
-	}
-
 	:global(.selected) {
 		font-weight: bold;
 		background: hsl(var(--primary) / 30%);
@@ -251,6 +279,19 @@
 
 	:global(.word-enter) {
 		animation: wordEnter 0.5s ease-out;
+	}
+
+	@keyframes shake {
+		0%,
+		100% {
+			transform: translateX(0);
+		}
+		25% {
+			transform: translateX(-1px) rotate(-1deg);
+		}
+		75% {
+			transform: translateX(1px) rotate(1deg);
+		}
 	}
 
 	@keyframes wordExit {
@@ -286,21 +327,6 @@
 		100% {
 			transform: scale(1);
 			filter: brightness(1);
-		}
-	}
-
-	:global(.sparkle) {
-		display: none;
-	}
-
-	@keyframes float-in {
-		from {
-			transform: translateY(-10px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
 		}
 	}
 </style>
