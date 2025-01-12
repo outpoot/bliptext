@@ -66,38 +66,14 @@ export function getWordAtIndex(content: string, index: number): string {
 	const word = words[index];
 	if (!word) return '';
 
-	// Check all format types in a specific order
-	const formats = [
-		{ start: '_', end: '_' },    // Italic
-		{ start: '**', end: '**' },  // Bold
-		{ start: '*', end: '*' },    // Alternate italic
-		{ start: '[', end: ']' }     // Links
-	];
-
-	for (const format of formats) {
-		if (word.startsWith(format.start)) {
-			let fullText = word;
-			let i = index;
-			let foundEnd = false;
-
-			// Keep joining words until we find the matching closing tag
-			while (i < words.length - 1) {
-				i++;
-				fullText += ' ' + words[i];
-
-				if (words[i].includes(format.end)) {
-					foundEnd = true;
-					break;
-				}
-			}
-
-			if (foundEnd) {
-				return fullText;
-			}
+	if (word.startsWith('[')) {
+		const closingBracket = word.indexOf(']');
+		if (closingBracket !== -1) {
+			return word;
 		}
 	}
 
-	return word;
+	return word.replace(/[.,]/g, '');
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {

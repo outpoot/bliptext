@@ -34,7 +34,7 @@ redis.on('error', function (error) {
 })
 
 const server = Bun.serve<WebSocketData>({
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 8080,
     async fetch(request, server) {
         const url = new URL(request.url);
 

@@ -130,62 +130,15 @@
 		const actualIndex = contentWords.findIndex((w: string, idx: number) => {
 			if (Array.from(wordIndicesMap.values()).includes(idx)) return false;
 
-			// Check for different format combinations in specific order
-			const formats = [
-				{ start: '_', end: '_' }, // Italic
-				{ start: '**', end: '**' }, // Bold
-				{ start: '*', end: '*' }, // Alternate italic
-				{ start: '[', end: ']' } // Links
-			];
+			// Remove markdown syntax for comparison
+			const cleanWord = word.replace(/[*_.,]/g, '');
+			const cleanW = w.replace(/[*_.,]/g, '');
 
-			for (const format of formats) {
-				if (w.startsWith(format.start) && !w.endsWith(format.end)) {
-					let fullText = w;
-					let i = idx;
-					let foundEnd = false;
-
-					while (i < contentWords.length - 1) {
-						i++;
-						const nextWord = contentWords[i];
-						fullText += ' ' + nextWord;
-
-						if (nextWord.includes(format.end)) {
-							foundEnd = true;
-							break;
-						}
-					}
-
-					if (foundEnd) {
-						// Store the complete formatted text for hover
-						span.dataset.fullText = fullText;
-
-						// Clean the text for comparison
-						let textToCompare = fullText;
-						for (const f of formats) {
-							if (textToCompare.startsWith(f.start)) {
-								textToCompare = textToCompare.slice(f.start.length);
-								if (textToCompare.endsWith(f.end)) {
-									textToCompare = textToCompare.slice(0, -f.end.length);
-								}
-							}
-						}
-
-						// Handle link URLs separately
-						if (textToCompare.includes('](')) {
-							textToCompare = textToCompare.substring(0, textToCompare.indexOf(']('));
-						}
-
-						return textToCompare === word;
-					}
-				}
+			if (cleanW.startsWith('[')) {
+				const closingBracket = cleanW.indexOf(']');
+				return closingBracket !== -1 ? cleanW.substring(1, closingBracket) === cleanWord : false;
 			}
-
-			// For single words or complete formatted words
-			if (w.startsWith('[')) {
-				const closingBracket = w.indexOf(']');
-				return closingBracket !== -1 ? w.substring(1, closingBracket) === word : false;
-			}
-			return w === word;
+			return cleanW === cleanWord;
 		});
 
 		if (actualIndex !== -1) {
@@ -215,11 +168,8 @@
 		while ((node = walker.nextNode())) nodes.push(node as Text);
 
 		nodes.reverse().forEach((textNode) => {
-			const parentEl = textNode.parentElement;
-			const isFormattedText =
-				parentEl?.tagName === 'A' || parentEl?.tagName === 'STRONG' || parentEl?.tagName === 'EM';
-
-			if (isFormattedText) {
+			const isInLink = textNode.parentElement?.tagName === 'A';
+			if (isInLink) {
 				const span = createWordSpan(textNode.textContent || '', contentWords);
 				textNode.parentNode?.replaceChild(span, textNode);
 			} else {
