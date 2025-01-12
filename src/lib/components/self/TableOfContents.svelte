@@ -14,6 +14,7 @@
 
 	let items = $state<{ id: string; level: number; text: string }[]>([]);
 
+	let err = $state('');
 	let activeId = $state('');
 
 	let observer: IntersectionObserver;
@@ -103,6 +104,18 @@
 			history.pushState(null, '', `#${id}`);
 		}
 	}
+
+	function validateInput(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const value = input.value;
+
+		// Allow markdown formatting patterns
+		if (value && !/^(\*\*\w+\*\*|\*\w+\*|\[\w+\]\([^\s]{1,50}\)|\w+)$/.test(value)) {
+			err = 'Please enter a single word, optionally formatted with *word*, **word**, or [word](url)';
+		} else {
+			err = '';
+		}
+	}
 </script>
 
 <div class="sticky top-4">
@@ -137,8 +150,12 @@
 	{#if wordInput}
 		<Input
 			{...inputProps}
-			placeholder="Type a single word to edit..."
+			placeholder="Type a word"
 			class="mt-4 border-2 border-primary p-6 text-lg"
+			on:input={validateInput}
 		/>
+		{#if err}
+			<p class="text-red-500">{err}</p>
+		{/if}
 	{/if}
 </div>

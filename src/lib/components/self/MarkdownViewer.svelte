@@ -55,8 +55,26 @@
 	let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 	const wordIndicesMap = new Map<HTMLElement, number>();
 
+	function isValidFormattedWord(word: string): boolean {
+		//bold/italic
+		if (/^\*\*\w+\*\*$/.test(word) || /^\*\w+\*$/.test(word)) {
+			return true;
+		}
+		// hyperlink with url up to 50 chars
+		if (/^\[\w+\]\([^\s]{1,50}\)$/.test(word)) {
+			return true;
+		}
+		// unformatted word
+		return /^\w+$/.test(word);
+	}
+
 	// Word manipulation functions
 	function replaceWord(oldWord: string, newWord: string, element: HTMLElement) {
+		if (!isValidFormattedWord(newWord)) {
+			console.error('Invalid word format');
+			return;
+		}
+
 		element.classList.remove('selected', 'shake');
 		element.classList.add('word-exit');
 
@@ -65,6 +83,31 @@
 			element.classList.remove('word-exit');
 			element.classList.add('word-enter');
 			setTimeout(() => element.classList.remove('word-enter'), 500);
+
+			const [, text, url] = newWord.match(/^\[(.+)\]\((.+)\)$/) || [];
+			const span = document.createElement('span');
+			span.className = 'hv word-enter';
+
+			if (newWord.startsWith('[')) {
+				const anchor = document.createElement('a');
+				span.textContent = text;
+				anchor.href = url;
+				anchor.appendChild(span);
+				element.replaceWith(anchor);
+			} else if (newWord.startsWith('**')) {
+				span.textContent = newWord.slice(2, -2);
+				const strong = document.createElement('strong');
+				strong.appendChild(span);
+				element.replaceWith(strong);
+			} else if (newWord.startsWith('*')) {
+				span.textContent = newWord.slice(1, -1);
+				const em = document.createElement('em');
+				em.appendChild(span);
+				element.replaceWith(em);
+			} else {
+				span.textContent = newWord;
+				element.replaceWith(span);
+			}
 		}, 300);
 
 		showSubmitButton = false;
