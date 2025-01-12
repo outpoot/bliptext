@@ -62,50 +62,84 @@ export const flyAndScale = (
 };
 
 export function getWordAtIndex(content: string, index: number): string {
-    const words = content.split(/\s+/);
-    return words[index] || '';
+	const words = content.split(/\s+/);
+	const word = words[index];
+	if (!word) return '';
+
+	// Check all format types in a specific order
+	const formats = [
+		{ start: '_', end: '_' },    // Italic
+		{ start: '**', end: '**' },  // Bold
+		{ start: '*', end: '*' },    // Alternate italic
+		{ start: '[', end: ']' }     // Links
+	];
+
+	for (const format of formats) {
+		if (word.startsWith(format.start)) {
+			let fullText = word;
+			let i = index;
+			let foundEnd = false;
+
+			// Keep joining words until we find the matching closing tag
+			while (i < words.length - 1) {
+				i++;
+				fullText += ' ' + words[i];
+
+				if (words[i].includes(format.end)) {
+					foundEnd = true;
+					break;
+				}
+			}
+
+			if (foundEnd) {
+				return fullText;
+			}
+		}
+	}
+
+	return word;
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-    const words = content.split(/\s+/);
-    if (index >= 0 && index < words.length) {
-        words[index] = newWord;
-    }
-    return words.join(' ');
+	const words = content.split(/\s+/);
+	if (index >= 0 && index < words.length) {
+		words[index] = newWord;
+	}
+	return words.join(' ');
 }
 
 export function slugify(text: string): string {
-    return text
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+	return text
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/(^-|-$)/g, '');
 }
 
 export function fuzzySearch(text: string, query: string): number {
-    const textLower = text.toLowerCase();
-    const queryLower = query.toLowerCase();
-    let score = 0;
-    let lastIndex = -1;
+	const textLower = text.toLowerCase();
+	const queryLower = query.toLowerCase();
+	let score = 0;
+	let lastIndex = -1;
 
-    // Check each character in query
-    for (const char of queryLower) {
-        const index = textLower.indexOf(char, lastIndex + 1);
-        if (index === -1) return 0;
-        
-        // Give higher score for consecutive matches and matches after spaces
-        score += 1 + (
-            lastIndex === index - 1 ? 2 : // Consecutive
-            textLower[index - 1] === ' ' ? 1.5 : // After space
-            0
-        );
-        
-        lastIndex = index;
-    }
+	// Check each character in query
+	for (const char of queryLower) {
+		const index = textLower.indexOf(char, lastIndex + 1);
+		if (index === -1) return 0;
 
-    // Bonus for matching from the start
-    if (textLower.startsWith(queryLower)) {
-        score *= 2;
-    }
+		// Give higher score for consecutive matches and matches after spaces
+		score += 1 + (
+			lastIndex === index - 1 ? 2 : // Consecutive
+				textLower[index - 1] === ' ' ? 1.5 : // After space
+					0
+		);
 
-    return score;
+		lastIndex = index;
+	}
+
+	// Bonus for matching from the start
+	if (textLower.startsWith(queryLower)) {
+		score *= 2;
+	}
+
+	return score;
 }
