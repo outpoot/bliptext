@@ -7,9 +7,13 @@
 	import { onMount } from 'svelte';
 	import { currentUser } from '$lib/stores/user';
 	import type { Session } from 'better-auth';
+	import { toast } from 'svelte-sonner';
+
+
 
 	let { data } = $props<{ data: { article: Article | null, session: Session } }>();
 
+	let article = $state(data.article)
 	let ws: WebSocket | null = $state(null);
 
 	let content = $state(data.article?.content ?? '');
@@ -59,7 +63,21 @@
 		showFloatingWord = Boolean(newWord); // Show only if we have a word
 	}
 
-	function handleWordChanged() {
+	async function handleWordChanged({wordIndex, newWord}: { oldWord: string; newWord: string; wordIndex: number; }) {
+
+		const res = await fetch(`/api/articles/${data.article.slug}/word`,{
+			method: "PUT",
+			body: JSON.stringify({wordIndex, newWord})
+		})
+
+		if(!res.ok) {
+			const {error, article: oldArticle} = await res.json()
+			toast.error(error)
+			article = oldArticle
+
+			return
+		}
+
 		selectedWord = '';
 		showFloatingWord = false;
 	}
@@ -115,8 +133,8 @@
 		<div class="flex gap-6">
 			<div class="w-64 pt-16">
 				<TableOfContents
-					content={data.article.content}
-					title={data.article.title}
+					content={article.content}
+					title={article.title}
 					wordInput={true}
 					inputProps={{
 						onkeydown: handleInputKeyDown,
@@ -130,9 +148,9 @@
 
 			<div class="flex-1">
 				<MarkdownViewer
-					content={data.article.content}
-					title={data.article.title}
-					article={data.article}
+					content={article.content}
+					title={article.title}
+					article={article}
 					showHeader={true}
 					showSidebars={false}
 					isEditPage={true}
@@ -144,7 +162,7 @@
 			</div>
 
 			<div class="w-64 pt-16">
-				<Tools article={data.article} isEditPage={true} />
+				<Tools article={article} isEditPage={true} />
 			</div>
 		</div>
 

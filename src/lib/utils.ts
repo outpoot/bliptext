@@ -62,7 +62,7 @@ export const flyAndScale = (
 };
 
 export function getWordAtIndex(content: string, index: number): string {
-	const words = content.split(/\s+/);
+	const words = content.split(" ");
 	const word = words[index];
 	if (!word) return '';
 
@@ -77,7 +77,7 @@ export function getWordAtIndex(content: string, index: number): string {
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-	const words = content.split(/\s+/);
+	const words = content.split(" ");
 	if (index >= 0 && index < words.length) {
 		words[index] = newWord;
 	}

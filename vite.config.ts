@@ -3,6 +3,9 @@ import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	optimizeDeps: {
+		include: ["svelte-sonner"]
+	},
 	resolve: {
 		alias: {
 			'lucide-svelte/icons': new URL(

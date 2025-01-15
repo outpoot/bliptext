@@ -32,7 +32,7 @@
 		isEditPage?: boolean;
 		article?: Partial<Article>;
 		selectedWord?: string;
-		onWordChange: (data: { oldWord: string; newWord: string }) => void;
+		onWordChange: (data: { oldWord: string; newWord: string, wordIndex: number; }) => void;
 	}>();
 
 	// Plugin configuration
@@ -75,6 +75,9 @@
 			return;
 		}
 
+		const actualIndex = wordIndicesMap.get(element);
+		if (actualIndex === undefined) return;
+
 		element.classList.remove('selected', 'shake');
 		element.classList.add('word-exit');
 
@@ -112,7 +115,7 @@
 
 		showSubmitButton = false;
 		selectedElement = null;
-		onWordChange?.({ oldWord, newWord });
+		onWordChange?.({ oldWord, newWord, wordIndex: actualIndex });
 	}
 
 	async function handleHover(word: string, element: HTMLElement) {

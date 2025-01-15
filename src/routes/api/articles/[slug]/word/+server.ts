@@ -1,12 +1,12 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles, revisions } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, gte } from 'drizzle-orm';
 import { getWordAtIndex, replaceWordAtIndex } from '$lib/utils';
 import { auth } from '$lib/auth';
 
 export async function PUT({ params, request }) {
-	const { wordIndex, newWord } = await request.json();
+	let { wordIndex, newWord } = await request.json();
 	const { slug } = params;
 
 	if (typeof wordIndex !== 'number' || !newWord) {
@@ -21,9 +21,9 @@ export async function PUT({ params, request }) {
 		headers: request.headers
 	});
 
-    if(!session) {
-        return json({error: "You must be logged in to edit a word"}, {status: 401})
-    }
+	if (!session) {
+		return json({ error: 'You must be logged in to edit a word' }, { status: 401 });
+	}
 
 	try {
 		const article = await db.query.articles.findFirst({
@@ -34,7 +34,27 @@ export async function PUT({ params, request }) {
 			return json({ error: 'Article not found' }, { status: 404 });
 		}
 
+		const lastXMinRevisions = await db
+			.select()
+			.from(revisions)
+			.where(
+				and(
+					eq(revisions.articleId, article.id),
+					and(
+						eq(revisions.createdBy, session.user.id),
+						gte(revisions.createdAt, new Date(Date.now() - 1000 * 60 * 5))
+					)
+				)
+			);
+
+        if(lastXMinRevisions.length > 0) {
+            return json({error: "You edited this article recently! Please wait before editing again."}, {status: 429})
+        }
+
 		const oldWord = getWordAtIndex(article.content, wordIndex);
+        if(oldWord.startsWith("\n")) newWord = "\n" + newWord
+        if(oldWord.endsWith("\n")) newWord += "\n"
+
 		const newContent = replaceWordAtIndex(article.content, wordIndex, newWord);
 
 		const [revision] = await db
@@ -44,7 +64,7 @@ export async function PUT({ params, request }) {
 				content: newContent,
 				wordChanged: oldWord,
 				wordIndex,
-				createdBy: session?.user.id 
+				createdBy: session?.user.id
 			})
 			.returning();
 

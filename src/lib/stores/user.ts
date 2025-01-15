@@ -5,6 +5,7 @@ export type User = {
     name: string;
     email: string;
     isAdmin: boolean;
+    image: string;
 } | null;
 
-export const currentUser = writable<User>(null);
+export const currentUser = writable<User>(undefined);
