@@ -16,6 +16,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
     const { title, content } = await request.json();
 
+    if(!session?.user.isAdmin) {
+        return json({error: "You must be an admin to create a new post"}, {status: 401})
+    }
     if (!title || !content || !userId) {
         return json({ error: 'Title and content are required' }, { status: 400 });
     }
