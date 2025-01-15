@@ -110,6 +110,8 @@
 				: '96px'}; transition: margin 700ms cubic-bezier(0.34, 1.56, 0.64, 1)"
 		>
 			<div class="flex w-full flex-col items-center gap-6">
+				<LogoBlink />
+
 				<div class="pointer-events-none flex select-none flex-col items-center gap-4">
 					<a href="/home" class="pointer-events-auto no-underline">
 						<Label class="cursor-pointer text-7xl font-bold" style="font-family: 'LinLibertine'"
@@ -120,8 +122,6 @@
 						A wiki where you can edit <span class="text-primary">one word</span> every 5 minutes.
 					</Label>
 				</div>
-
-				<LogoBlink />
 
 				<SearchBar class="h-12 w-full max-w-xl" includeRandom={true} />
 

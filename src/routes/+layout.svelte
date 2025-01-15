@@ -5,7 +5,7 @@
 	import SearchBar from '$lib/components/self/SearchBar.svelte';
 	import { signIn } from '$lib/auth-client';
 	import { onMount } from 'svelte';
-    import { currentUser } from '$lib/stores/user';
+	import { currentUser } from '$lib/stores/user';
 	import { getSession } from '$lib/auth-client';
 
 	async function handleSignIn() {
@@ -19,7 +19,7 @@
 	let isHomePage = $derived(page.url.pathname === '/');
 
 	onMount(async () => {
-		const { data } = await getSession()
+		const { data } = await getSession();
 
 		if (data?.user) {
 			currentUser.set(data.user);
@@ -35,9 +35,11 @@
 	<div class="flex min-h-screen flex-col">
 		<header class="border-b">
 			<div class="container-2xl mx-auto flex h-16 items-center justify-between px-4">
-				<a href="/home" class="flex items-center gap-2 cursor-pointer">
+				<a href="/" class="flex cursor-pointer items-center gap-2">
 					<img src="/images/logo.svg" alt="Bliptext" class="h-8 w-8" />
-					<Label class="text-2xl font-bold cursor-pointer" style="font-family: 'LinLibertine'">Bliptext</Label>
+					<Label class="cursor-pointer text-2xl font-bold" style="font-family: 'LinLibertine'"
+						>Bliptext</Label
+					>
 				</a>
 
 				<div class="flex-1 px-16">
@@ -45,12 +47,14 @@
 				</div>
 
 				<nav class="flex items-center gap-2">
-					<a
-						href="/articles/new"
-						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-					>
-						New
-					</a>
+					{#if $currentUser?.isAdmin}
+						<a
+							href="/articles/new"
+							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+						>
+							New
+						</a>
+					{/if}
 					<a
 						href="/categories"
 						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"

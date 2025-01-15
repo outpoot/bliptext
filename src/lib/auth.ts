@@ -20,4 +20,14 @@ export const auth = betterAuth({
             clientSecret: env.DISCORD_CLIENT_SECRET,
         }
     },
+    user: {
+        additionalFields: {
+            isAdmin: {
+                type: "boolean",
+                required: true,
+                defaultValue: false,
+                input: false
+            }
+        }
+    }
 });

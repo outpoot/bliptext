@@ -10,6 +10,7 @@
 	import { slugify } from '$lib/utils';
 
 	import MarkdownViewer from '$lib/components/self/MarkdownViewer.svelte';
+	import { currentUser } from '$lib/stores/user';
 
 	const defaultContent = `# [A dog | i.imgur.com/XgbZdeA.jpeg | An image of a dog.]
 Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivorous) mammal that typically has a long snout, an acute sense of smell, non-retractile claws, and a barking, howling, or whining voice. It is widely kept as a pet or for work or field sports. Dogs are known for their **loyalty** and **companionship**.`;
@@ -49,6 +50,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 	}
 </script>
 
+{#if $currentUser?.isAdmin}
 <div class="container-2xl mx-auto py-8">
 	<h1 class="mb-8 text-3xl font-bold">Create New Article</h1>
 
@@ -90,3 +92,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 		</Tabs.Content>
 	</Tabs.Root>
 </div>
+
+{:else}
+<p>You must be an admin to do this.</p>
+{/if}
