@@ -61,6 +61,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
                     content: newContent,
                     editorId: session.user.id,
                     editorName: session.user.name,
+                    editorImage: session.user.image,
                 }
             })
         );

@@ -14,6 +14,8 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import FileText from 'lucide-svelte/icons/file-text';
 	import { Button } from '$lib/components/ui/button';
+	import FloatingWord from './FloatingWord.svelte';
+	import { WordProcessor } from '$lib/utils/wordProcessor';
 
 	let {
 		content,
@@ -23,7 +25,9 @@
 		isEditPage = false,
 		article = { title, content },
 		onWordChange,
-		selectedWord = ''
+		selectedWord = '',
+		selfId = '',
+		ws
 	} = $props<{
 		content: string;
 		title?: string;
@@ -32,8 +36,12 @@
 		isEditPage?: boolean;
 		article?: Partial<Article>;
 		selectedWord?: string;
-		onWordChange: (data: { oldWord: string; newWord: string, wordIndex: number; }) => void;
+		onWordChange: (data: { oldWord: string; newWord: string; wordIndex: number }) => void;
+		selfId?: string;
+		ws?: WebSocket | null;
 	}>();
+
+	const wordProcessor = new WordProcessor(content);
 
 	// Plugin configuration
 	const plugins: Plugin[] = [
@@ -53,102 +61,26 @@
 	let showSubmitButton = $state(false);
 	let submitButtonPosition = $state({ x: 0, y: 0 });
 	let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
-	const wordIndicesMap = new Map<HTMLElement, number>();
 
-	function isValidFormattedWord(word: string): boolean {
-		//bold/italic
-		if (/^\*\*\w+\*\*$/.test(word) || /^\*\w+\*$/.test(word)) {
-			return true;
-		}
-		// hyperlink with url up to 50 chars
-		if (/^\[\w+\]\([^\s]{1,50}\)$/.test(word)) {
-			return true;
-		}
-		// unformatted word
-		return /^\w+$/.test(word);
-	}
+	let otherUsersHovers = $state<{
+		[editorId: string]: {
+			word: string;
+			wordIndex: number;
+			editorName: string;
+			editorImage: string;
+		};
+	}>({});
 
-	// Word manipulation functions
-	function replaceWord(oldWord: string, newWord: string, element: HTMLElement) {
-		if (!isValidFormattedWord(newWord)) {
-			console.error('Invalid word format');
-			return;
-		}
-
-		const actualIndex = wordIndicesMap.get(element);
-		if (actualIndex === undefined) return;
-
-		element.classList.remove('selected', 'shake');
-		element.classList.add('word-exit');
-
-		setTimeout(() => {
-			element.textContent = newWord;
-			element.classList.remove('word-exit');
-			element.classList.add('word-enter');
-			setTimeout(() => element.classList.remove('word-enter'), 500);
-
-			const [, text, url] = newWord.match(/^\[(.+)\]\((.+)\)$/) || [];
-			const span = document.createElement('span');
-			span.className = 'hv word-enter';
-
-			if (newWord.startsWith('[')) {
-				const anchor = document.createElement('a');
-				span.textContent = text;
-				anchor.href = url;
-				anchor.appendChild(span);
-				element.replaceWith(anchor);
-			} else if (newWord.startsWith('**')) {
-				span.textContent = newWord.slice(2, -2);
-				const strong = document.createElement('strong');
-				strong.appendChild(span);
-				element.replaceWith(strong);
-			} else if (newWord.startsWith('*')) {
-				span.textContent = newWord.slice(1, -1);
-				const em = document.createElement('em');
-				em.appendChild(span);
-				element.replaceWith(em);
-			} else {
-				span.textContent = newWord;
-				element.replaceWith(span);
-			}
-		}, 300);
-
-		showSubmitButton = false;
-		selectedElement = null;
-		onWordChange?.({ oldWord, newWord, wordIndex: actualIndex });
-	}
-
-	async function handleHover(word: string, element: HTMLElement) {
-		if (!selectedWord || !article?.slug) return;
-
-		const actualIndex = wordIndicesMap.get(element);
-		if (actualIndex === undefined) return;
-
-		try {
-			const response = await fetch(`/api/articles/${article.slug}/hover`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ wordIndex: actualIndex, newWord: selectedWord })
-			});
-
-			if (!response.ok) throw new Error('Hover update failed');
-
-			const data = await response.json();
-			console.log('Hover preview:', data);
-		} catch (error) {
-			console.error('Failed to send hover update:', error);
-		}
-	}
-
-	// Event handlers
-	function handleElementHover(element: HTMLElement, word: string) {
-		if (!selectedWord) return;
+	function handleElementHover(element: HTMLElement, self: boolean = true) {
+		if (!selectedWord && self) return;
 		element.classList.add('shake');
-		hoverTimeout = setTimeout(() => handleHover(word, element), 500);
+
+		if (self) hoverTimeout = setTimeout(() => handleHover(element), 500);
 	}
 
 	function handleElementLeave(element: HTMLElement) {
 		element.classList.remove('shake');
+
 		if (hoverTimeout) {
 			clearTimeout(hoverTimeout);
 			hoverTimeout = null;
@@ -167,89 +99,86 @@
 		showSubmitButton = true;
 	}
 
-	// Text processing
-	function createWordSpan(word: string, contentWords: string[]): HTMLSpanElement {
-		const span = document.createElement('span');
-		span.textContent = word;
-		span.className = 'hv';
+	async function handleHover(element: HTMLElement) {
+		if (!selectedWord || !article?.slug) return;
 
-		const actualIndex = contentWords.findIndex((w: string, idx: number) => {
-			if (Array.from(wordIndicesMap.values()).includes(idx)) return false;
+		const actualIndex = wordProcessor.wordIndicesMap.get(element);
+		if (actualIndex === undefined) return;
 
-			// Remove markdown syntax for comparison
-			const cleanWord = word.replace(/[*_.,]/g, '');
-			const cleanW = w.replace(/[*_.,]/g, '');
+		try {
+			const response = await fetch(`/api/articles/${article.slug}/hover`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					wordIndex: actualIndex,
+					newWord: selectedWord
+				})
+			});
 
-			if (cleanW.startsWith('[')) {
-				const closingBracket = cleanW.indexOf(']');
-				return closingBracket !== -1 ? cleanW.substring(1, closingBracket) === cleanWord : false;
-			}
-			return cleanW === cleanWord;
-		});
+			if (!response.ok) throw new Error('Hover update failed');
 
-		if (actualIndex !== -1) {
-			wordIndicesMap.set(span, actualIndex);
+			const data = await response.json();
+			console.log('Hover preview:', data);
+		} catch (error) {
+			console.error('Failed to send hover update:', error);
 		}
-
-		span.addEventListener('mouseenter', () => handleElementHover(span, word));
-		span.addEventListener('mouseleave', () => handleElementLeave(span));
-		span.addEventListener('click', () => handleElementClick(span));
-
-		return span;
 	}
 
-	function wrapTextNodes(element: Element) {
-		const contentWords = content.split(/\s+/);
-		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-			acceptNode: (node) => {
-				if (!node.textContent?.trim() || node.parentElement?.classList.contains('hv')) {
-					return NodeFilter.FILTER_REJECT;
+	$effect(() => {
+		if (!ws) return;
+
+		let currentHoveredElement: HTMLElement | null = null;
+
+		ws.addEventListener('message', (event: { data: string }) => {
+			const data = JSON.parse(event.data);
+			if (data.type === 'word_hover') {
+				const { editorId, editorName, newWord, editorImage, wordIndex } = data.data;
+
+				if (editorId === selfId) return;
+
+				if (currentHoveredElement) handleElementLeave(currentHoveredElement);
+
+				const element = wordProcessor.getElementByWordIndex(wordIndex);
+				if (element) {
+					currentHoveredElement = element;
+					handleElementHover(element, false);
 				}
-				return NodeFilter.FILTER_ACCEPT;
+
+				otherUsersHovers = {
+					...otherUsersHovers,
+					[editorId]: {
+						word: newWord,
+						wordIndex,
+						editorName,
+						editorImage
+					}
+				};
 			}
 		});
+	});
 
-		const nodes: Text[] = [];
-		let node;
-		while ((node = walker.nextNode())) nodes.push(node as Text);
-
-		nodes.reverse().forEach((textNode) => {
-			const isInLink = textNode.parentElement?.tagName === 'A';
-			if (isInLink) {
-				const span = createWordSpan(textNode.textContent || '', contentWords);
-				textNode.parentNode?.replaceChild(span, textNode);
-			} else {
-				const words = textNode.textContent?.split(/\s+/) ?? [];
-				const fragment = document.createDocumentFragment();
-
-				words.forEach((word) => {
-					if (!word.trim()) return;
-					const span = createWordSpan(word, contentWords);
-					fragment.appendChild(span);
-					fragment.appendChild(document.createTextNode(' '));
-				});
-
-				textNode.parentNode?.replaceChild(fragment, textNode);
-			}
-		});
-	}
-
-	// Side effects
 	$effect(() => {
 		if (!isEditPage) return;
 
 		const content = document.querySelector('.markdown-content');
 		if (!content) return;
 
-		wordIndicesMap.clear();
+		wordProcessor.wordIndicesMap.clear();
 
 		content
 			.querySelectorAll('a')
 			.forEach((link) => link.addEventListener('click', (e) => e.preventDefault()));
 
-		content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li').forEach(wrapTextNodes);
+		content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li').forEach((element) => {
+			wordProcessor.wrapTextNodes(
+				element,
+				handleElementHover,
+				handleElementLeave,
+				handleElementClick
+			);
+		});
 
-		console.log(wordIndicesMap);
+		console.log(wordProcessor.wordIndicesMap);
 	});
 </script>
 
@@ -297,13 +226,28 @@
 		class="fixed z-50"
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 		onclick={() => {
-			replaceWord(selectedElement?.textContent ?? '', selectedWord, selectedElement!);
+			wordProcessor.replaceWord(
+				selectedElement?.textContent ?? '',
+				selectedWord,
+				selectedElement!,
+				onWordChange
+			);
 			selectedWord = '';
 		}}
 	>
 		Replace
 	</Button>
 {/if}
+
+{#each Object.entries(otherUsersHovers) as [_, hover]}
+	{#if true}
+		{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
+		{@const rect = element?.getBoundingClientRect()}
+		{#if element && rect}
+			<FloatingWord word={hover.word} x={rect.left} y={rect.top - 10} image={hover.editorImage} />
+		{/if}
+	{/if}
+{/each}
 
 <style>
 	:global(.hv) {
@@ -313,12 +257,9 @@
 		cursor: pointer;
 	}
 
-	:global(.hv:hover) {
-		background: hsl(var(--primary) / 20%);
-	}
-
 	:global(.shake) {
 		animation: shake 0.5s linear infinite;
+		background: hsl(var(--primary) / 20%);
 	}
 
 	:global(.selected) {
