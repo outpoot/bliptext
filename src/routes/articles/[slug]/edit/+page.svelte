@@ -5,8 +5,11 @@
 	import TableOfContents from '$lib/components/self/TableOfContents.svelte';
 	import Tools from '$lib/components/self/Tools.svelte';
 	import { onMount } from 'svelte';
+	import { currentUser } from '$lib/stores/user';
+	import type { Session } from 'better-auth';
 
-	let { data } = $props<{ data: { article: Article | null } }>();
+	let { data } = $props<{ data: { article: Article | null, session: Session } }>();
+
 	let ws: WebSocket | null = $state(null);
 
 	let content = $state(data.article?.content ?? '');
@@ -61,35 +64,42 @@
 		showFloatingWord = false;
 	}
 
-	function getCookie(name: string) {
-		const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-		return match ? match[2] : null;
-	}
-
 	onMount(() => {
-		const token = getCookie('better-auth.session_token');
-		if (!token || !data.article) return;
+		(async () => {
+			const token = data.session.data.session.token;
+			console.log(token)
+			if (!token || !data.article) return;
 
-		// Connect to WebSocket
-		ws = new WebSocket(`ws://localhost:3000?token=${token}`);
+			// Connect to WebSocket
+			ws = new WebSocket(`ws://localhost:8080?token=${token}`);
 
-		ws.addEventListener('open', () => {
-			ws?.send(
-				JSON.stringify({
-					type: 'set_article',
-					article: data.article?.id
-				})
-			);
-		});
+			ws.addEventListener('open', () => {
+				console.log('Connected to WebSocket');
+				ws?.send(
+					JSON.stringify({
+						type: 'set_article',
+						article: data.article?.id
+					})
+				);
+			});
 
-		ws.addEventListener('message', (event) => {
-			const data = JSON.parse(event.data);
-			console.log(data);
-			if (data.type === 'word_hover') {
-				const { content: newContent } = data.data;
-				content = newContent;
-			}
-		});
+			ws.addEventListener('error', (error) => {
+				console.error('WebSocket error:', error);
+			});
+
+			ws.addEventListener('close', (event) => {
+				console.log('WebSocket closed:', event.code, event.reason);
+			});
+
+			ws.addEventListener('message', (event) => {
+				const data = JSON.parse(event.data);
+				console.log(data);
+				if (data.type === 'word_hover') {
+					const { content: newContent } = data.data;
+					content = newContent;
+				}
+			});
+		})();
 
 		return () => {
 			ws?.close();
@@ -128,6 +138,8 @@
 					isEditPage={true}
 					onWordChange={handleWordChanged}
 					{selectedWord}
+					{ws}
+					selfId={$currentUser?.id}
 				/>
 			</div>
 

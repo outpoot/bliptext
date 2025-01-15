@@ -6,6 +6,7 @@
 	import { signIn } from '$lib/auth-client';
 	import { onMount } from 'svelte';
     import { currentUser } from '$lib/stores/user';
+	import { getSession } from '$lib/auth-client';
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -18,12 +19,10 @@
 	let isHomePage = $derived(page.url.pathname === '/');
 
 	onMount(async () => {
-		const response = await fetch('/api/me');
-		
-		if (response.ok) {
-			const userData = await response.json();
-			console.log(userData)
-			currentUser.set(userData);
+		const { data } = await getSession()
+
+		if (data?.user) {
+			currentUser.set(data.user);
 		} else {
 			// TODO: show error via toast
 		}

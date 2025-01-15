@@ -30,39 +30,56 @@ redis.on("message", async (channel, msg) => {
 });
 
 redis.on('error', function (error) {
-    console.dir(error)
-})
+    console.dir(error);
+});
 
 const server = Bun.serve<WebSocketData>({
     port: process.env.PORT || 8080,
     async fetch(request, server) {
-        const url = new URL(request.url);
+        try {
+            const url = new URL(request.url);
+            const token = url.searchParams.get("token");
 
-        const token = url.searchParams.get("token");
-        if (!token) return new Response(null, { status: 401 });
+            if (!token) {
+                return new Response(null, { status: 401 });
+            }
 
-        const res = await fetch(`${process.env.SITE_URL}/api/me`, {
-            headers: {
-                Cookie: `better-auth.session_token=${token}`,
-            },
-        });
+            const headers = new Headers(request.headers);
 
-        if (!res.ok) return new Response(null, { status: 401 });
+            const res = await fetch(`${process.env.SITE_URL}/api/auth/get-session`, {
+                headers,
+                credentials: 'include'
+            });
 
-        const user = await res.json();
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Auth failed:', errorText);
+                return new Response(null, { status: 401 });
+            }
 
-        if (
-            server.upgrade(request, {
-                data: {
-                    currentArticle: null,
-                    user,
-                },
-            })
-        ) {
-            return;
+            const data = await res.json();
+
+            if (!data || !data.user || !data.user.id) {
+                return new Response(null, { status: 401 });
+            }
+
+            if (
+                server.upgrade(request, {
+                    data: {
+                        currentArticle: null,
+                        user: {
+                            id: data.user.id
+                        },
+                    },
+                })
+            ) {
+                return;
+            }
+
+            return new Response("Upgrade failed", { status: 500 });
+        } catch (error) {
+            return new Response(null, { status: 500 });
         }
-
-        return new Response("Upgrade failed", { status: 500 });
     },
     websocket: {
         open: async (ws) => {

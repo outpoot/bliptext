@@ -1,6 +1,5 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { articles } from '$lib/server/db/schema';
 import { fuzzySearch } from '$lib/utils';
 
 export async function GET({ url }) {
