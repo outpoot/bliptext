@@ -1,5 +1,3 @@
-// TODO: user auth
-
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles, revisions } from '$lib/server/db/schema';
@@ -46,7 +44,7 @@ export async function PUT({ params, request }) {
 				content: newContent,
 				wordChanged: oldWord,
 				wordIndex,
-				createdBy: session?.user.id // TODO: Add proper user tracking
+				createdBy: session?.user.id 
 			})
 			.returning();
 
