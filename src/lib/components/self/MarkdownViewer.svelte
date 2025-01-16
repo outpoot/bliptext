@@ -75,15 +75,31 @@
 		if (!selectedWord && self) return;
 		element.classList.add('shake');
 
-		if (self) hoverTimeout = setTimeout(() => handleHover(element), 500);
+		if (self) hoverTimeout = setTimeout(() => handleHover(element), 150);
 	}
 
-	function handleElementLeave(element: HTMLElement) {
+	async function handleElementLeave(element: HTMLElement) {
 		element.classList.remove('shake');
 
 		if (hoverTimeout) {
 			clearTimeout(hoverTimeout);
 			hoverTimeout = null;
+		}
+
+		// remove hover from server
+		const actualIndex = wordProcessor.wordIndicesMap.get(element);
+		if (actualIndex !== undefined) {
+			try {
+				await fetch(`/api/articles/${article.slug}/hover`, {
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						wordIndex: actualIndex
+					})
+				});
+			} catch (error) {
+				console.error('Failed to send hover leave:', error);
+			}
 		}
 	}
 
@@ -131,6 +147,7 @@
 
 		ws.addEventListener('message', (event: { data: string }) => {
 			const data = JSON.parse(event.data);
+
 			if (data.type === 'word_hover') {
 				const { editorId, editorName, newWord, editorImage, wordIndex } = data.data;
 
@@ -153,6 +170,20 @@
 						editorImage
 					}
 				};
+			} else if (data.type === 'word_leave' || data.type === 'user_disconnected') {
+				const { editorId } = data.data;
+
+				const userHover = otherUsersHovers[editorId];
+				if (userHover) {
+					const element = wordProcessor.getElementByWordIndex(userHover.wordIndex);
+					if (element) {
+						handleElementLeave(element);
+					}
+				}
+
+				const newHovers = { ...otherUsersHovers };
+				delete newHovers[editorId];
+				otherUsersHovers = newHovers;
 			}
 		});
 	});

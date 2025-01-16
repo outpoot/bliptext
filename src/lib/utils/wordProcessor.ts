@@ -16,11 +16,14 @@ export class WordProcessor {
         return /^\w+$/.test(word);
     }
 
-    replaceWord(oldWord: string, newWord: string, element: HTMLElement, onWordChange: (data: { oldWord: string; newWord: string }) => void) {
+    replaceWord(oldWord: string, newWord: string, element: HTMLElement, onWordChange: (data: { oldWord: string; newWord: string; wordIndex: number }) => void) {
         if (!this.isValidFormattedWord(newWord)) {
             console.error('Invalid word format');
             return;
         }
+
+        const actualIndex = this.wordIndicesMap.get(element);
+        if (actualIndex === undefined) return;
 
         element.classList.remove('selected', 'shake');
         element.classList.add('word-exit');
@@ -57,7 +60,7 @@ export class WordProcessor {
             }
         }, 300);
 
-        onWordChange?.({ oldWord, newWord });
+        onWordChange?.({ oldWord, newWord, wordIndex: actualIndex });
     }
 
     createWordSpan(word: string, contentWords: string[], handleElementHover: (element: HTMLElement) => void, handleElementLeave: (element: HTMLElement) => void, handleElementClick: (element: HTMLElement) => void): HTMLSpanElement {

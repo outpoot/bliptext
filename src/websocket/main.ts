@@ -104,6 +104,21 @@ const server = Bun.serve<WebSocketData>({
             }
         },
         close: async (ws) => {
+            if (ws.data.currentArticle) {
+                const clients = sockets.filter(
+                    (socket) => socket.data.currentArticle === ws.data.currentArticle && socket !== ws
+                );
+
+                for (const client of clients) {
+                    client.send(JSON.stringify({
+                        type: 'user_disconnected',
+                        data: {
+                            editorId: ws.data.user.id
+                        }
+                    }));
+                }
+            }
+
             sockets = sockets.filter((a) => a !== ws);
         },
     },
