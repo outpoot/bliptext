@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import path from "path";
 
 dotenv.config({ path: path.join(__dirname, "../../.env") });
-const redis = new Redis(process.env.REDIS_URL!);
 
 export type WebSocketData = {
     currentArticle?: string;
@@ -13,113 +12,149 @@ export type WebSocketData = {
     };
 };
 
-let sockets: ServerWebSocket<WebSocketData>[] = [];
-let subscribedToArticles: string[] = [];
+const redis = new Redis(process.env.REDIS_URL!);
+const sockets = new Set<ServerWebSocket<WebSocketData>>();
+const activeArticles = new Map<string, Set<string>>();
+const subscribedArticles = new Set<string>();
 
-redis.on("message", async (channel, msg) => {
+redis.on("message", (channel, msg) => {
     if (!channel.startsWith("updates:")) return;
     const article = channel.substring(8);
 
-    const clients = sockets.filter(
-        (socket) => socket.data.currentArticle == article
-    );
-
-    for (const client of clients) {
-        client.send(msg);
+    for (const socket of sockets) {
+        if (socket.data.currentArticle === article) {
+            socket.send(msg);
+        }
     }
 });
 
-redis.on('error', function (error) {
-    console.dir(error);
-});
+redis.on('error', console.error);
+
+async function validateAuth(request: Request) {
+    const token = new URL(request.url).searchParams.get("token");
+    if (!token) return null;
+
+    try {
+        const res = await fetch(`${process.env.SITE_URL}/api/auth/get-session`, {
+            headers: new Headers(request.headers),
+            credentials: 'include'
+        });
+
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.user?.id ? { id: data.user.id } : null;
+    } catch {
+        return null;
+    }
+}
+
+async function broadcastActiveUsers(articleId: string) {
+    const count = activeArticles.get(articleId)?.size ?? 0;
+    const message = JSON.stringify({ type: 'active_users_update', data: { count } });
+
+    for (const socket of sockets) {
+        if (socket.data.currentArticle === articleId) {
+            socket.send(message);
+        }
+    }
+}
+
+async function handleSetArticle(ws: ServerWebSocket<WebSocketData>, article: string) {
+    ws.data.currentArticle = article;
+
+    if (!activeArticles.has(article)) {
+        activeArticles.set(article, new Set());
+    }
+    activeArticles.get(article)?.add(ws.data.user.id);
+
+    if (!subscribedArticles.has(article)) {
+        subscribedArticles.add(article);
+        await redis.subscribe("updates:" + article);
+    }
+
+    await broadcastActiveUsers(article);
+}
+
+async function handleGetActiveArticles(ws: ServerWebSocket<WebSocketData>) {
+    const activeArticlesData = [];
+
+    for (const [articleId, users] of activeArticles) {
+        if (users.size > 0) {
+            try {
+                const response = await fetch(`${process.env.SITE_URL}/api/articles/${articleId}?byId=true`);
+                if (response.ok) {
+                    const article = await response.json();
+                    activeArticlesData.push({ ...article, activeUsers: users.size });
+                }
+            } catch (error) {
+                console.error('Failed to fetch article:', error);
+            }
+        }
+    }
+
+    ws.send(JSON.stringify({ type: "active_articles", data: activeArticlesData }));
+}
 
 const server = Bun.serve<WebSocketData>({
-    port: process.env.PORT || 8080,
+    port: Number(process.env.PORT) || 8080,
     async fetch(request, server) {
-        try {
-            const url = new URL(request.url);
-            const token = url.searchParams.get("token");
+        const user = await validateAuth(request);
+        if (!user) return new Response(null, { status: 401 });
 
-            if (!token) {
-                return new Response(null, { status: 401 });
-            }
+        const upgraded = server.upgrade(request, {
+            data: { user, currentArticle: null }
+        });
 
-            const headers = new Headers(request.headers);
-
-            const res = await fetch(`${process.env.SITE_URL}/api/auth/get-session`, {
-                headers,
-                credentials: 'include'
-            });
-
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.error('Auth failed:', errorText);
-                return new Response(null, { status: 401 });
-            }
-
-            const data = await res.json();
-
-            if (!data || !data.user || !data.user.id) {
-                return new Response(null, { status: 401 });
-            }
-
-            if (
-                server.upgrade(request, {
-                    data: {
-                        currentArticle: null,
-                        user: {
-                            id: data.user.id
-                        },
-                    },
-                })
-            ) {
-                return;
-            }
-
-            return new Response("Upgrade failed", { status: 500 });
-        } catch (error) {
-            return new Response(null, { status: 500 });
-        }
+        return upgraded
+            ? undefined
+            : new Response("Upgrade failed", { status: 500 });
     },
     websocket: {
-        open: async (ws) => {
-            sockets.push(ws);
+        open(ws) {
+            sockets.add(ws);
         },
-        message: async (ws, msg) => {
+        async message(ws, msg) {
             if (typeof msg !== "string") return;
 
-            const data = JSON.parse(msg);
+            try {
+                const data = JSON.parse(msg);
 
-            switch (data.type) {
-                case "set_article":
-                    ws.data.currentArticle = data.article;
-                    if (!subscribedToArticles.includes(data.article)) {
-                        subscribedToArticles.push(data.article);
-                        redis.subscribe("updates:" + data.article);
-                    }
-                    break;
+                switch (data.type) {
+                    case "set_article":
+                        await handleSetArticle(ws, data.article);
+                        break;
 
-                default:
-                    console.log("Received unknown event type " + data.type);
+                    case "get_active_articles":
+                        await handleGetActiveArticles(ws);
+                        break;
+                }
+            } catch (error) {
+                console.error('Message handling error:', error);
             }
         },
-        close: async (ws) => {
-            if (ws.data.currentArticle) {
-                const clients = sockets.filter(
-                    (socket) => socket.data.currentArticle === ws.data.currentArticle && socket !== ws
-                );
+        close(ws) {
+            const articleId = ws.data.currentArticle;
+            if (articleId) {
+                activeArticles.get(articleId)?.delete(ws.data.user.id);
 
-                for (const client of clients) {
-                    client.send(JSON.stringify({
-                        type: 'user_disconnected',
-                        data: {
-                            editorId: ws.data.user.id
-                        }
-                    }));
+                if (activeArticles.get(articleId)?.size === 0) {
+                    activeArticles.delete(articleId);
+                }
+
+                broadcastActiveUsers(articleId);
+
+                const message = JSON.stringify({
+                    type: 'user_disconnected',
+                    data: { editorId: ws.data.user.id }
+                });
+
+                for (const socket of sockets) {
+                    if (socket.data.currentArticle === articleId && socket !== ws) {
+                        socket.send(message);
+                    }
                 }
             }
-
-            sockets = sockets.filter((a) => a !== ws);
+            sockets.delete(ws);
         },
     },
 });

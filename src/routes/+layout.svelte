@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 	import { currentUser } from '$lib/stores/user';
 	import { getSession } from '$lib/auth-client';
-	import {Toaster} from "svelte-sonner"
+	import { Toaster } from 'svelte-sonner';
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -26,12 +26,12 @@
 			currentUser.set(data.user);
 		} else {
 			// TODO: show error via toast
-			currentUser.set(null)
+			currentUser.set(null);
 		}
 	});
 </script>
 
-<Toaster/>
+<Toaster />
 {#if isHomePage}
 	{@render children()}
 {:else}
@@ -69,7 +69,11 @@
 							href="/profile"
 							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
 						>
-							<img src={$currentUser.image} class="w-8 h-8 rounded-full" alt={`@${$currentUser.name}'s Profile Picture'`} />
+							<img
+								src={$currentUser.image}
+								class="h-8 w-8 rounded-full"
+								alt={`@${$currentUser.name}'s Profile Picture'`}
+							/>
 						</a>
 					{:else if $currentUser == undefined}
 						<button
