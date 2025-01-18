@@ -60,7 +60,9 @@
 	let selectedElement: HTMLElement | null = $state(null);
 	let showSubmitButton = $state(false);
 	let submitButtonPosition = $state({ x: 0, y: 0 });
+
 	let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
+	let leaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	let otherUsersHovers = $state<{
 		[editorId: string]: {
@@ -86,21 +88,26 @@
 			hoverTimeout = null;
 		}
 
-		// remove hover from server
-		const actualIndex = wordProcessor.wordIndicesMap.get(element);
-		if (actualIndex !== undefined) {
-			try {
-				await fetch(`/api/articles/${article.slug}/hover`, {
-					method: 'DELETE',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						wordIndex: actualIndex
-					})
-				});
-			} catch (error) {
-				console.error('Failed to send hover leave:', error);
-			}
+		if (leaveTimeout) {
+			clearTimeout(leaveTimeout);
 		}
+
+		leaveTimeout = setTimeout(async () => {
+			const actualIndex = wordProcessor.wordIndicesMap.get(element);
+			if (actualIndex !== undefined) {
+				try {
+					await fetch(`/api/articles/${article.slug}/hover`, {
+						method: 'DELETE',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							wordIndex: actualIndex
+						})
+					});
+				} catch (error) {
+					console.error('Failed to send hover leave:', error);
+				}
+			}
+		}, 125);
 	}
 
 	function handleElementClick(element: HTMLElement) {
