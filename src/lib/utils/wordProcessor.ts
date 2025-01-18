@@ -1,7 +1,19 @@
-export class WordProcessor {
-    wordIndicesMap = new Map<HTMLElement, number>();
+type WordEventHandlers = {
+    onHover?: (element: HTMLElement) => void;
+    onLeave?: (element: HTMLElement) => void;
+    onClick?: (element: HTMLElement) => void;
+};
 
-    constructor(private content: string) { }
+export class WordProcessor {
+    public wordIndicesMap = new Map<HTMLElement, number>();
+    private eventHandlers: WordEventHandlers;
+
+    constructor(
+        private content: string,
+        eventHandlers: WordEventHandlers = {}
+    ) {
+        this.eventHandlers = eventHandlers;
+    }
 
     isValidFormattedWord(word: string): boolean {
         // bold/italic
@@ -16,7 +28,19 @@ export class WordProcessor {
         return /^\w+$/.test(word);
     }
 
-    replaceWord(oldWord: string, newWord: string, element: HTMLElement, onWordChange: (data: { oldWord: string; newWord: string; wordIndex: number }) => void) {
+    private attachEventListeners(element: HTMLElement) {
+        if (this.eventHandlers.onHover) {
+            element.addEventListener('mouseenter', () => this.eventHandlers.onHover?.(element));
+        }
+        if (this.eventHandlers.onLeave) {
+            element.addEventListener('mouseleave', () => this.eventHandlers.onLeave?.(element));
+        }
+        if (this.eventHandlers.onClick) {
+            element.addEventListener('click', () => this.eventHandlers.onClick?.(element));
+        }
+    }
+
+    replaceWord(newWord: string, element: HTMLElement, onWordChange: (data: { newWord: string; wordIndex: number }) => void) {
         if (!this.isValidFormattedWord(newWord)) {
             console.error('Invalid word format');
             return;
@@ -29,41 +53,45 @@ export class WordProcessor {
         element.classList.add('word-exit');
 
         setTimeout(() => {
-            element.textContent = newWord;
-            element.classList.remove('word-exit');
-            element.classList.add('word-enter');
-            setTimeout(() => element.classList.remove('word-enter'), 500);
-
-            const [, text, url] = newWord.match(/^\[(.+)\]\((.+)\)$/) || [];
             const span = document.createElement('span');
-            span.className = 'hv word-enter';
+            span.className = 'hv';
+            span.dataset.wordIndex = actualIndex.toString();
+            span.textContent = newWord.startsWith('**') ? newWord.slice(2, -2) :
+                newWord.startsWith('*') ? newWord.slice(1, -1) :
+                    newWord.startsWith('[') ? newWord.match(/^\[(.+?)\]/)?.[1] || newWord :
+                        newWord;
 
+            this.attachEventListeners(span);
+
+            let replacement: Element = span;
             if (newWord.startsWith('[')) {
+                const [, , url] = newWord.match(/^\[(.+)\]\((.+)\)$/) || [];
                 const anchor = document.createElement('a');
-                span.textContent = text;
                 anchor.href = url;
                 anchor.appendChild(span);
-                element.replaceWith(anchor);
+                replacement = anchor;
             } else if (newWord.startsWith('**')) {
-                span.textContent = newWord.slice(2, -2);
                 const strong = document.createElement('strong');
                 strong.appendChild(span);
-                element.replaceWith(strong);
+                replacement = strong;
             } else if (newWord.startsWith('*')) {
-                span.textContent = newWord.slice(1, -1);
                 const em = document.createElement('em');
                 em.appendChild(span);
-                element.replaceWith(em);
-            } else {
-                span.textContent = newWord;
-                element.replaceWith(span);
+                replacement = em;
             }
+
+            this.wordIndicesMap.set(span, actualIndex);
+            this.wordIndicesMap.delete(element);
+
+            element.replaceWith(replacement);
+            span.classList.add('word-enter');
+            setTimeout(() => span.classList.remove('word-enter'), 500);
         }, 300);
 
-        onWordChange?.({ oldWord, newWord, wordIndex: actualIndex });
+        onWordChange?.({ newWord, wordIndex: actualIndex });
     }
 
-    createWordSpan(word: string, contentWords: string[], handleElementHover: (element: HTMLElement) => void, handleElementLeave: (element: HTMLElement) => void, handleElementClick: (element: HTMLElement) => void): HTMLSpanElement {
+    private createWordSpan(word: string, contentWords: string[]): HTMLSpanElement {
         const span = document.createElement('span');
         span.textContent = word;
         span.className = 'hv';
@@ -84,16 +112,15 @@ export class WordProcessor {
 
         if (actualIndex !== -1) {
             this.wordIndicesMap.set(span, actualIndex);
+            span.dataset.wordIndex = actualIndex.toString();
         }
 
-        span.addEventListener('mouseenter', () => handleElementHover(span));
-        span.addEventListener('mouseleave', () => handleElementLeave(span));
-        span.addEventListener('click', () => handleElementClick(span));
+        this.attachEventListeners(span);
 
         return span;
     }
 
-    wrapTextNodes(element: Element, handleElementHover: (element: HTMLElement) => void, handleElementLeave: (element: HTMLElement) => void, handleElementClick: (element: HTMLElement) => void) {
+    wrapTextNodes(element: Element) {
         const contentWords = this.content.split(/\s+/);
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
             acceptNode: (node) => {
@@ -111,7 +138,7 @@ export class WordProcessor {
         nodes.reverse().forEach((textNode) => {
             const isInLink = textNode.parentElement?.tagName === 'A';
             if (isInLink) {
-                const span = this.createWordSpan(textNode.textContent || '', contentWords, handleElementHover, handleElementLeave, handleElementClick);
+                const span = this.createWordSpan(textNode.textContent || '', contentWords);
                 textNode.parentNode?.replaceChild(span, textNode);
             } else {
                 const words = textNode.textContent?.split(/\s+/) ?? [];
@@ -119,7 +146,7 @@ export class WordProcessor {
 
                 words.forEach((word) => {
                     if (!word.trim()) return;
-                    const span = this.createWordSpan(word, contentWords, handleElementHover, handleElementLeave, handleElementClick);
+                    const span = this.createWordSpan(word, contentWords);
                     fragment.appendChild(span);
                     fragment.appendChild(document.createTextNode(' '));
                 });

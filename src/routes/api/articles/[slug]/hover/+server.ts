@@ -7,16 +7,7 @@ import Redis from 'ioredis';
 import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
 import { env } from '$env/dynamic/private';
 import { auth } from '$lib/auth';
-
-const redis = new Redis(env.REDIS_URL!);
-
-redis.on('error', (err) => {
-    console.error('Redis connection error:', err);
-});
-
-redis.on('connect', () => {
-    console.log('Redis connected successfully');
-});
+import { redis } from '$lib/server/redis';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
     try {
@@ -51,17 +42,18 @@ export const PUT: RequestHandler = async ({ params, request }) => {
         }
 
         const oldWord = getWordAtIndex(article.content, wordIndex);
-        const newContent = replaceWordAtIndex(article.content, wordIndex, newWord);
 
+        if (oldWord === null) {
+            return json({ error: 'Invalid word index' }, { status: 400 });
+        }
+        
         await redis.publish(
             `updates:${article.id}`,
             JSON.stringify({
                 type: 'word_hover',
                 data: {
-                    oldWord,
                     newWord,
                     wordIndex,
-                    content: newContent,
                     editorId: session.user.id,
                     editorName: session.user.name,
                     editorImage: session.user.image,

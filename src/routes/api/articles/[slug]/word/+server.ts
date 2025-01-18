@@ -4,6 +4,7 @@ import { articles, revisions } from '$lib/server/db/schema';
 import { and, eq, gte } from 'drizzle-orm';
 import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
 import { auth } from '$lib/auth';
+import { redis } from '$lib/server/redis';
 
 export async function PUT({ params, request }) {
 	const { wordIndex, newWord } = await request.json();
@@ -79,6 +80,21 @@ export async function PUT({ params, request }) {
 				updatedAt: new Date()
 			})
 			.where(eq(articles.id, article.id));
+
+		await redis.publish(
+			`updates:${article.id}`,
+			JSON.stringify({
+				type: 'word_hover',
+				data: {
+					newWord,
+					wordIndex,
+					editorId: session.user.id,
+					editorName: session.user.name,
+					editorImage: session.user.image,
+					replace: true
+				}
+			})
+		);
 
 		return json({ success: true, newContent });
 	} catch (error) {

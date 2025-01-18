@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import Redis from "ioredis";
+import { redis } from "$lib/server/redis";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -13,7 +13,6 @@ type WebSocketData = {
     connectionType: 'editor' | 'viewer';
 };
 
-const redis = new Redis(process.env.REDIS_URL!);
 const articleUsers = new Map<string, Set<string>>();
 const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
 const editorSockets = new Map<string, ServerWebSocket<WebSocketData>>();

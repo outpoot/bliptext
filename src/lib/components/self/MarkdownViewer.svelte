@@ -16,6 +16,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import FloatingWord from './FloatingWord.svelte';
 	import { WordProcessor } from '$lib/utils/wordProcessor';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		content,
@@ -24,7 +25,6 @@
 		showHeader = false,
 		isEditPage = false,
 		article = { title, content },
-		onWordChange,
 		selectedWord = '',
 		selfId = '',
 		ws
@@ -36,12 +36,15 @@
 		isEditPage?: boolean;
 		article?: Partial<Article>;
 		selectedWord?: string;
-		onWordChange: (data: { oldWord: string; newWord: string; wordIndex: number }) => void;
 		selfId?: string;
 		ws?: WebSocket | null;
 	}>();
 
-	const wordProcessor = new WordProcessor(content);
+	const wordProcessor = new WordProcessor(content, {
+		onHover: (element) => handleElementHover(element),
+		onLeave: (element) => handleElementLeave(element),
+		onClick: (element) => handleElementClick(element)
+	});
 
 	// Plugin configuration
 	const plugins: Plugin[] = [
@@ -74,6 +77,7 @@
 	}>({});
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
+		console.log('Hovering over element:', element, self, selectedWord);
 		if (!selectedWord && self) return;
 		element.classList.add('shake');
 
@@ -152,6 +156,30 @@
 
 		let currentHoveredElement: HTMLElement | null = null;
 
+		ws.addEventListener('message', async (event: { data: string }) => {
+			const data = JSON.parse(event.data);
+			console.log(data);
+			if (data.type === 'word_hover') {
+				const { wordIndex, newWord, replace, editorId } = data.data;
+
+				if (replace) {
+					const element = wordProcessor.getElementByWordIndex(wordIndex);
+					if (!element) {
+						console.error('Element from update not found, index:', wordIndex);
+						return;
+					}
+
+					if (otherUsersHovers[editorId]) {
+						const newHovers = { ...otherUsersHovers };
+						delete newHovers[editorId];
+						otherUsersHovers = newHovers;
+					}
+
+					wordProcessor.replaceWord(newWord, element, () => {});
+				}
+			}
+		});
+
 		ws.addEventListener('message', (event: { data: string }) => {
 			const data = JSON.parse(event.data);
 
@@ -163,6 +191,7 @@
 				if (currentHoveredElement) handleElementLeave(currentHoveredElement);
 
 				const element = wordProcessor.getElementByWordIndex(wordIndex);
+				console.log('Element:', element);
 				if (element) {
 					currentHoveredElement = element;
 					handleElementHover(element, false);
@@ -208,16 +237,22 @@
 			.forEach((link) => link.addEventListener('click', (e) => e.preventDefault()));
 
 		content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li').forEach((element) => {
-			wordProcessor.wrapTextNodes(
-				element,
-				handleElementHover,
-				handleElementLeave,
-				handleElementClick
-			);
+			wordProcessor.wrapTextNodes(element);
+		});
+	});
+
+	async function handleWordChanged({ newWord, wordIndex }: { newWord: string; wordIndex: number }) {
+		const res = await fetch(`/api/articles/${article.slug}/word`, {
+			method: 'PUT',
+			body: JSON.stringify({ wordIndex, newWord })
 		});
 
-		console.log(wordProcessor.wordIndicesMap);
-	});
+		if (!res.ok) {
+			const { error } = await res.json();
+			toast.error(error);
+			return;
+		}
+	}
 </script>
 
 <!-- Template -->
@@ -264,12 +299,9 @@
 		class="fixed z-50"
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 		onclick={() => {
-			wordProcessor.replaceWord(
-				selectedElement?.textContent ?? '',
-				selectedWord,
-				selectedElement!,
-				onWordChange
-			);
+			showSubmitButton = false;
+
+			wordProcessor.replaceWord(selectedWord, selectedElement!, handleWordChanged);
 			selectedWord = '';
 		}}
 	>

@@ -16,23 +16,6 @@
 
 	let content = $state(data.article?.content ?? '');
 
-	interface WordItem {
-		word: string;
-		index: number;
-	}
-
-	let wordsArray: WordItem[] = $state([]);
-
-	$effect(() => {
-		const words = content.split(/\s+/);
-		wordsArray = words.map(
-			(word: string, index: number): WordItem => ({
-				word,
-				index
-			})
-		);
-	});
-
 	let selectedWord = $state('');
 
 	let mouseX = $state(0);
@@ -61,38 +44,12 @@
 		showFloatingWord = Boolean(newWord); // Show only if we have a word
 	}
 
-	async function handleWordChanged({
-		wordIndex,
-		newWord
-	}: {
-		oldWord: string;
-		newWord: string;
-		wordIndex: number;
-	}) {
-		const res = await fetch(`/api/articles/${data.article.slug}/word`, {
-			method: 'PUT',
-			body: JSON.stringify({ wordIndex, newWord })
-		});
-
-		if (!res.ok) {
-			const { error, article: oldArticle } = await res.json();
-			toast.error(error);
-			article = oldArticle;
-
-			return;
-		}
-
-		selectedWord = '';
-		showFloatingWord = false;
-	}
-
 	onMount(() => {
 		(async () => {
 			const token = data.session.data.session.token;
-			console.log(token);
+
 			if (!token || !data.article) return;
 
-			// Connect to WebSocket
 			ws = new WebSocket(`ws://localhost:8080?token=${token}&type=editor`);
 
 			ws.addEventListener('open', () => {
@@ -115,16 +72,17 @@
 			ws.addEventListener('close', (event) => {
 				console.log('WebSocket closed:', event.code, event.reason);
 				if (event.code === 4000) {
-					toast.error('Disconnected: You opened this article on another device.', { duration: Infinity });
+					toast.error('Disconnected: You opened this article on another device.', {
+						duration: Infinity
+					});
 				}
 			});
 
 			ws.addEventListener('message', (event) => {
 				const data = JSON.parse(event.data);
-				console.log(data);
+
 				if (data.type === 'word_hover') {
-					const { content: newContent } = data.data;
-					content = newContent;
+					content = data.data.content;
 				}
 			});
 		})();
@@ -164,7 +122,6 @@
 					showHeader={true}
 					showSidebars={false}
 					isEditPage={true}
-					onWordChange={handleWordChanged}
 					{selectedWord}
 					{ws}
 					selfId={$currentUser?.id}
