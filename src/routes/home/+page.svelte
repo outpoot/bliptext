@@ -31,7 +31,10 @@
 				ws.addEventListener('message', (event) => {
 					const data = JSON.parse(event.data);
 					if (data.type === 'active_articles') {
-						activeArticles = data.data.sort((a, b) => b.activeUsers - a.activeUsers);
+						activeArticles = data.data.sort(
+							(a: { activeUsers: number }, b: { activeUsers: number }) =>
+								b.activeUsers - a.activeUsers
+						);
 					}
 				});
 			}

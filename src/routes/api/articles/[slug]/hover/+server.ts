@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import Redis from 'ioredis';
-import { getWordAtIndex, replaceWordAtIndex } from '$lib/utils';
+import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
 import { env } from '$env/dynamic/private';
 import { auth } from '$lib/auth';
 
@@ -17,6 +17,7 @@ redis.on('error', (err) => {
 redis.on('connect', () => {
     console.log('Redis connected successfully');
 });
+
 export const PUT: RequestHandler = async ({ params, request }) => {
     try {
         // Get user from session
@@ -35,8 +36,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
             return json({ error: 'Invalid word or index' }, { status: 400 });
         }
 
-        if (!/^[a-zA-Z]{1,45}$/.test(newWord)) {
-            return json({ error: 'Word must be 1-45 letters only' }, { status: 400 });
+        if (!isValidWord(newWord)) {
+            return json({
+                error: 'Word must be either plain text, bold (**word**), italic (*word*), or a link ([word](url))'
+            }, { status: 400 });
         }
 
         const article = await db.query.articles.findFirst({

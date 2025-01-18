@@ -61,27 +61,29 @@ export const flyAndScale = (
 	};
 };
 
-export function getWordAtIndex(content: string, index: number): string {
-	const words = content.split(" ");
+export function getWordAtIndex(content: string, index: number): string | null {
+	const words = content.split(/\s+/).filter(Boolean);
+	if (index < 0 || index >= words.length) return null;
+
 	const word = words[index];
-	if (!word) return '';
-
-	if (word.startsWith('[')) {
-		const closingBracket = word.indexOf(']');
-		if (closingBracket !== -1) {
-			return word;
-		}
-	}
-
-	return word.replace(/[.,]/g, '');
+	return word
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-	const words = content.split(" ");
-	if (index >= 0 && index < words.length) {
-		words[index] = newWord;
+	const words = content.split(/\s+/).filter(Boolean);
+	if (index < 0 || index >= words.length) return content;
+
+	let startIndex = 0;
+	for (let i = 0; i < index; i++) {
+		startIndex = content.indexOf(words[i], startIndex) + words[i].length;
 	}
-	return words.join(' ');
+
+	startIndex = content.indexOf(words[index], startIndex);
+	const endIndex = startIndex + words[index].length;
+
+	const newContent = content.slice(0, startIndex) + newWord + content.slice(endIndex);
+
+	return newContent;
 }
 
 export function slugify(text: string): string {
@@ -118,4 +120,12 @@ export function fuzzySearch(text: string, query: string): number {
 	}
 
 	return score;
+}
+
+export function isValidWord(newWord: string): boolean {
+	const isBoldOrItalic = /^\*\*\w+\*\*$/.test(newWord) || /^\*\w+\*$/.test(newWord);
+	const isLink = /^\[\w+\]\([^\s]{1,50}\)$/.test(newWord);
+	const isPlainWord = /^\w+$/.test(newWord);
+
+	return isBoldOrItalic || isLink || isPlainWord;
 }
