@@ -10,18 +10,18 @@ type WebSocketData = {
     user: {
         id: string;
     };
+    connectionType: 'editor' | 'viewer';
 };
 
-// types
 const redis = new Redis(process.env.REDIS_URL!);
 const articleUsers = new Map<string, Set<string>>();
 const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
+const editorSockets = new Map<string, ServerWebSocket<WebSocketData>>();
 
 redis.on("message", (channel, msg) => {
     if (!channel.startsWith("updates:")) return;
     const articleId = channel.substring(8);
 
-    // Send updates to all sockets viewing this article
     Array.from(articleUsers.get(articleId) || [])
         .flatMap(userId => Array.from(userSockets.get(userId) || []))
         .forEach(socket => socket.send(msg));
@@ -54,7 +54,6 @@ async function broadcastUserCount(articleId: string): Promise<void> {
         data: { count }
     });
 
-    // send count to all sockets viewing the article
     Array.from(articleUsers.get(articleId) || [])
         .flatMap(userId => Array.from(userSockets.get(userId) || []))
         .forEach(socket => socket.send(message));
@@ -63,7 +62,15 @@ async function broadcastUserCount(articleId: string): Promise<void> {
 async function handleSetArticle(ws: ServerWebSocket<WebSocketData>, articleId: string): Promise<void> {
     const userId = ws.data.user.id;
 
-    // remove from previous article if exists
+    if (ws.data.connectionType === 'editor') {
+        const existingEditorSocket = editorSockets.get(userId);
+        if (existingEditorSocket && existingEditorSocket !== ws) {
+            existingEditorSocket.close(4000, "New editor connection opened elsewhere");
+        }
+        editorSockets.set(userId, ws);
+    }
+
+    // cleanup previous article if exists
     if (ws.data.articleId) {
         const prevArticle = articleUsers.get(ws.data.articleId);
         if (prevArticle) {
@@ -81,17 +88,14 @@ async function handleSetArticle(ws: ServerWebSocket<WebSocketData>, articleId: s
         }
     }
 
-    // add to new article
     ws.data.articleId = articleId;
 
-    // track user sockets
     if (!userSockets.has(userId)) {
         userSockets.set(userId, new Set([ws]));
     } else {
         userSockets.get(userId)!.add(ws);
     }
 
-    // track article users
     if (!articleUsers.has(articleId)) {
         articleUsers.set(articleId, new Set([userId]));
         await redis.subscribe("updates:" + articleId);
@@ -138,8 +142,18 @@ const server = Bun.serve<WebSocketData>({
         const user = await validateAuth(request);
         if (!user) return new Response(null, { status: 401 });
 
+        const url = new URL(request.url);
+        const connectionType = url.searchParams.get("type") === "editor" ? "editor" : "viewer";
+
+        if (connectionType === "editor") {
+            const existingEditorSocket = editorSockets.get(user.id);
+            if (existingEditorSocket) {
+                existingEditorSocket.close(4000, "New editor connection opened elsewhere");
+            }
+        }
+
         const upgraded = server.upgrade(request, {
-            data: { user, articleId: null }
+            data: { user, articleId: null, connectionType }
         });
 
         return upgraded
@@ -152,11 +166,11 @@ const server = Bun.serve<WebSocketData>({
             if (typeof msg !== "string") return;
 
             try {
-                const data = JSON.parse(msg) as { type: string; article?: string };
+                const data = JSON.parse(msg) as { type: string; article?: any };
                 switch (data.type) {
                     case "set_article":
                         if (data.article) {
-                            await handleSetArticle(ws, data.article);
+                            await handleSetArticle(ws, data.article.id);
                         }
                         break;
                     case "get_active_articles":
@@ -171,8 +185,15 @@ const server = Bun.serve<WebSocketData>({
         close(ws) {
             if (ws.data.articleId && ws.data.user) {
                 const userId = ws.data.user.id;
-                const sockets = userSockets.get(userId);
 
+                if (ws.data.connectionType === 'editor') {
+                    const currentEditorSocket = editorSockets.get(userId);
+                    if (currentEditorSocket === ws) {
+                        editorSockets.delete(userId);
+                    }
+                }
+
+                const sockets = userSockets.get(userId);
                 if (sockets) {
                     sockets.delete(ws);
                     if (sockets.size === 0) {

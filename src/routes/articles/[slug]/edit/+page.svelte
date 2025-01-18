@@ -9,11 +9,9 @@
 	import type { Session } from 'better-auth';
 	import { toast } from 'svelte-sonner';
 
+	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 
-
-	let { data } = $props<{ data: { article: Article | null, session: Session } }>();
-
-	let article = $state(data.article)
+	let article = $state(data.article);
 	let ws: WebSocket | null = $state(null);
 
 	let content = $state(data.article?.content ?? '');
@@ -63,19 +61,25 @@
 		showFloatingWord = Boolean(newWord); // Show only if we have a word
 	}
 
-	async function handleWordChanged({wordIndex, newWord}: { oldWord: string; newWord: string; wordIndex: number; }) {
+	async function handleWordChanged({
+		wordIndex,
+		newWord
+	}: {
+		oldWord: string;
+		newWord: string;
+		wordIndex: number;
+	}) {
+		const res = await fetch(`/api/articles/${data.article.slug}/word`, {
+			method: 'PUT',
+			body: JSON.stringify({ wordIndex, newWord })
+		});
 
-		const res = await fetch(`/api/articles/${data.article.slug}/word`,{
-			method: "PUT",
-			body: JSON.stringify({wordIndex, newWord})
-		})
+		if (!res.ok) {
+			const { error, article: oldArticle } = await res.json();
+			toast.error(error);
+			article = oldArticle;
 
-		if(!res.ok) {
-			const {error, article: oldArticle} = await res.json()
-			toast.error(error)
-			article = oldArticle
-
-			return
+			return;
 		}
 
 		selectedWord = '';
@@ -85,18 +89,21 @@
 	onMount(() => {
 		(async () => {
 			const token = data.session.data.session.token;
-			console.log(token)
+			console.log(token);
 			if (!token || !data.article) return;
 
 			// Connect to WebSocket
-			ws = new WebSocket(`ws://localhost:8080?token=${token}`);
+			ws = new WebSocket(`ws://localhost:8080?token=${token}&type=editor`);
 
 			ws.addEventListener('open', () => {
 				console.log('Connected to WebSocket');
 				ws?.send(
 					JSON.stringify({
 						type: 'set_article',
-						article: data.article?.id
+						article: {
+							id: data.article?.id,
+							slug: data.article?.slug
+						}
 					})
 				);
 			});
@@ -107,6 +114,9 @@
 
 			ws.addEventListener('close', (event) => {
 				console.log('WebSocket closed:', event.code, event.reason);
+				if (event.code === 4000) {
+					toast.error('Disconnected: You opened this article on another device.', { duration: Infinity });
+				}
 			});
 
 			ws.addEventListener('message', (event) => {
@@ -150,7 +160,7 @@
 				<MarkdownViewer
 					content={article.content}
 					title={article.title}
-					article={article}
+					{article}
 					showHeader={true}
 					showSidebars={false}
 					isEditPage={true}
@@ -162,7 +172,7 @@
 			</div>
 
 			<div class="w-64 pt-16">
-				<Tools article={article} isEditPage={true} />
+				<Tools {article} isEditPage={true} />
 			</div>
 		</div>
 

@@ -19,10 +19,10 @@
 
 	onMount(() => {
 		let initialized = false;
-		
+
 		getSession().then(({ data }) => {
 			if (!initialized && data?.session) {
-				ws = new WebSocket(`ws://localhost:8080?token=${data.session?.token}`);
+				ws = new WebSocket(`ws://localhost:8080?token=${data.session?.token}&type=viewer`);
 
 				ws.addEventListener('open', () => {
 					ws?.send(JSON.stringify({ type: 'get_active_articles' }));
