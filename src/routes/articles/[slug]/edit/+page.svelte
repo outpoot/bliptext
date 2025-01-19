@@ -9,6 +9,9 @@
 	import type { Session } from 'better-auth';
 	import { toast } from 'svelte-sonner';
 	import { activeUsers } from '$lib/stores/activeUsers';
+	import TosOverlay from '$lib/components/self/TosOverlay.svelte';
+	import { tosAccepted } from '$lib/stores/tosAccepted';
+	import { signIn } from '$lib/auth-client';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 
@@ -20,6 +23,14 @@
 	let mouseX = $state(0);
 	let mouseY = $state(0);
 	let showFloatingWord = $state(false);
+	let showTos = $state(!$tosAccepted);
+
+	async function handleSignIn() {
+		await signIn.social({
+			provider: 'discord',
+			callbackURL: '/home'
+		});
+	}
 
 	function handleMouseMove(e: MouseEvent) {
 		mouseX = e.clientX;
@@ -101,7 +112,18 @@
 
 <svelte:window onmousemove={handleMouseMove} />
 
-{#if $currentUser?.isBanned}
+{#if $currentUser === null}
+	<div class="container mx-auto py-8">
+		<div class="rounded-lg bg-destructive/10 p-4 text-destructive">
+			<p>You must be logged in to edit articles.</p>
+			<br />
+			<p>
+				Please <button onclick={handleSignIn} class="text-primary hover:underline">sign in</button> to
+				continue.
+			</p>
+		</div>
+	</div>
+{:else if $currentUser?.isBanned}
 	<div class="container mx-auto py-8">
 		<div class="rounded-lg bg-destructive/10 p-4 text-destructive">
 			<p>Access to article editing has been restricted due to an account suspension.</p>
@@ -160,6 +182,8 @@
 			<FloatingWord word={selectedWord} x={mouseX + 10} y={mouseY + 10} />
 		{/if}
 	</div>
+
+	<TosOverlay bind:open={showTos} />
 {:else}
 	<div class="container mx-auto py-8">
 		<p class="text-muted-foreground">Article not found</p>
