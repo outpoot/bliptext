@@ -6,6 +6,7 @@
 	import rehypeHighlight from 'rehype-highlight';
 	import 'highlight.js/styles/github-dark.css';
 	import { cooldown } from '$lib/stores/cooldown';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	// Components
 	import WikiBox from '$lib/components/self/WikiBox.svelte';
@@ -79,6 +80,9 @@
 			editorImage: string;
 		};
 	}>({});
+
+	let showLinkDialog = $state(false);
+	let pendingUrl = $state('');
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
 		if (!selectedWord && self) return;
@@ -228,20 +232,33 @@
 	});
 
 	$effect(() => {
-		if (!isEditPage) return;
-
 		const content = document.querySelector('.markdown-content');
 		if (!content) return;
 
-		wordProcessor.wordIndicesMap.clear();
+		if (isEditPage) {
+			wordProcessor.wordIndicesMap.clear();
+			content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li').forEach((element) => {
+				wordProcessor.wrapTextNodes(element);
+			});
 
-		content
-			.querySelectorAll('a')
-			.forEach((link) => link.addEventListener('click', (e) => e.preventDefault()));
+			content
+				.querySelectorAll('a')
+				.forEach((link) => link.addEventListener('click', (e) => e.preventDefault()));
+		} else {
+			const handleViewModeClick = (e: Event) => {
+				const target = e.target as HTMLElement;
+				const link = target.closest('a');
+				if (link) {
+					e.preventDefault();
+					e.stopPropagation();
+					pendingUrl = link.getAttribute('href') || '';
+					showLinkDialog = true;
+				}
+			};
 
-		content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li').forEach((element) => {
-			wordProcessor.wrapTextNodes(element);
-		});
+			content.addEventListener('click', handleViewModeClick, true);
+			return () => content.removeEventListener('click', handleViewModeClick, true);
+		}
 	});
 
 	async function handleWordChanged({ newWord, wordIndex }: { newWord: string; wordIndex: number }) {
@@ -275,6 +292,11 @@
 			selectedElement = null;
 		}
 	}
+
+	function handleConfirmNavigation() {
+		window.open(pendingUrl, '_blank');
+		showLinkDialog = false;
+	}
 </script>
 
 <!-- Template -->
@@ -307,7 +329,7 @@
 			<div class="mb-4 flex items-baseline gap-2">
 				<FileText class="h-5 w-5 text-muted-foreground" />
 				<h1 id="title" class="text-3xl font-bold">{article?.title || 'Untitled'}</h1>
-				
+
 				<div class="ml-auto flex items-center gap-1.5 text-muted-foreground">
 					<Users class="h-4 w-4" />
 					<span class="text-sm font-medium">{$activeUsers}</span>
@@ -345,6 +367,24 @@
 		{/if}
 	{/if}
 {/each}
+
+<Dialog.Root bind:open={showLinkDialog}>
+	<Dialog.Content class="sm:max-w-[425px]">
+		<Dialog.Header>
+			<Dialog.Title>Leave this page?</Dialog.Title>
+			<Dialog.Description>
+				You're about to visit: {pendingUrl}
+				<br />
+				<br />
+				We <strong>STRONGLY</strong> recommend you don't visit any external links.
+			</Dialog.Description>
+		</Dialog.Header>
+		<div class="flex justify-end gap-3 pt-6">
+			<Dialog.Close>No, take me back</Dialog.Close>
+			<Button onclick={handleConfirmNavigation} variant="destructive">Yes</Button>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>
 
 <style>
 	:global(.hv) {
