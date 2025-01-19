@@ -44,6 +44,9 @@
 					<Label class="cursor-pointer text-2xl font-bold" style="font-family: 'LinLibertine'"
 						>Bliptext</Label
 					>
+					{#if $currentUser?.isAdmin}
+						<span class="text-xs">| Admin</span>
+					{/if}
 				</a>
 
 				<div class="flex-1 px-16">

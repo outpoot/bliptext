@@ -2,11 +2,17 @@ import { error, json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles, revisions, user } from '$lib/server/db/schema';
 import { eq, desc, and, lt } from 'drizzle-orm';
+import { auth } from '$lib/auth';
 
-export async function GET({ params, url }) {
+export async function GET({ params, url, request }) {
     const { slug } = params;
     const cursor = url.searchParams.get('cursor');
     const limit = 50;
+
+    const session = await auth.api.getSession({
+        headers: request.headers
+    });
+    const isAdmin = session?.user?.isAdmin;
 
     try {
         const article = await db.query.articles.findFirst({
@@ -24,6 +30,13 @@ export async function GET({ params, url }) {
             )
             : eq(revisions.articleId, article.id);
 
+        const userSelection = {
+            id: user.id,
+            name: user.name,
+            image: user.image,
+            ...(isAdmin ? { isBanned: user.isBanned } : {})
+        };
+
         const history = await db
             .select({
                 id: revisions.id,
@@ -31,17 +44,13 @@ export async function GET({ params, url }) {
                 newWord: revisions.content,
                 wordIndex: revisions.wordIndex,
                 createdAt: revisions.createdAt,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    image: user.image
-                }
+                user: userSelection
             })
             .from(revisions)
             .leftJoin(user, eq(revisions.createdBy, user.id))
             .where(whereClause)
             .orderBy(desc(revisions.createdAt))
-            .limit(limit + 1); // one extra to check if there are more
+            .limit(limit + 1);
 
         const hasMore = history.length > limit;
         const items = history.slice(0, limit);

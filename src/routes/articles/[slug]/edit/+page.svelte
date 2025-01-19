@@ -102,7 +102,25 @@
 
 <svelte:window onmousemove={handleMouseMove} />
 
-{#if data.article}
+{#if $currentUser?.isBanned}
+	<div class="container mx-auto py-8">
+		<div class="rounded-lg bg-destructive/10 p-4 text-destructive">
+			<p>Access to article editing has been restricted due to an account suspension.</p>
+			<br />
+			<p>
+				While suspensions are carefully reviewed and rarely incorrect, you may <a
+					href="https://discord.gg/cKWNV2uZUP"
+					class="text-primary hover:underline">appeal here</a
+				>. Note that banned accounts may also be restricted from the Discord server.
+			</p>
+			<br />
+			<p>
+				During this suspension period (indefinite), your account has limited access to interactive
+				features, including article editing and viewing active content.
+			</p>
+		</div>
+	</div>
+{:else if data.article}
 	<div class="container-2xl mx-auto py-8">
 		<div class="flex gap-6">
 			<div class="w-64 pt-16">

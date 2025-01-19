@@ -6,6 +6,9 @@
 	import { getWordAtIndex } from '$lib/utils';
 	import { fade } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
+	import Gavel from 'lucide-svelte/icons/gavel';
+
+	import { currentUser } from '$lib/stores/user';
 
 	interface RevisionWithUser {
 		id: string;
@@ -17,6 +20,7 @@
 			id: string;
 			name: string;
 			image: string;
+			isBanned?: boolean;
 		};
 	}
 
@@ -57,6 +61,7 @@
 			}
 
 			revisions = [...revisions, ...newData.history];
+
 			hasMore = newData.hasMore;
 			nextCursor = newData.nextCursor;
 		} catch (err) {
@@ -66,6 +71,33 @@
 			hasMore = false;
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function banUser(userId: string) {
+		if (userId === $currentUser?.id) {
+			toast.error('You cannot ban yourself');
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/admin/ban`, {
+				method: 'POST',
+				body: JSON.stringify({ userId })
+			});
+
+			if (!res.ok) throw new Error();
+
+			toast.success('User banned successfully');
+			revisions = revisions.map((rev: { user: { id: string; isBanned: any } }) => ({
+				...rev,
+				user: {
+					...rev.user,
+					isBanned: rev.user.id === userId ? true : rev.user.isBanned
+				}
+			}));
+		} catch {
+			toast.error('Failed to ban user');
 		}
 	}
 
@@ -129,8 +161,23 @@
 								</div>
 							</div>
 						</div>
-					</div></Card
-				>
+						{#if $currentUser?.isAdmin && !revision.user.isBanned}
+							<Button
+								variant="destructive"
+								size="sm"
+								class="flex items-center gap-2"
+								onclick={() => banUser(revision.user.id)}
+								disabled={revision.user.id === $currentUser?.id}
+							>
+								<Gavel class="h-4 w-4" />
+								Ban
+							</Button>
+						{/if}
+						{#if revision.user.isBanned}
+							<span class="text-xs text-destructive">Banned</span>
+						{/if}
+					</div>
+				</Card>
 			</div>
 		{/each}
 

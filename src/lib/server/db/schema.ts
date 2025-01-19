@@ -13,7 +13,9 @@ export const user = pgTable("user", {
 	// custom fields
 	articlesCount: integer('articles_count').default(0).notNull(),
 	revisionCount: integer('revision_count').default(0).notNull(),
-	isAdmin: boolean('is_admin').default(false).notNull()
+	isAdmin: boolean('is_admin').default(false).notNull(),
+	isBanned: boolean('is_banned').default(false).notNull(),
+	bannedAt: timestamp('banned_at')
 });
 
 export const articles = pgTable('articles', {
@@ -78,10 +80,10 @@ export const verification = pgTable("verification", {
 });
 
 export const authTokens = pgTable('auth_tokens', {
-    token: varchar('token', { length: 32 }).primaryKey(),
-    userId: text('user_id').references(() => user.id).notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    expiresAt: timestamp('expires_at').notNull(),
+	token: varchar('token', { length: 32 }).primaryKey(),
+	userId: text('user_id').references(() => user.id).notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	expiresAt: timestamp('expires_at').notNull(),
 
 	ip: text('ip').notNull(),
 	userAgent: text('user_agent').notNull()

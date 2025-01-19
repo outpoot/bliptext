@@ -40,6 +40,11 @@ async function validateAuth(request: Request): Promise<{ id: string } | null> {
 
         if (!res.ok) return null;
         const data = await res.json();
+
+        if (data?.user?.isBanned) {
+            return null;
+        }
+
         return data?.user?.id ? { id: data.user.id } : null;
     } catch {
         return null;
@@ -139,7 +144,14 @@ const server = Bun.serve<WebSocketData>({
 
     async fetch(request, server) {
         const user = await validateAuth(request);
-        if (!user) return new Response(null, { status: 401 });
+        if (!user) {
+            const url = new URL(request.url);
+
+            if (url.searchParams.get("banned") === "true") {
+                return new Response("User is banned", { status: 403 });
+            }
+            return new Response(null, { status: 401 });
+        }
 
         const url = new URL(request.url);
         const connectionType = url.searchParams.get("type") === "editor" ? "editor" : "viewer";

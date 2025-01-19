@@ -10,7 +10,7 @@ export const auth = betterAuth({
     baseURL: env.PUBLIC_BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     appName: "Bliptext",
-    
+
     database: drizzleAdapter(db, {
         provider: "pg",
     }),
@@ -27,7 +27,13 @@ export const auth = betterAuth({
                 required: true,
                 defaultValue: false,
                 input: false
-            }
+            },
+            isBanned: {
+                type: "boolean",
+                required: true,
+                defaultValue: false,
+                input: false
+            },
         }
     }
 });

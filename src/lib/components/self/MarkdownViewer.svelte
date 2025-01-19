@@ -79,7 +79,6 @@
 	}>({});
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
-		console.log('Hovering over element:', element, self, selectedWord);
 		if (!selectedWord && self) return;
 		element.classList.add('shake');
 
