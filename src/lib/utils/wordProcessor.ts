@@ -49,7 +49,7 @@ export class WordProcessor {
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
 
-        element = element.closest('a') || element;
+        element = element.closest('a, strong, em') || element;
         element.classList.add('word-exit');
 
         setTimeout(() => {

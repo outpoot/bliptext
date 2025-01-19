@@ -119,7 +119,7 @@
 						>
 					</a>
 					<Label class="text-sm sm:text-xl">
-						A wiki where you can edit <span class="text-primary">one word</span> every 5 minutes.
+						A wiki where you can edit <span class="text-primary">one word</span> every 30 seconds.
 					</Label>
 				</div>
 

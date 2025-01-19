@@ -41,7 +41,7 @@
         Downloaded from Bliptext (https://bliptext.com)
         Date: ${new Date().toISOString()}
         
-        This file is provided by Bliptext, a free and open source knowledge base, where everybody can edit 1 word per 5 minutes.
+        This file is provided by Bliptext, a free and open source knowledge base, where everybody can edit 1 word per 30 seconds.
         
         Visit us at https://bliptext.com
 -->\n\n# ${title}\n\n`;
