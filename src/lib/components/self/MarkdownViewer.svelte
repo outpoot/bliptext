@@ -64,6 +64,7 @@
 	let selectedElement: HTMLElement | null = $state(null);
 	let showSubmitButton = $state(false);
 	let submitButtonPosition = $state({ x: 0, y: 0 });
+	let isReplacing = $state(false);
 
 	let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 	let leaveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -97,6 +98,9 @@
 			clearTimeout(leaveTimeout);
 		}
 
+		// no leave request if we're in replace mode
+		if (isReplacing) return;
+
 		leaveTimeout = setTimeout(async () => {
 			const actualIndex = wordProcessor.wordIndicesMap.get(element);
 			if (actualIndex !== undefined && !$cooldown.isActive) {
@@ -121,6 +125,7 @@
 
 		selectedElement = element;
 		element.classList.add('selected');
+		isReplacing = true;
 
 		const rect = element.getBoundingClientRect();
 		submitButtonPosition = { x: rect.left, y: rect.top - 40 };
@@ -260,6 +265,8 @@
 		// update UI after successful edit
 		wordProcessor.replaceWord(newWord, selectedElement!, () => {});
 		cooldown.startCooldown(30000);
+
+		isReplacing = false;
 		selectedWord = '';
 		showSubmitButton = false;
 		if (selectedElement) {
