@@ -81,7 +81,7 @@
 		}
 
 		try {
-			const res = await fetch(`/api/admin/ban`, {
+			const res = await fetch(`/api/admin/bans`, {
 				method: 'POST',
 				body: JSON.stringify({ userId })
 			});

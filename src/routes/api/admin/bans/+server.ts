@@ -27,7 +27,8 @@ export async function POST({ request }) {
         const updateData = {
             isBanned: true,
             bannedAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            bannedBy: session.user.id
         };
 
         await db
@@ -40,5 +41,41 @@ export async function POST({ request }) {
     } catch (err) {
         console.error('Failed to ban user:', err);
         throw error(500, 'Failed to ban user');
+    }
+}
+
+export async function DELETE({ request }) {
+    const session = await auth.api.getSession({
+        headers: request.headers
+    });
+
+    if (!session?.user?.isAdmin) {
+        throw error(403, 'Not authorized');
+    }
+
+    const { userId } = await request.json();
+
+    if (!userId) {
+        throw error(400, 'User ID is required');
+    }
+
+    if (userId === session.user.id) {
+        throw error(400, 'Cannot unban yourself');
+    }
+
+    try {
+        await db
+            .update(user)
+            .set({
+                isBanned: false,
+                bannedAt: null,
+                bannedBy: null
+            })
+            .where(eq(user.id, userId));
+
+        return json({ success: true });
+    } catch (err) {
+        console.error('Failed to unban user:', err);
+        throw error(500, 'Failed to unban user');
     }
 }

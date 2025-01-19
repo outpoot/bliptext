@@ -15,7 +15,8 @@ export const user = pgTable("user", {
 	revisionCount: integer('revision_count').default(0).notNull(),
 	isAdmin: boolean('is_admin').default(false).notNull(),
 	isBanned: boolean('is_banned').default(false).notNull(),
-	bannedAt: timestamp('banned_at')
+	bannedAt: timestamp('banned_at'),
+	bannedBy: text('banned_by').references((): any => user.id)
 });
 
 export const articles = pgTable('articles', {
@@ -105,8 +106,12 @@ export const revisionsRelations = relations(revisions, ({ one }) => ({
 	})
 }));
 
-export const usersRelations = relations(user, ({ many }) => ({
-	revisions: many(revisions)
+export const usersRelations = relations(user, ({ many, one }) => ({
+	revisions: many(revisions),
+	bannedByUser: one(user, {
+		fields: [user.bannedBy],
+		references: [user.id]
+	})
 }));
 
 export type Article = typeof articles.$inferSelect;
