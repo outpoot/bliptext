@@ -1,5 +1,3 @@
-// TODO: user auth
-
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';

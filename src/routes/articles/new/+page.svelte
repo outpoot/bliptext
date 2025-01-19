@@ -51,48 +51,47 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 </script>
 
 {#if $currentUser?.isAdmin}
-<div class="container-2xl mx-auto py-8">
-	<h1 class="mb-8 text-3xl font-bold">Create New Article</h1>
+	<div class="container-2xl mx-auto py-8">
+		<h1 class="mb-8 text-3xl font-bold">Create New Article</h1>
 
-	<Tabs.Root value={activeTab} onValueChange={handleTabChange}>
-		<Tabs.List>
-			<Tabs.Trigger value="edit">Edit</Tabs.Trigger>
-			<Tabs.Trigger value="preview">Preview</Tabs.Trigger>
-		</Tabs.List>
+		<Tabs.Root value={activeTab} onValueChange={handleTabChange}>
+			<Tabs.List>
+				<Tabs.Trigger value="edit">Edit</Tabs.Trigger>
+				<Tabs.Trigger value="preview">Preview</Tabs.Trigger>
+			</Tabs.List>
 
-		<Tabs.Content value="edit">
-			<form class="grid gap-6 pt-4" onsubmit={handleSubmit}>
-				<div class="grid gap-2">
-					<Label for="title">Title</Label>
-					<Input id="title" bind:value={title} required />
+			<Tabs.Content value="edit">
+				<form class="grid gap-6 pt-4" onsubmit={handleSubmit}>
+					<div class="grid gap-2">
+						<Label for="title">Title</Label>
+						<Input id="title" bind:value={title} required />
+					</div>
+
+					<div class="grid gap-2">
+						<Label for="content">Content</Label>
+						<Textarea id="content" bind:value={content} class="min-h-[300px]" required />
+					</div>
+
+					<Button type="submit" disabled={isSubmitting}>
+						{isSubmitting ? 'Creating...' : 'Create Article'}
+					</Button>
+				</form>
+			</Tabs.Content>
+
+			<Tabs.Content value="preview">
+				<div class="pt-4">
+					{#key renderKey}
+						<MarkdownViewer
+							{content}
+							title={title || 'Untitled Article'}
+							article={{ title, content }}
+							showHeader={true}
+						/>
+					{/key}
 				</div>
-
-				<div class="grid gap-2">
-					<Label for="content">Content</Label>
-					<Textarea id="content" bind:value={content} class="min-h-[300px]" required />
-				</div>
-
-				<Button type="submit" disabled={isSubmitting}>
-					{isSubmitting ? 'Creating...' : 'Create Article'}
-				</Button>
-			</form>
-		</Tabs.Content>
-
-		<Tabs.Content value="preview">
-			<div class="pt-4">
-				{#key renderKey}
-					<MarkdownViewer
-						{content}
-						title={title || 'Untitled Article'}
-						article={{ title, content }}
-						showHeader={true}
-					/>
-				{/key}
-			</div>
-		</Tabs.Content>
-	</Tabs.Root>
-</div>
-
+			</Tabs.Content>
+		</Tabs.Root>
+	</div>
 {:else}
-<p>You must be an admin to do this.</p>
+	<p>You must be an admin to do this.</p>
 {/if}

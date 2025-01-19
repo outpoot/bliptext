@@ -2,7 +2,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 
-	let { icon, tooltipText, buttonClass = '', variant = 'outline' } = $props();
+	let { icon, tooltipText, buttonClass = '', variant = 'outline' as const } = $props<{
+		icon: any;
+		tooltipText: string;
+		buttonClass?: string;
+		variant?: 'outline' | 'link' | 'default' | 'destructive' | 'secondary' | 'ghost';
+	}>();
 </script>
 
 <Tooltip.Provider>

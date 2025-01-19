@@ -5,6 +5,7 @@
 	import type { Plugin } from 'svelte-exmarkdown';
 	import rehypeHighlight from 'rehype-highlight';
 	import 'highlight.js/styles/github-dark.css';
+	import { cooldown } from '$lib/stores/cooldown';
 
 	// Components
 	import WikiBox from '$lib/components/self/WikiBox.svelte';
@@ -25,7 +26,7 @@
 		showHeader = false,
 		isEditPage = false,
 		article = { title, content },
-		selectedWord = '',
+		selectedWord = $bindable(''),
 		selfId = '',
 		ws
 	} = $props<{
@@ -98,7 +99,7 @@
 
 		leaveTimeout = setTimeout(async () => {
 			const actualIndex = wordProcessor.wordIndicesMap.get(element);
-			if (actualIndex !== undefined) {
+			if (actualIndex !== undefined && !$cooldown.isActive) {
 				try {
 					await fetch(`/api/articles/${article.slug}/hover`, {
 						method: 'DELETE',
@@ -142,10 +143,14 @@
 				})
 			});
 
-			if (!response.ok) throw new Error('Hover update failed');
-
 			const data = await response.json();
-			console.log('Hover preview:', data);
+
+			if (response.status === 429) {
+				cooldown.startCooldown(data.remainingTime);
+				return;
+			}
+
+			if (!response.ok) throw new Error('Hover update failed');
 		} catch (error) {
 			console.error('Failed to send hover update:', error);
 		}
@@ -156,11 +161,11 @@
 
 		let currentHoveredElement: HTMLElement | null = null;
 
-		ws.addEventListener('message', async (event: { data: string }) => {
+		ws.addEventListener('message', (event: { data: string }) => {
 			const data = JSON.parse(event.data);
-			console.log(data);
+
 			if (data.type === 'word_hover') {
-				const { wordIndex, newWord, replace, editorId } = data.data;
+				const { wordIndex, newWord, replace, editorId, editorName, editorImage } = data.data;
 
 				if (replace) {
 					const element = wordProcessor.getElementByWordIndex(wordIndex);
@@ -176,22 +181,14 @@
 					}
 
 					wordProcessor.replaceWord(newWord, element, () => {});
+					return;
 				}
-			}
-		});
-
-		ws.addEventListener('message', (event: { data: string }) => {
-			const data = JSON.parse(event.data);
-
-			if (data.type === 'word_hover') {
-				const { editorId, editorName, newWord, editorImage, wordIndex } = data.data;
 
 				if (editorId === selfId) return;
 
 				if (currentHoveredElement) handleElementLeave(currentHoveredElement);
 
 				const element = wordProcessor.getElementByWordIndex(wordIndex);
-				console.log('Element:', element);
 				if (element) {
 					currentHoveredElement = element;
 					handleElementHover(element, false);
@@ -247,10 +244,27 @@
 			body: JSON.stringify({ wordIndex, newWord })
 		});
 
-		if (!res.ok) {
-			const { error } = await res.json();
-			toast.error(error);
+		const data = await res.json();
+
+		if (res.status === 429) {
+			cooldown.startCooldown(data.remainingTime);
+			toast.error(data.error);
 			return;
+		}
+
+		if (!res.ok) {
+			toast.error(data.error);
+			return;
+		}
+
+		// update UI after successful edit
+		wordProcessor.replaceWord(newWord, selectedElement!, () => {});
+		cooldown.startCooldown(30000);
+		selectedWord = '';
+		showSubmitButton = false;
+		if (selectedElement) {
+			selectedElement.classList.remove('selected');
+			selectedElement = null;
 		}
 	}
 </script>
@@ -299,10 +313,10 @@
 		class="fixed z-50"
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 		onclick={() => {
-			showSubmitButton = false;
-
-			wordProcessor.replaceWord(selectedWord, selectedElement!, handleWordChanged);
-			selectedWord = '';
+			const actualIndex = wordProcessor.wordIndicesMap.get(selectedElement!);
+			if (actualIndex !== undefined) {
+				handleWordChanged({ newWord: selectedWord, wordIndex: actualIndex });
+			}
 		}}
 	>
 		Replace

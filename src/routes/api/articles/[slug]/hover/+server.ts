@@ -3,50 +3,40 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import Redis from 'ioredis';
-import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
-import { env } from '$env/dynamic/private';
+import { getWordAtIndex, isValidWord } from '$lib/utils';
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
+import { cooldownManager } from '$lib/server/cooldown';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
     try {
-        // Get user from session
         const session = await auth.api.getSession({
             headers: request.headers
         });
 
         if (!session?.user) {
-            throw new Error('Unauthorized');
+            return new Response('Unauthorized', { status: 401 });
+        }
+
+        if (cooldownManager.isOnCooldown(session.user.id)) {
+            const remainingTime = cooldownManager.getRemainingTime(session.user.id);
+            return json({ error: 'Please wait before making more edits', remainingTime }, { status: 429 });
         }
 
         const { wordIndex, newWord } = await request.json();
-        const { slug } = params;
 
-        if (typeof wordIndex !== 'number' || !newWord?.trim()) {
-            return json({ error: 'Invalid word or index' }, { status: 400 });
-        }
-
-        if (!isValidWord(newWord)) {
-            return json({
-                error: 'Word must be either plain text, bold (**word**), italic (*word*), or a link ([word](url))'
-            }, { status: 400 });
+        if (typeof wordIndex !== 'number' || !newWord?.trim() || !isValidWord(newWord)) {
+            return json({ error: 'Invalid word format' }, { status: 400 });
         }
 
         const article = await db.query.articles.findFirst({
-            where: eq(articles.slug, slug)
+            where: eq(articles.slug, params.slug)
         });
 
-        if (!article) {
-            return json({ error: 'Article not found' }, { status: 404 });
+        if (!article || getWordAtIndex(article.content, wordIndex) === null) {
+            return json({ error: 'Invalid article or word index' }, { status: 404 });
         }
 
-        const oldWord = getWordAtIndex(article.content, wordIndex);
-
-        if (oldWord === null) {
-            return json({ error: 'Invalid word index' }, { status: 400 });
-        }
-        
         await redis.publish(
             `updates:${article.id}`,
             JSON.stringify({
@@ -62,13 +52,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
         );
 
         return json({ success: true });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Hover update error:', error);
-
-        if (error.message === 'Unauthorized') {
-            return new Response('Unauthorized', { status: 401 });
-        }
-
         return json({ error: 'Failed to process word hover' }, { status: 500 });
     }
 };

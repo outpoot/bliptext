@@ -23,6 +23,7 @@
 		const { data } = await getSession();
 
 		if (data?.user) {
+			// @ts-ignore im pretty sure its some betterauth thing
 			currentUser.set(data.user);
 		} else {
 			// TODO: show error via toast
@@ -65,16 +66,12 @@
 						Categories
 					</a>
 					{#if $currentUser}
-						<a
-							href="/profile"
-							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-						>
-							<img
-								src={$currentUser.image}
-								class="h-8 w-8 rounded-full"
-								alt={`@${$currentUser.name}'s Profile Picture'`}
-							/>
-						</a>
+						<!-- TODO: make a dropdown with options on click -->
+						<img
+							src={$currentUser.image}
+							class="h-8 w-8 rounded-full"
+							alt={`@${$currentUser.name}'s Profile Picture'`}
+						/>
 					{:else if $currentUser == undefined}
 						<button
 							onclick={handleSignIn}

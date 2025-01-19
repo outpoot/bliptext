@@ -1,10 +1,11 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles, revisions } from '$lib/server/db/schema';
-import { and, eq, gte } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
+import { cooldownManager } from '$lib/server/cooldown';
 
 export async function PUT({ params, request }) {
 	const { wordIndex, newWord } = await request.json();
@@ -37,21 +38,12 @@ export async function PUT({ params, request }) {
 			return json({ error: 'Article not found' }, { status: 404 });
 		}
 
-		const lastXMinRevisions = await db
-			.select()
-			.from(revisions)
-			.where(
-				and(
-					eq(revisions.articleId, article.id),
-					and(
-						eq(revisions.createdBy, session.user.id),
-						gte(revisions.createdAt, new Date(Date.now() - 1000 * 30)) // 30 seconds
-					)
-				)
-			);
-
-		if (lastXMinRevisions.length > 0) {
-			return json({ error: "You edited this article recently! Please wait before editing again." }, { status: 429 });
+		if (cooldownManager.isOnCooldown(session.user.id)) {
+			const remainingTime = cooldownManager.getRemainingTime(session.user.id);
+			return json({
+				error: "Please wait before making more edits",
+				remainingTime
+			}, { status: 429 });
 		}
 
 		const oldWord = getWordAtIndex(article.content, wordIndex);
@@ -95,6 +87,8 @@ export async function PUT({ params, request }) {
 				}
 			})
 		);
+
+		cooldownManager.addCooldown(session.user.id);
 
 		return json({ success: true, newContent });
 	} catch (error) {

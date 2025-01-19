@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Separator from '../ui/separator/separator.svelte';
 	import { Input } from '../ui/input';
+	import { cooldown } from '$lib/stores/cooldown';
 
 	let { content, title, wordInput, inputProps } = $props<{
 		content: string;
@@ -111,7 +112,8 @@
 
 		// Allow markdown formatting patterns
 		if (value && !/^(\*\*\w+\*\*|\*\w+\*|\[\w+\]\([^\s]{1,50}\)|\w+)$/.test(value)) {
-			err = 'Please enter a single word, optionally formatted with *word*, **word**, or [word](url)';
+			err =
+				'Please enter a single word, optionally formatted with *word*, **word**, or [word](url)';
 		} else {
 			err = '';
 		}
@@ -148,12 +150,22 @@
 	<Separator class="mb-2 mt-2" />
 
 	{#if wordInput}
-		<Input
-			{...inputProps}
-			placeholder="Type a word"
-			class="mt-4 border-2 border-primary p-6 text-lg"
-			on:input={validateInput}
-		/>
+		<div class="relative">
+			<Input
+				{...inputProps}
+				placeholder="Type a word"
+				class="mt-4 border-2 border-primary p-6 text-lg"
+				on:input={validateInput}
+				disabled={$cooldown.isActive}
+			/>
+			{#if $cooldown.isActive}
+				<div class="absolute inset-0 flex items-center justify-center bg-background/80">
+					<span class="text-sm text-muted-foreground">
+						Wait {$cooldown.remainingTime}s
+					</span>
+				</div>
+			{/if}
+		</div>
 		{#if err}
 			<p class="text-red-500">{err}</p>
 		{/if}

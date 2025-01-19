@@ -44,6 +44,12 @@
 		showFloatingWord = Boolean(newWord); // Show only if we have a word
 	}
 
+	$effect(() => {
+		if (!selectedWord) {
+			showFloatingWord = false;
+		}
+	});
+
 	onMount(() => {
 		(async () => {
 			const token = data.session.data.session.token;
@@ -122,7 +128,7 @@
 					showHeader={true}
 					showSidebars={false}
 					isEditPage={true}
-					{selectedWord}
+					bind:selectedWord
 					{ws}
 					selfId={$currentUser?.id}
 				/>

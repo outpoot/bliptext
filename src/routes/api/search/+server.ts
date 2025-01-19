@@ -4,14 +4,14 @@ import { fuzzySearch } from '$lib/utils';
 
 export async function GET({ url }) {
     const query = url.searchParams.get('q') || '';
-    
+
     if (!query) {
         return json({ results: [] });
     }
 
     try {
         const allArticles = await db.query.articles.findMany();
-        
+
         const results = allArticles
             .map(article => ({
                 ...article,
