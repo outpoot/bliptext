@@ -4,6 +4,7 @@
 	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
 	import { fade } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
+	import { Input } from '$lib/components/ui/input';
 
 	let { data } = $props<{
 		data: {
@@ -19,6 +20,11 @@
 			}>;
 		};
 	}>();
+
+	let searchQuery = $state('');
+	let filteredUsers = $derived(
+		data.bannedUsers.filter((user: { name: string; }) => user.name.toLowerCase().includes(searchQuery.toLowerCase()))
+	);
 
 	async function unbanUser(userId: string) {
 		try {
@@ -50,8 +56,12 @@
 		<p class="text-sm text-muted-foreground sm:text-base">Manage banned users</p>
 	</div>
 
+	<div class="mb-4">
+		<Input type="search" placeholder="Search by username..." bind:value={searchQuery} />
+	</div>
+
 	<div class="space-y-3 sm:space-y-4">
-		{#each data.bannedUsers as user (user.id)}
+		{#each filteredUsers as user (user.id)}
 			<div transition:fade>
 				<Card class="p-3 sm:p-4">
 					<div class="flex items-start gap-3 sm:gap-4">
@@ -78,9 +88,15 @@
 			</div>
 		{/each}
 
-		{#if data.bannedUsers.length === 0}
+		{#if filteredUsers.length === 0}
 			<Card class="p-4">
-				<p class="text-center text-sm text-muted-foreground">No banned users found</p>
+				{#if searchQuery}
+					<p class="text-center text-sm text-muted-foreground">
+						No banned users found matching "{searchQuery}"
+					</p>
+				{:else}
+					<p class="text-center text-sm text-muted-foreground">No banned users found</p>
+				{/if}
 			</Card>
 		{/if}
 	</div>
