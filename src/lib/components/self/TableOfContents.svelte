@@ -4,6 +4,7 @@
 	import Separator from '../ui/separator/separator.svelte';
 	import { Input } from '../ui/input';
 	import { cooldown } from '$lib/stores/cooldown';
+	import { activeUsers } from '$lib/stores/activeUsers';
 
 	let { content, title, wordInput, inputProps } = $props<{
 		content: string;
@@ -150,6 +151,10 @@
 	<Separator class="mb-2 mt-2" />
 
 	{#if wordInput}
+		<div class="flex items-center justify-between px-1 py-2 text-sm text-muted-foreground">
+			<span>Active users</span>
+			<span class="font-medium">{$activeUsers}</span>
+		</div>
 		<div class="relative">
 			<Input
 				{...inputProps}

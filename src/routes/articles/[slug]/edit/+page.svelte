@@ -8,13 +8,12 @@
 	import { currentUser } from '$lib/stores/user';
 	import type { Session } from 'better-auth';
 	import { toast } from 'svelte-sonner';
+	import { activeUsers } from '$lib/stores/activeUsers';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 
 	let article = $state(data.article);
 	let ws: WebSocket | null = $state(null);
-
-	let content = $state(data.article?.content ?? '');
 
 	let selectedWord = $state('');
 
@@ -86,9 +85,8 @@
 
 			ws.addEventListener('message', (event) => {
 				const data = JSON.parse(event.data);
-
-				if (data.type === 'word_hover') {
-					content = data.data.content;
+				if (data.type === 'active_users_update') {
+					$activeUsers = data.data.count;
 				}
 			});
 		})();
@@ -96,6 +94,7 @@
 		return () => {
 			ws?.close();
 			ws = null;
+			$activeUsers = 0;
 		};
 	});
 </script>
