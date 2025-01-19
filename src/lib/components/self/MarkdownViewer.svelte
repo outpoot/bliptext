@@ -18,6 +18,8 @@
 	import FloatingWord from './FloatingWord.svelte';
 	import { WordProcessor } from '$lib/utils/wordProcessor';
 	import { toast } from 'svelte-sonner';
+	import Users from 'lucide-svelte/icons/users';
+	import { activeUsers } from '$lib/stores/activeUsers';
 
 	let {
 		content,
@@ -305,6 +307,11 @@
 			<div class="mb-4 flex items-baseline gap-2">
 				<FileText class="h-5 w-5 text-muted-foreground" />
 				<h1 id="title" class="text-3xl font-bold">{article?.title || 'Untitled'}</h1>
+				
+				<div class="ml-auto flex items-center gap-1.5 text-muted-foreground">
+					<Users class="h-4 w-4" />
+					<span class="text-sm font-medium">{$activeUsers}</span>
+				</div>
 			</div>
 			<Separator class="mb-8" />
 		{/if}

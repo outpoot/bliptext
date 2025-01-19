@@ -94,7 +94,7 @@
 		return () => {
 			ws?.close();
 			ws = null;
-			$activeUsers = 0;
+			$activeUsers = 1;
 		};
 	});
 </script>
