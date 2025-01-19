@@ -39,7 +39,7 @@
 	<div class="flex min-h-screen flex-col">
 		<header class="border-b">
 			<div class="container-2xl mx-auto flex h-16 items-center justify-between px-4">
-				<a href="/" class="flex cursor-pointer items-center gap-2">
+				<a href="/home" class="flex cursor-pointer items-center gap-2">
 					<img src="/images/logo.svg" alt="Bliptext" class="h-8 w-8" />
 					<Label class="cursor-pointer text-2xl font-bold" style="font-family: 'LinLibertine'"
 						>Bliptext</Label
@@ -90,7 +90,7 @@
 
 		<footer class="border-t">
 			<div class="container mx-auto flex h-16 items-center justify-between px-4">
-				<p class="text-sm text-muted-foreground">© 2024 Bliptext</p>
+				<p class="text-sm text-muted-foreground">© 2025 Bliptext</p>
 				<nav class="flex items-center gap-4">
 					<a href="/about" class="text-sm text-muted-foreground hover:text-foreground">About</a>
 					<a href="/privacy" class="text-sm text-muted-foreground hover:text-foreground">Privacy</a>

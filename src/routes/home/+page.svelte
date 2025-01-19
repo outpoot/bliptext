@@ -56,7 +56,10 @@
 </script>
 
 <div class="container mx-auto py-8">
-	<h1 class="mb-8 text-4xl font-bold">Active Articles</h1>
+	<h1 class="mb-8 text-4xl font-bold">Home</h1>
+
+	<Separator class="mb-4" />
+	<h1 class="mb-8 text-xl font-bold">Most active articles</h1>
 
 	{#if activeArticles.length > 0}
 		<div class="grid gap-4">

@@ -52,7 +52,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 
 {#if $currentUser?.isAdmin}
 	<div class="container-2xl mx-auto py-8">
-		<h1 class="mb-8 text-3xl font-bold">Create New Article</h1>
+		<h1 class="mb-8 text-3xl font-bold">Create</h1>
 
 		<Tabs.Root value={activeTab} onValueChange={handleTabChange}>
 			<Tabs.List>
