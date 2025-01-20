@@ -12,6 +12,7 @@
 	import TosOverlay from '$lib/components/self/TosOverlay.svelte';
 	import { tosAccepted } from '$lib/stores/tosAccepted';
 	import { signIn } from '$lib/auth-client';
+	import SignInConfirmDialog from '$lib/components/self/SignInConfirmDialog.svelte';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 
@@ -24,6 +25,7 @@
 	let mouseY = $state(0);
 	let showFloatingWord = $state(false);
 	let showTos = $state(!$tosAccepted);
+	let showConfirm = $state(false);
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -118,11 +120,14 @@
 			<p>You must be logged in to edit articles.</p>
 			<br />
 			<p>
-				Please <button onclick={handleSignIn} class="text-primary hover:underline">sign in</button> to
-				continue.
+				Please <button onclick={() => (showConfirm = true)} class="text-primary hover:underline">
+					sign in
+				</button> to continue.
 			</p>
 		</div>
 	</div>
+
+	<SignInConfirmDialog bind:open={showConfirm} onConfirm={handleSignIn} />
 {:else if $currentUser?.isBanned}
 	<div class="container mx-auto py-8">
 		<div class="rounded-lg bg-destructive/10 p-4 text-destructive">

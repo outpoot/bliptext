@@ -8,6 +8,7 @@
 	import { currentUser } from '$lib/stores/user';
 	import { getSession } from '$lib/auth-client';
 	import { Toaster } from 'svelte-sonner';
+	import SignInConfirmDialog from '$lib/components/self/SignInConfirmDialog.svelte';
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -18,6 +19,8 @@
 
 	let { children } = $props();
 	let isHomePage = $derived(page.url.pathname === '/');
+
+	let showConfirm = $state(false);
 
 	onMount(async () => {
 		const { data } = await getSession();
@@ -83,11 +86,13 @@
 						/>
 					{:else if $currentUser == undefined}
 						<button
-							onclick={handleSignIn}
+							onclick={() => (showConfirm = true)}
 							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
 						>
 							Sign in
 						</button>
+
+						<SignInConfirmDialog bind:open={showConfirm} onConfirm={handleSignIn} />
 					{/if}
 				</nav>
 			</div>

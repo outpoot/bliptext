@@ -44,7 +44,7 @@
 			{displayText}
 		</span>
 
-		<div class="absolute inset-0 bg-white/10" />
+		<div class="absolute inset-0 bg-white/10"></div>
 	</div>
 </div>
 
