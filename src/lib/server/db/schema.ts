@@ -24,7 +24,9 @@ export const articles = pgTable('articles', {
 	title: varchar('title', { length: 255 }).notNull(),
 	slug: varchar('slug', { length: 255 }).notNull().unique(),
 	content: varchar('content', { length: 100_000 }).notNull(),
-	currentRevision: uuid('current_revision').references((): any => revisions.id),
+	currentRevision: uuid('current_revision').references((): any => revisions.id, {
+		onDelete: 'set null'
+	}),
 
 	createdBy: text('created_by').references(() => user.id).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -38,7 +40,11 @@ export const revisions = pgTable('revisions', {
 	wordChanged: varchar('word_changed', { length: 255 }).notNull(),
 	wordIndex: integer('word_index').notNull(),
 
-	createdBy: text('created_by').references(() => user.id).notNull(),
+	createdBy: text('created_by')
+		.references(() => user.id, {
+			onDelete: 'cascade'
+		})
+		.notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
@@ -52,14 +58,18 @@ export const session = pgTable("session", {
 	updatedAt: timestamp('updated_at').notNull(),
 	ipAddress: text('ip_address'),
 	userAgent: text('user_agent'),
-	userId: text('user_id').notNull().references(() => user.id)
+	userId: text('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' })
 });
 
 export const account = pgTable("account", {
 	id: text("id").primaryKey(),
 	accountId: text('account_id').notNull(),
 	providerId: text('provider_id').notNull(),
-	userId: text('user_id').notNull().references(() => user.id),
+	userId: text('user_id').notNull().references(() => user.id, {
+		onDelete: 'cascade'
+	}),
 	accessToken: text('access_token'),
 	refreshToken: text('refresh_token'),
 	idToken: text('id_token'),
@@ -82,7 +92,9 @@ export const verification = pgTable("verification", {
 
 export const authTokens = pgTable('auth_tokens', {
 	token: varchar('token', { length: 32 }).primaryKey(),
-	userId: text('user_id').references(() => user.id).notNull(),
+	userId: text('user_id')
+		.references(() => user.id, { onDelete: 'cascade' })
+		.notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	expiresAt: timestamp('expires_at').notNull(),
 

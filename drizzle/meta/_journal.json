@@ -29,6 +29,27 @@
       "when": 1737306846342,
       "tag": "0003_messy_jack_murdock",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1737400959822,
+      "tag": "0004_icy_caretaker",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1737401200933,
+      "tag": "0005_glorious_the_anarchist",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1737401316254,
+      "tag": "0006_noisy_ikaris",
+      "breakpoints": true
     }
   ]
 }
