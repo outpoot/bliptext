@@ -51,6 +51,11 @@ This renders:
 		}>;
 	}
 
+	function decodeWikiUrl(url: string) {
+		if (!url) return url;
+		return url.replace(/\/\/\//g, '_');
+	}
+
 	const astContext = getAstNode();
 	const node = $astContext as AstNode;
 
@@ -76,10 +81,11 @@ This renders:
 
 		// set image shit
 		if (imageNode?.properties?.src) {
+			const decodedSrc = decodeWikiUrl(imageNode.properties.src);
 			imageDetails = {
-				src: imageNode.properties.src.startsWith('http')
-					? imageNode.properties.src
-					: 'https://' + imageNode.properties.src,
+				src: decodedSrc.startsWith('http')
+					? decodedSrc
+					: 'https://' + decodedSrc,
 				alt: imageNode.properties.alt || ''
 			};
 		}

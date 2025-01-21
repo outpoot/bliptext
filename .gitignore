@@ -21,3 +21,6 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+src/serverside_utils/input.txt
+src/serverside_utils/output.md

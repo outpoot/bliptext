@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { getAstNode } from 'svelte-exmarkdown';
 
+	function decodeWikiUrl(url: string) {
+		if (!url) return url;
+		return url.replace(/\/\/\//g, '_');
+	}
+
 	const astContext = getAstNode();
 	const node = $astContext;
 	const rawContent = node?.children?.[0]?.value ?? '';
 
-	// Parse bracket content
 	const bracketContent = rawContent.match(/\[(.*)\]/)?.[1] ?? '';
 	const parts = bracketContent.split('|').map((s) => s.trim());
 	const isWikiBox = parts.length >= 2 && parts.length <= 3;
@@ -15,11 +19,11 @@
 	let content = '';
 
 	if (isWikiBox) {
-		[title, imageUrl, content] = parts.length === 2 ? ['', ...parts] : parts;
+		[title, imageUrl, content = ''] = parts;
 
 		if (imageUrl) {
 			imageUrl = !imageUrl.startsWith('https://') ? `https://${imageUrl}` : imageUrl;
-			imageUrl = imageUrl.includes('imgur.com') ? imageUrl : '';
+			imageUrl = decodeWikiUrl(imageUrl);
 		}
 	}
 </script>
