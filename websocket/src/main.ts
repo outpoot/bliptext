@@ -1,9 +1,9 @@
 import type { ServerWebSocket } from "bun";
-import { redis } from "$lib/server/redis";
-import dotenv from "dotenv";
+import Redis from "ioredis";
 import path from "path";
 
-dotenv.config({ path: path.join(__dirname, "../../.env") });
+const redis = new Redis(process.env.REDIS_URL!);
+
 
 type WebSocketData = {
     articleId?: string;
@@ -16,6 +16,15 @@ type WebSocketData = {
 const articleUsers = new Map<string, Set<string>>();
 const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
 const editorSockets = new Map<string, ServerWebSocket<WebSocketData>>();
+
+redis.on('error', (err) => {
+    console.error('Redis connection error:', err);
+});
+
+redis.on('connect', () => {
+    console.log('Redis connected successfully');
+});
+
 
 redis.on("message", (channel, msg) => {
     if (!channel.startsWith("updates:")) return;
