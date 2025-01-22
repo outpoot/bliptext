@@ -9,6 +9,6 @@ const client = postgres(env.DATABASE_URL);
 export const db = drizzle(client, { schema });
 
 export const queries = {
-    getArticle: db.query.articles.findFirst,
-    getRevisions: db.query.revisions.findMany
+	getArticle: db.query.articles.findFirst,
+	getRevisions: db.query.revisions.findMany
 };
