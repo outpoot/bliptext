@@ -39,7 +39,24 @@ export const auth = betterAuth({
     advanced: {
         crossSubDomainCookies: {
             enabled: true,
-            domain: "bliptext.com"
+            domain: ".bliptext.com"
         },
+        useSecureCookies: true,
+        cookies: {
+            session_token: {
+                attributes: {
+                    sameSite: 'lax',
+                    path: '/',
+                    domain: '.bliptext.com'
+                }
+            },
+            session_data: {
+                attributes: {
+                    sameSite: 'lax',
+                    path: '/',
+                    domain: '.bliptext.com'
+                }
+            }
+        }
     }
 });
