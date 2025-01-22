@@ -7,8 +7,8 @@
 	import Users from 'lucide-svelte/icons/users';
 	import { getSession } from '$lib/auth-client';
 	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
+	import { toast } from 'svelte-sonner';
 
-	let ws: WebSocket | null = null;
 	let activeArticles = $state<
 		Array<{
 			id: string;
@@ -18,40 +18,57 @@
 		}>
 	>([]);
 
-	onMount(() => {
-		let initialized = false;
+	async function initializeWebSocket(token: string) {
+		const ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${token}&type=viewer`);
 
-		getSession().then(({ data }) => {
-			if (!initialized && data?.session) {
-				ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${data.session?.token}&type=viewer`);
+		ws.addEventListener('open', () => {
+			ws.send(JSON.stringify({ type: 'get_active_articles' }));
+		});
 
-				ws.addEventListener('open', () => {
-					ws?.send(JSON.stringify({ type: 'get_active_articles' }));
-				});
-
-				ws.addEventListener('message', (event) => {
-					const data = JSON.parse(event.data);
-					if (data.type === 'active_articles') {
-						activeArticles = data.data.sort(
-							(a: { activeUsers: number }, b: { activeUsers: number }) =>
-								b.activeUsers - a.activeUsers
-						);
-					}
-				});
+		ws.addEventListener('message', (event) => {
+			const data = JSON.parse(event.data);
+			if (data.type === 'active_articles') {
+				activeArticles = data.data.sort((a, b) => b.activeUsers - a.activeUsers);
 			}
 		});
 
-		// Periodically refresh active articles
-		const interval = setInterval(() => {
-			if (ws?.readyState === WebSocket.OPEN) {
-				ws.send(JSON.stringify({ type: 'get_active_articles' }));
+		return ws;
+	}
+
+	async function getWebSocketToken() {
+		const res = await fetch('/api/generate-ws-token');
+
+		if (!res.ok) {
+			if (res.status === 401) {
+				toast.error('Your account is restricted from editing');
 			}
-		}, 5000);
+			throw new Error('Failed to connect');
+		}
+
+		return (await res.json()).token;
+	}
+
+	onMount(() => {
+		let interval: ReturnType<typeof setInterval>;
+		let ws: WebSocket;
+
+		(async () => {
+			const { data } = await getSession();
+			if (!data?.session) return;
+
+			const token = await getWebSocketToken();
+			ws = await initializeWebSocket(token);
+
+			interval = setInterval(() => {
+				if (ws.readyState === WebSocket.OPEN) {
+					ws.send(JSON.stringify({ type: 'get_active_articles' }));
+				}
+			}, 5000);
+		})();
 
 		return () => {
-			initialized = true;
 			clearInterval(interval);
-			ws?.close();
+			if (ws) ws.close();
 		};
 	});
 </script>

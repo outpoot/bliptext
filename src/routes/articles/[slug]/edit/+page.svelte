@@ -65,7 +65,9 @@
 
 	onMount(() => {
 		(async () => {
-			if (!data.article) return;
+			const ttt = data.session.data.session.token;
+
+			if (!ttt || !data.article) return;
 
 			const res = await fetch('/api/generate-ws-token');
 			if (!res.ok) {
