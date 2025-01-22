@@ -58,7 +58,8 @@
 			renderer: {
 				h1: WikiBox,
 				// @ts-ignore
-				p: Summary
+				p: Summary,
+				a: null
 			}
 		}
 	];

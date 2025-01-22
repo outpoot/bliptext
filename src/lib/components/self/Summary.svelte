@@ -141,11 +141,7 @@ This renders:
 					<span class="min-w-24 font-bold">{label}</span>
 					<span class="flex-1">
 						{#each content as part}
-							{#if part.type === 'link'}
-								<a href={part.href} class="text-primary hover:underline">{part.value}</a>
-							{:else}
-								{part.value}
-							{/if}
+						{part.value}
 						{/each}
 					</span>
 				</div>
