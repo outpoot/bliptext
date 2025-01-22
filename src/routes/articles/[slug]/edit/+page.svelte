@@ -65,9 +65,17 @@
 
 	onMount(() => {
 		(async () => {
-			const token = data.session.data.session.token;
+			if (!data.article) return;
 
-			if (!token || !data.article) return;
+			const res = await fetch('/api/generate-ws-token');
+			if (!res.ok) {
+				if (res.status === 401) {
+					toast.error('Your account is restricted from editing');
+				}
+				throw new Error('Failed to connect');
+			}
+
+			const { token } = await res.json();
 
 			ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${token}&type=editor`);
 

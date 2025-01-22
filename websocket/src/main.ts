@@ -36,25 +36,20 @@ redis.on("message", (channel, msg) => {
 });
 
 redis.on('error', console.error);
-
 async function validateAuth(request: Request): Promise<{ id: string } | null> {
     const token = new URL(request.url).searchParams.get("token");
     if (!token) return null;
 
     try {
-        const res = await fetch(`${process.env.SITE_URL}/api/auth/get-session`, {
-            headers: new Headers(request.headers),
-            credentials: 'include'
-        });
+        const sessionData = await redis.get(`ws:${token}`);
+        if (!sessionData) return null;
 
-        if (!res.ok) return null;
-        const data = await res.json();
+        const { userId } = JSON.parse(sessionData);
 
-        if (data?.user?.isBanned) {
-            return null;
-        }
+        await redis.del(`ws:${token}`);
 
-        return data?.user?.id ? { id: data.user.id } : null;
+        return { id: userId };
+
     } catch {
         return null;
     }
