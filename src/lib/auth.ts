@@ -35,5 +35,11 @@ export const auth = betterAuth({
                 input: false
             },
         }
+    },
+    advanced: {
+        crossSubDomainCookies: {
+            enabled: true,
+            domain: "bliptext.com"
+        },
     }
 });
