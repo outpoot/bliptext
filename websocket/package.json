@@ -1,0 +1,15 @@
+{
+  "name": "bliptext-ws",
+  "module": "src/main.ts",
+  "type": "module",
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.2",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.2"
+  }
+}
