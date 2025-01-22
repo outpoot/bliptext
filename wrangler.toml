@@ -2,3 +2,6 @@ name = "bliptext"
 compatibility_flags = ["nodejs_compat"]
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "./.svelte-kit/cloudflare"
+
+[vars]
+PUBLIC_BETTER_AUTH_URL = "https://beta.bliptext.com"
