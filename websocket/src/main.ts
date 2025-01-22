@@ -50,7 +50,8 @@ async function validateAuth(request: Request): Promise<{ id: string } | null> {
 
         return { id: userId };
 
-    } catch {
+    } catch (error) {
+        console.error('Auth validation error:', error);
         return null;
     }
 }
