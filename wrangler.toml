@@ -5,3 +5,4 @@ pages_build_output_dir = "./.svelte-kit/cloudflare"
 
 [vars]
 PUBLIC_BETTER_AUTH_URL = "https://beta.bliptext.com"
+PUBLIC_WEBSOCKET_URL = "wss://ws.bliptext.com"
