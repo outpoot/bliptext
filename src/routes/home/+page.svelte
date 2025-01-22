@@ -6,6 +6,7 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import Users from 'lucide-svelte/icons/users';
 	import { getSession } from '$lib/auth-client';
+	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
 
 	let ws: WebSocket | null = null;
 	let activeArticles = $state<
@@ -22,7 +23,7 @@
 
 		getSession().then(({ data }) => {
 			if (!initialized && data?.session) {
-				ws = new WebSocket(`ws://localhost:8080?token=${data.session?.token}&type=viewer`);
+				ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${data.session?.token}&type=viewer`);
 
 				ws.addEventListener('open', () => {
 					ws?.send(JSON.stringify({ type: 'get_active_articles' }));

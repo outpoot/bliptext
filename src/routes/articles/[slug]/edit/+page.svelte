@@ -13,6 +13,7 @@
 	import { tosAccepted } from '$lib/stores/tosAccepted';
 	import { signIn } from '$lib/auth-client';
 	import SignInConfirmDialog from '$lib/components/self/SignInConfirmDialog.svelte';
+	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 
@@ -68,7 +69,7 @@
 
 			if (!token || !data.article) return;
 
-			ws = new WebSocket(`ws://localhost:8080?token=${token}&type=editor`);
+			ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${token}&type=editor`);
 
 			ws.addEventListener('open', () => {
 				console.log('Connected to WebSocket');
