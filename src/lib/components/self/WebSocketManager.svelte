@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
+	import { currentUser } from '$lib/stores/user';
 
 	type WebSocketType = 'viewer' | 'editor';
 
@@ -33,7 +34,7 @@
 	async function getWebSocketToken() {
 		const res = await fetch('/api/generate-ws-token');
 		if (!res.ok) {
-			if (res.status === 401) {
+			if (res.status === 401 && $currentUser) {
 				toast.error('Your account is restricted from editing');
 			}
 			throw new Error('Failed to connect');
