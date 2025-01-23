@@ -34,7 +34,7 @@
 	async function getWebSocketToken() {
 		const res = await fetch('/api/generate-ws-token');
 		if (!res.ok) {
-			if (res.status === 401) {
+			if (res.status === 401 && $currentUser) {
 				toast.error('Your account is restricted from editing');
 			}
 			throw new Error('Failed to connect');
@@ -84,7 +84,6 @@
 	};
 
 	onMount(() => {
-		if(!$currentUser) return;
 		getWebSocketToken().then((token) => initializeWebSocket(token));
 
 		return () => {
