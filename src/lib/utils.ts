@@ -123,6 +123,8 @@ export function fuzzySearch(text: string, query: string): number {
 }
 
 export function isValidWord(newWord: string): boolean {
+	if (newWord.length > 20) return false;
+
 	const isBoldOrItalic = /^\*\*\w+\*\*$/.test(newWord) || /^\*\w+\*$/.test(newWord);
 	const isLink = /^\[\w+\]\([^\s]{1,50}\)$/.test(newWord);
 	const isPlainWord = /^\w+$/.test(newWord);

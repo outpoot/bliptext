@@ -54,9 +54,9 @@
 
 	function handleInput(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
-		const newWord = input.value.replace(/\s+/g, '').slice(0, 45);
+		const newWord = input.value.replace(/\s+/g, '').slice(0, 20);
 		selectedWord = newWord;
-		showFloatingWord = Boolean(newWord); // Show only if we have a word
+		showFloatingWord = Boolean(newWord);
 	}
 
 	$effect(() => {
