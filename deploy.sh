@@ -1,4 +1,2 @@
-# cursed!
-
-source .env
-fly deploy --build-arg DATABASE_URL=$DATABASE_URL --build-arg BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET --build-arg DISCORD_CLIENT_ID=$DISCORD_CLIENT_ID --build-arg DISCORD_CLIENT_SECRET=$DISCORD_CLIENT_SECRET --build-arg REDIS_URL=$REDIS_URL
+git commit --allow-empty -m "chore: trigger deployment"
+git push
