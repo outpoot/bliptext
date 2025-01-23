@@ -11,6 +11,7 @@ export async function GET({ url }) {
         interface QueryResult {
             id: string;
             title: string;
+            slug: string;
             content: string;
         }
 
@@ -18,6 +19,7 @@ export async function GET({ url }) {
             SELECT 
                 id,
                 title,
+                slug,
                 SUBSTRING(
                     REGEXP_REPLACE(
                         REGEXP_REPLACE(content, ':::.*?:::\s*', '', 'gs'),
@@ -37,6 +39,7 @@ export async function GET({ url }) {
             results: results.map(row => ({
                 id: row.id,
                 title: row.title.slice(0, 200),
+                slug: row.slug,
                 content: row.content.slice(0, 200)
             }))
         });
