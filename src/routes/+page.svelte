@@ -123,7 +123,7 @@
 					</Label>
 				</div>
 
-				<SearchBar class="h-12 w-full max-w-xl" includeRandom={false} />
+				<SearchBar class="h-12 w-full max-w-xl" includeRandom={true} />
 
 				<Separator class="w-full max-w-2xl" />
 

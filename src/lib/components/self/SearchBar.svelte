@@ -5,7 +5,7 @@
 
 	import Search from 'lucide-svelte/icons/search';
 	import Sparkles from 'lucide-svelte/icons/sparkles';
-	
+
 	import TooltipButton from './TooltipButton.svelte';
 
 	let searchQuery = $state('');
@@ -14,6 +14,17 @@
 		e.preventDefault();
 		if (searchQuery.trim()) {
 			goto(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+		}
+	}
+
+	async function handleRandom() {
+		try {
+			const res = await fetch('/api/random');
+			if (!res.ok) throw new Error('Failed to fetch random article');
+			const { slug } = await res.json();
+			await goto(`/articles/${slug}/edit`);
+		} catch (error) {
+			console.error('Error navigating to random article:', error);
 		}
 	}
 
@@ -37,7 +48,12 @@
 
 	{#if includeRandom}
 		<div class="h-10">
-			<TooltipButton icon={Sparkles} tooltipText="View random article" buttonClass="h-10 w-12" />
+			<TooltipButton
+				icon={Sparkles}
+				tooltipText="View random article"
+				buttonClass="h-10 w-12"
+				onClick={handleRandom}
+			/>
 		</div>
 	{/if}
 </form>
