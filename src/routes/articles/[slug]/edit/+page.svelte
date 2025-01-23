@@ -13,12 +13,14 @@
 	import { tosAccepted } from '$lib/stores/tosAccepted';
 	import { signIn } from '$lib/auth-client';
 	import SignInConfirmDialog from '$lib/components/self/SignInConfirmDialog.svelte';
-	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
+	import WebSocketManager, {
+		type WebSocketManagerHandle
+	} from '$lib/components/self/WebSocketManager.svelte';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
+	let wsManager = $state<WebSocketManagerHandle | undefined>();
 
 	let article = $state(data.article);
-	let ws: WebSocket | null = $state(null);
 
 	let selectedWord = $state('');
 
@@ -63,61 +65,32 @@
 		}
 	});
 
-	onMount(() => {
-		(async () => {
-			const ttt = data.session.data.session.token;
+	function handleMessage(data: any) {
+		if (data.type === 'active_users_update') {
+			$activeUsers = data.data.count;
+		}
+	}
 
-			if (!ttt || !data.article) return;
-
-			const res = await fetch('/api/generate-ws-token');
-			if (!res.ok) {
-				if (res.status === 401) {
-					toast.error('Your account is restricted from editing');
-				}
-				throw new Error('Failed to connect');
+	function handleOpen() {
+		wsManager?.send({
+			type: 'set_article',
+			article: {
+				id: data.article?.id,
+				slug: data.article?.slug
 			}
+		});
+	}
 
-			const { token } = await res.json();
-
-			ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${token}&type=editor`);
-
-			ws.addEventListener('open', () => {
-				console.log('Connected to WebSocket');
-				ws?.send(
-					JSON.stringify({
-						type: 'set_article',
-						article: {
-							id: data.article?.id,
-							slug: data.article?.slug
-						}
-					})
-				);
+	function handleClose(event: CloseEvent) {
+		if (event.code === 4000) {
+			toast.error('Disconnected: You opened this article on another device.', {
+				duration: Infinity
 			});
+		}
+	}
 
-			ws.addEventListener('error', (error) => {
-				console.error('WebSocket error:', error);
-			});
-
-			ws.addEventListener('close', (event) => {
-				console.log('WebSocket closed:', event.code, event.reason);
-				if (event.code === 4000) {
-					toast.error('Disconnected: You opened this article on another device.', {
-						duration: Infinity
-					});
-				}
-			});
-
-			ws.addEventListener('message', (event) => {
-				const data = JSON.parse(event.data);
-				if (data.type === 'active_users_update') {
-					$activeUsers = data.data.count;
-				}
-			});
-		})();
-
+	onMount(() => {
 		return () => {
-			ws?.close();
-			ws = null;
 			$activeUsers = 1;
 		};
 	});
@@ -158,6 +131,13 @@
 		</div>
 	</div>
 {:else if data.article}
+	<WebSocketManager
+		bind:this={wsManager}
+		type="editor"
+		onMessage={handleMessage}
+		onOpen={handleOpen}
+		onClose={handleClose}
+	/>
 	<div class="container-2xl mx-auto py-8">
 		<div class="flex gap-6">
 			<div class="w-64 pt-16">
@@ -184,7 +164,6 @@
 					showSidebars={false}
 					isEditPage={true}
 					bind:selectedWord
-					{ws}
 					selfId={$currentUser?.id}
 				/>
 			</div>

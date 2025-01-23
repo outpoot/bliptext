@@ -6,8 +6,9 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import Users from 'lucide-svelte/icons/users';
 	import { getSession } from '$lib/auth-client';
-	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
-	import { toast } from 'svelte-sonner';
+	import WebSocketManager, {
+		type WebSocketManagerHandle
+	} from '$lib/components/self/WebSocketManager.svelte';
 
 	let activeArticles = $state<
 		Array<{
@@ -18,60 +19,42 @@
 		}>
 	>([]);
 
-	async function initializeWebSocket(token: string) {
-		const ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${token}&type=viewer`);
+	let wsManager = $state<WebSocketManagerHandle | undefined>();
+	let interval = $state<ReturnType<typeof setInterval>>();
 
-		ws.addEventListener('open', () => {
-			ws.send(JSON.stringify({ type: 'get_active_articles' }));
-		});
-
-		ws.addEventListener('message', (event) => {
-			const data = JSON.parse(event.data);
-			if (data.type === 'active_articles') {
-				activeArticles = data.data.sort((a, b) => b.activeUsers - a.activeUsers);
-			}
-		});
-
-		return ws;
+	function handleMessage(data: any) {
+		if (data.type === 'active_articles') {
+			activeArticles = data.data.sort(
+				(a: { activeUsers: number }, b: { activeUsers: number }) => b.activeUsers - a.activeUsers
+			);
+		}
 	}
 
-	async function getWebSocketToken() {
-		const res = await fetch('/api/generate-ws-token');
-
-		if (!res.ok) {
-			if (res.status === 401) {
-				toast.error('Your account is restricted from editing');
-			}
-			throw new Error('Failed to connect');
-		}
-
-		return (await res.json()).token;
+	function handleOpen() {
+		wsManager?.send({ type: 'get_active_articles' });
 	}
 
 	onMount(() => {
-		let interval: ReturnType<typeof setInterval>;
-		let ws: WebSocket;
-
-		(async () => {
-			const { data } = await getSession();
+		getSession().then(({ data }) => {
 			if (!data?.session) return;
 
-			const token = await getWebSocketToken();
-			ws = await initializeWebSocket(token);
-
 			interval = setInterval(() => {
-				if (ws.readyState === WebSocket.OPEN) {
-					ws.send(JSON.stringify({ type: 'get_active_articles' }));
-				}
+				wsManager?.send({ type: 'get_active_articles' });
 			}, 5000);
-		})();
+		});
 
 		return () => {
-			clearInterval(interval);
-			if (ws) ws.close();
+			if (interval) clearInterval(interval);
 		};
 	});
 </script>
+
+<WebSocketManager
+	bind:this={wsManager}
+	type="viewer"
+	onMessage={handleMessage}
+	onOpen={handleOpen}
+/>
 
 <div class="container mx-auto py-8">
 	<h1 class="mb-8 text-4xl font-bold">Home</h1>
