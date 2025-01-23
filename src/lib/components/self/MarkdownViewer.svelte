@@ -1,26 +1,36 @@
 <script lang="ts">
 	import type { Article } from '$lib/server/db/schema';
+	import type { Plugin } from 'svelte-exmarkdown';
 	import Markdown from 'svelte-exmarkdown';
 	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
-	import type { Plugin } from 'svelte-exmarkdown';
-	import 'highlight.js/styles/github-dark.css';
-	import { cooldown } from '$lib/stores/cooldown';
-	import * as Dialog from '$lib/components/ui/dialog';
 
-	// Components
+	import { cooldown } from '$lib/stores/cooldown';
+	import { activeUsers } from '$lib/stores/activeUsers';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { Button } from '$lib/components/ui/button';
+	import { Separator } from '$lib/components/ui/separator';
+
 	import WikiBox from '$lib/components/self/WikiBox.svelte';
 	import Summary from '$lib/components/self/Summary.svelte';
 	import TableOfContents from './TableOfContents.svelte';
 	import Tools from './Tools.svelte';
-	import { Separator } from '$lib/components/ui/separator';
-	import FileText from 'lucide-svelte/icons/file-text';
-	import { Button } from '$lib/components/ui/button';
 	import FloatingWord from './FloatingWord.svelte';
+	import SafeLink from './SafeLink.svelte';
+	import WordInput from './WordInput.svelte';
+
 	import { WordProcessor } from '$lib/utils/wordProcessor';
 	import { toast } from 'svelte-sonner';
+
+	import FileText from 'lucide-svelte/icons/file-text';
 	import Users from 'lucide-svelte/icons/users';
-	import { activeUsers } from '$lib/stores/activeUsers';
-	import SafeLink from "./SafeLink.svelte";
+	import ListTree from 'lucide-svelte/icons/list-tree';
+	import Wrench from 'lucide-svelte/icons/wrench';
+	import X from 'lucide-svelte/icons/x';
+	import Pen from 'lucide-svelte/icons/pen';
+	import Eye from 'lucide-svelte/icons/eye';
+
+	let showMobileTools = $state(false);
+	let showMobileContents = $state(false);
 
 	let {
 		content,
@@ -31,7 +41,9 @@
 		article = { title, content },
 		selectedWord = $bindable(''),
 		selfId = '',
-		ws
+		ws,
+		onInputKeyDown = undefined,
+		onInput = undefined,
 	} = $props<{
 		content: string;
 		title?: string;
@@ -42,6 +54,8 @@
 		selectedWord?: string;
 		selfId?: string;
 		ws?: WebSocket | null;
+		onInputKeyDown?: (event: KeyboardEvent) => void;
+		onInput?: (event: InputEvent) => void;
 	}>();
 
 	const wordProcessor = new WordProcessor(content, {
@@ -302,24 +316,32 @@
 <!-- Template -->
 {#if showSidebars}
 	<div class="flex gap-6">
-		<div class="w-64 pt-16">
-			<TableOfContents {content} {title} wordInput={false} />
+		<div class="hidden w-64 pt-16 md:block">
+			<TableOfContents
+				{content}
+				{title}
+				wordInput={isEditPage}
+				inputProps={isEditPage
+					? { onkeydown: onInputKeyDown, oninput: onInput, value: selectedWord }
+					: undefined}
+				onNavigate={() => (showMobileContents = false)}
+			/>
 		</div>
 
 		<div class="flex-1">
 			{#if showHeader}
-				<div class="mb-4 flex items-baseline gap-2">
+				<div class="mb-4 ml-3 flex items-baseline gap-2">
 					<FileText class="h-5 w-5 text-muted-foreground" />
 					<h1 id="title" class="text-3xl font-bold">{article.title || 'Untitled'}</h1>
 				</div>
 				<Separator class="mb-8" />
 			{/if}
-			<div class="markdown-content">
+			<div class="markdown-content px-4 md:px-0">
 				<Markdown md={content} {plugins} />
 			</div>
 		</div>
 
-		<div class="w-64 pt-16">
+		<div class="hidden w-64 pt-16 md:block">
 			<Tools {article} {isEditPage} />
 		</div>
 	</div>
@@ -337,8 +359,120 @@
 			</div>
 			<Separator class="mb-8" />
 		{/if}
-		<div class="markdown-content">
+		<div class="markdown-content px-4">
 			<Markdown md={content} {plugins} />
+		</div>
+	</div>
+{/if}
+
+<!-- Mobile FAB Menu -->
+{#if showSidebars}
+	<div class="fixed bottom-6 right-6 flex items-end gap-3 md:hidden">
+		<div class="flex-none">
+			{#if isEditPage}
+				<WordInput
+					class="w-64"
+					inputProps={{
+						onkeydown: onInputKeyDown,
+						oninput: onInput,
+						value: selectedWord
+					}}
+				/>
+			{/if}
+		</div>
+
+		<div class="flex flex-col gap-3">
+			{#if isEditPage}
+				<Button
+					variant="default"
+					size="icon"
+					class="h-12 w-12 rounded-full shadow-lg"
+					href={`../${article.slug}`}
+				>
+					<Eye class="h-6 w-6" />
+					<span class="sr-only">View original</span>
+				</Button>
+			{:else}
+				<Button
+					variant="default"
+					size="icon"
+					class="h-12 w-12 rounded-full shadow-lg"
+					href={`${article.slug}/edit`}
+				>
+					<Pen class="h-6 w-6" />
+					<span class="sr-only">Edit article</span>
+				</Button>
+			{/if}
+
+			<Button
+				variant="default"
+				size="icon"
+				class="h-12 w-12 rounded-full shadow-lg"
+				onclick={() => (showMobileContents = true)}
+			>
+				<ListTree class="h-6 w-6" />
+				<span class="sr-only">Show contents</span>
+			</Button>
+			<Button
+				variant="default"
+				size="icon"
+				class="h-12 w-12 rounded-full shadow-lg"
+				onclick={() => (showMobileTools = true)}
+			>
+				<Wrench class="h-6 w-6" />
+				<span class="sr-only">Show tools</span>
+			</Button>
+		</div>
+	</div>
+{/if}
+
+<!-- Mobile Overlays -->
+{#if showMobileTools}
+	<div class="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+		<button
+			class="absolute inset-0 bg-background/80 backdrop-blur-sm"
+			onclick={() => (showMobileTools = false)}
+			aria-label="Close tools"
+		></button>
+		<div class="absolute inset-x-4 bottom-4 rounded-lg border bg-background p-4 shadow-lg">
+			<div class="mb-2 flex items-center justify-between">
+				<Button variant="ghost" size="icon" onclick={() => (showMobileTools = false)}>
+					<X class="h-4 w-4" />
+				</Button>
+			</div>
+			<Tools {article} {isEditPage} />
+		</div>
+	</div>
+{/if}
+
+{#if showMobileContents}
+	<div class="fixed inset-0 z-50 md:hidden">
+		<button
+			type="button"
+			class="absolute inset-0 bg-background/80 backdrop-blur-sm"
+			onclick={() => (showMobileContents = false)}
+			onkeydown={(e) => e.key === 'Escape' && (showMobileContents = false)}
+			aria-label="Close contents"
+		></button>
+		<div class="absolute inset-x-4 bottom-4 rounded-lg border bg-background p-4 shadow-lg">
+			<div class="mb-2 flex items-center justify-between">
+				<Button variant="ghost" size="icon" onclick={() => (showMobileContents = false)}>
+					<X class="h-4 w-4" />
+				</Button>
+			</div>
+			<TableOfContents
+				{content}
+				{title}
+				wordInput={isEditPage}
+				inputProps={isEditPage
+					? {
+							onkeydown: onInputKeyDown,
+							oninput: onInput,
+							value: selectedWord
+						}
+					: undefined}
+				onNavigate={() => (showMobileContents = false)}
+			/>
 		</div>
 	</div>
 {/if}

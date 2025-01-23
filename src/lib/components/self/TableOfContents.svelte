@@ -2,14 +2,14 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import Separator from '../ui/separator/separator.svelte';
-	import { Input } from '../ui/input';
-	import { cooldown } from '$lib/stores/cooldown';
+    import WordInput from './WordInput.svelte';
 
-	let { content, title, wordInput, inputProps } = $props<{
+	let { content, title, wordInput, inputProps, onNavigate = () => {} } = $props<{
 		content: string;
 		title: string;
 		wordInput: boolean;
 		inputProps?: any;
+		onNavigate?: () => void;
 	}>();
 	let isCollapsed = $state(false);
 
@@ -103,19 +103,7 @@
 		if (el) {
 			el.scrollIntoView({ behavior: 'smooth' });
 			history.pushState(null, '', `#${id}`);
-		}
-	}
-
-	function validateInput(event: Event) {
-		const input = event.target as HTMLInputElement;
-		const value = input.value;
-
-		// Allow markdown formatting patterns
-		if (value && !/^(\*\*\w+\*\*|\*\w+\*|\[\w+\]\([^\s]{1,50}\)|\w+)$/.test(value)) {
-			err =
-				'Please enter a single word, optionally formatted with *word*, **word**, or [word](url)';
-		} else {
-			err = '';
+			onNavigate();
 		}
 	}
 </script>
@@ -150,24 +138,9 @@
 	<Separator class="mb-2 mt-2" />
 
 	{#if wordInput}
-		<div class="relative">
-			<Input
-				{...inputProps}
-				placeholder="Type a word"
-				class="mt-4 border-2 border-primary p-6 text-lg"
-				on:input={validateInput}
-				disabled={$cooldown.isActive}
-			/>
-			{#if $cooldown.isActive}
-				<div class="absolute inset-0 flex items-center justify-center bg-background/80">
-					<span class="text-sm text-muted-foreground">
-						Wait {$cooldown.remainingTime}s
-					</span>
-				</div>
-			{/if}
-		</div>
-		{#if err}
-			<p class="text-red-500">{err}</p>
-		{/if}
+		<WordInput
+			class="mt-4"
+			{inputProps}
+		/>
 	{/if}
 </div>

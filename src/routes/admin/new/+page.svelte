@@ -51,7 +51,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 </script>
 
 {#if $currentUser?.isAdmin}
-	<div class="container-2xl mx-auto py-8">
+	<div class="container mx-auto py-8">
 		<h1 class="mb-8 text-3xl font-bold">Create</h1>
 
 		<Tabs.Root value={activeTab} onValueChange={handleTabChange}>
@@ -79,7 +79,7 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 			</Tabs.Content>
 
 			<Tabs.Content value="preview">
-				<div class="pt-4">
+				<div class="container-2xl pt-4">
 					{#key renderKey}
 						<MarkdownViewer
 							{content}

@@ -16,6 +16,7 @@
 	import WebSocketManager, {
 		type WebSocketManagerHandle
 	} from '$lib/components/self/WebSocketManager.svelte';
+	import Eye from 'lucide-svelte/icons/eye';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 	let wsManager = $state<WebSocketManagerHandle | undefined>();
@@ -29,6 +30,8 @@
 	let showFloatingWord = $state(false);
 	let showTos = $state(!$tosAccepted);
 	let showConfirm = $state(false);
+	let showMobileTools = $state(false);
+	let showMobileContents = $state(false);
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -139,40 +142,20 @@
 		onClose={handleClose}
 	/>
 	<div class="container-2xl mx-auto py-8">
-		<div class="flex gap-6">
-			<div class="w-64 pt-16">
-				<TableOfContents
-					content={article.content}
-					title={article.title}
-					wordInput={true}
-					inputProps={{
-						onkeydown: handleInputKeyDown,
-						oninput: handleInput,
-						value: selectedWord
-					}}
-				/>
-
-				<div class="sticky top-4"></div>
-			</div>
-
-			<div class="flex-1">
-				<MarkdownViewer
-					content={article.content}
-					title={article.title}
-					{article}
-					showHeader={true}
-					showSidebars={false}
-					isEditPage={true}
-					bind:selectedWord
-					selfId={$currentUser?.id}
-				/>
-			</div>
-
-			<div class="w-64 pt-16">
-				<Tools {article} isEditPage={true} />
-			</div>
-		</div>
-
+		<MarkdownViewer
+			content={article.content}
+			title={article.title}
+			{article}
+			showHeader={true}
+			showSidebars={true}
+			isEditPage={true}
+			bind:selectedWord
+			selfId={$currentUser?.id}
+			onInputKeyDown={handleInputKeyDown}
+			onInput={handleInput}
+			onMouseMove={handleMouseMove}
+		/>
+		
 		{#if showFloatingWord && selectedWord}
 			<FloatingWord word={selectedWord} x={mouseX + 10} y={mouseY + 10} />
 		{/if}

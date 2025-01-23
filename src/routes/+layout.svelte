@@ -9,7 +9,7 @@
 	import { getSession } from '$lib/auth-client';
 	import { Toaster, toast } from 'svelte-sonner';
 	import SignInConfirmDialog from '$lib/components/self/SignInConfirmDialog.svelte';
-	import { Button } from '$lib/components/ui/button';
+
 	import {
 		DropdownMenu,
 		DropdownMenuContent,
@@ -21,6 +21,14 @@
 	import UserX from 'lucide-svelte/icons/user-x';
 	import Shield from 'lucide-svelte/icons/shield';
 	import Book from 'lucide-svelte/icons/book';
+
+	import Folder from 'lucide-svelte/icons/folder'; // Example categories icon
+	import SearchIcon from 'lucide-svelte/icons/search';
+	import FilePlus from 'lucide-svelte/icons/file-plus';
+	import Ban from 'lucide-svelte/icons/ban';
+	import X from 'lucide-svelte/icons/x';
+	import { Button } from '$lib/components/ui/button';
+	let searchDialogOpen = $state(false);
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -95,31 +103,33 @@
 					{/if}
 				</a>
 
-				<div class="flex-1 px-16">
-					<SearchBar class="mx-auto max-w-2xl" />
+				<!-- Large screen search bar & categories -->
+				<div class="hidden flex-1 px-16 md:block">
+					<SearchBar class="mx-auto w-full md:max-w-2xl" />
+				</div>
+				<a
+					href="/categories"
+					class="hidden rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground md:inline"
+				>
+					Categories
+				</a>
+
+				<!-- Small screen icons for search & categories -->
+				<div class="flex items-center gap-4 md:hidden">
+					<Button variant="outline">
+						<a href="/categories">
+							<Folder class="h-6 w-6" />
+						</a>
+					</Button>
+					<Button 
+						variant="outline"
+						onclick={() => (searchDialogOpen = true)}
+					>
+						<SearchIcon class="h-6 w-6" />
+					</Button>
 				</div>
 
 				<nav class="flex items-center gap-2">
-					{#if $currentUser?.isAdmin}
-						<a
-							href="/articles/new"
-							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-						>
-							New
-						</a>
-						<a
-							href="/admin/bans"
-							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-						>
-							Bans
-						</a>
-					{/if}
-					<a
-						href="/categories"
-						class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-					>
-						Categories
-					</a>
 					{#if $currentUser}
 						<DropdownMenu>
 							<DropdownMenuTrigger>
@@ -146,6 +156,21 @@
 										<span>Terms of Service</span>
 									</a>
 								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								{#if $currentUser.isAdmin}
+									<DropdownMenuItem class="text-primary">
+										<a href="/admin/new" class="flex w-full items-center">
+											<FilePlus class="mr-2 h-4 w-4" />
+											<span>New</span>
+										</a>
+									</DropdownMenuItem>
+									<DropdownMenuItem class="text-primary">
+										<a href="/admin/bans" class="flex w-full items-center">
+											<Ban class="mr-2 h-4 w-4" />
+											<span>Bans</span>
+										</a>
+									</DropdownMenuItem>
+								{/if}
 								<DropdownMenuSeparator />
 								<DropdownMenuItem onclick={handleSignOut} class="cursor-pointer">
 									<LogOut class="mr-2 h-4 w-4" />
@@ -194,5 +219,28 @@
 				</nav>
 			</div>
 		</footer>
+	</div>
+{/if}
+
+{#if searchDialogOpen}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+	>
+		<div class="relative w-full max-w-lg">
+			<div class="mb-2 flex items-center justify-end">
+				<button
+					class="rounded-md bg-secondary px-2.5 py-2 text-sm font-medium hover:bg-secondary/80"
+					onclick={() => (searchDialogOpen = false)}
+				>
+					<X class="h-4 w-4" />
+				</button>
+			</div>
+
+			<SearchBar
+				class="w-full"
+				includeRandom={true}
+				onNavigate={() => (searchDialogOpen = false)}
+			/>
+		</div>
 	</div>
 {/if}
