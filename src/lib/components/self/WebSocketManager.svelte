@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
+	import { currentUser } from '$lib/stores/user';
 
 	type WebSocketType = 'viewer' | 'editor';
 
@@ -83,6 +84,7 @@
 	};
 
 	onMount(() => {
+		if(!$currentUser) return;
 		getWebSocketToken().then((token) => initializeWebSocket(token));
 
 		return () => {
