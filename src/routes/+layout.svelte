@@ -54,12 +54,9 @@
 				window.location.href = '/';
 			} catch (error) {
 				console.error('Failed to delete account:', error);
-				toast.error(
-					'Failed to delete account',
-					{
-						description: error instanceof Error ? error.message : 'Unknown error occurred'
-					}
-				);
+				toast.error('Failed to delete account', {
+					description: error instanceof Error ? error.message : 'Unknown error occurred'
+				});
 			}
 		}
 	}
@@ -94,7 +91,7 @@
 						>Bliptext</Label
 					>
 					{#if $currentUser?.isAdmin}
-						<span class="text-xs">| Admin</span>
+						<span class="text-[0.5rem] md:text-xs">| Admin</span>
 					{/if}
 				</a>
 
@@ -183,11 +180,17 @@
 
 		<footer class="border-t">
 			<div class="container mx-auto flex h-16 items-center justify-between px-4">
-				<p class="text-sm text-muted-foreground">© 2025 Bliptext</p>
+				<p class="text-sm text-muted-foreground">© {new Date().getFullYear()} Bliptext</p>
 				<nav class="flex items-center gap-4">
-					<a href="/about" class="text-sm text-muted-foreground hover:text-foreground">About</a>
-					<a href="/privacy" class="text-sm text-muted-foreground hover:text-foreground">Privacy</a>
-					<a href="/terms" class="text-sm text-muted-foreground hover:text-foreground">Terms</a>
+					<a href="/legal/about" class="text-sm text-muted-foreground hover:text-foreground"
+						>About</a
+					>
+					<a href="/legal/privacy" class="text-sm text-muted-foreground hover:text-foreground"
+						>Privacy</a
+					>
+					<a href="/legal/terms" class="text-sm text-muted-foreground hover:text-foreground"
+						>Terms</a
+					>
 				</nav>
 			</div>
 		</footer>
