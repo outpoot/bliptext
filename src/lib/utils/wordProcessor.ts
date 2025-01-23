@@ -1,172 +1,203 @@
 type WordEventHandlers = {
-	onHover?: (element: HTMLElement) => void;
-	onLeave?: (element: HTMLElement) => void;
-	onClick?: (element: HTMLElement) => void;
+    onHover?: (element: HTMLElement) => void;
+    onLeave?: (element: HTMLElement) => void;
+    onClick?: (element: HTMLElement) => void;
 };
 
 export class WordProcessor {
-	public wordIndicesMap = new Map<HTMLElement, number>();
-	private eventHandlers: WordEventHandlers;
+    public wordIndicesMap = new Map<HTMLElement, number>();
+    private eventHandlers: WordEventHandlers;
+    private cleanedWordToIndices: Map<string, number[]>;
+    private usedIndices: Set<number>;
 
-	constructor(
-		private content: string,
-		eventHandlers: WordEventHandlers = {}
-	) {
-		this.eventHandlers = eventHandlers;
-	}
+    constructor(
+        private content: string,
+        eventHandlers: WordEventHandlers = {}
+    ) {
+        this.eventHandlers = eventHandlers;
+        this.cleanedWordToIndices = new Map();
+        this.usedIndices = new Set();
 
-	isValidFormattedWord(word: string): boolean {
-		// bold/italic
-		if (/^\*\*\w+\*\*$/.test(word) || /^\*\w+\*$/.test(word)) {
-			return true;
-		}
-		// hyperlink with url up to 50 chars
-		if (/^\[\w+\]\([^\s]{1,50}\)$/.test(word)) {
-			return true;
-		}
-		// unformatted word
-		return /^\w+$/.test(word);
-	}
+        const contentWords = this.content.split(/\s+/);
+        contentWords.forEach((word, index) => {
+            const cleaned = this.cleanContentWord(word);
+            if (!this.cleanedWordToIndices.has(cleaned)) {
+                this.cleanedWordToIndices.set(cleaned, []);
+            }
+            this.cleanedWordToIndices.get(cleaned)?.push(index);
+        });
+    }
 
-	private attachEventListeners(element: HTMLElement) {
-		if (this.eventHandlers.onHover) {
-			element.addEventListener('mouseenter', () => this.eventHandlers.onHover?.(element));
-		}
-		if (this.eventHandlers.onLeave) {
-			element.addEventListener('mouseleave', () => this.eventHandlers.onLeave?.(element));
-		}
-		if (this.eventHandlers.onClick) {
-			element.addEventListener('click', () => this.eventHandlers.onClick?.(element));
-		}
-	}
+    private cleanContentWord(word: string): string {
+        let cleaned = word.replace(/[*_.,]/g, '');
+        if (cleaned.startsWith('[')) {
+            const closingBracket = cleaned.indexOf(']');
+            if (closingBracket !== -1) {
+                cleaned = cleaned.substring(1, closingBracket);
+            }
+        }
+        return cleaned;
+    }
 
-	replaceWord(
-		newWord: string,
-		element: HTMLElement,
-		onWordChange: (data: { newWord: string; wordIndex: number }) => void
-	) {
-		if (!this.isValidFormattedWord(newWord)) {
-			console.error('Invalid word format');
-			return;
-		}
+    isValidFormattedWord(word: string): boolean {
+        // bold/italic
+        if (/^\*\*\w+\*\*$/.test(word) || /^\*\w+\*$/.test(word)) {
+            return true;
+        }
+        // hyperlink with url up to 50 chars
+        if (/^\[\w+\]\([^\s]{1,50}\)$/.test(word)) {
+            return true;
+        }
+        // unformatted word
+        return /^\w+$/.test(word);
+    }
 
-		const actualIndex = this.wordIndicesMap.get(element);
-		if (actualIndex === undefined) return;
+    private attachEventListeners(element: HTMLElement) {
+        if (this.eventHandlers.onHover) {
+            element.addEventListener('mouseenter', () => this.eventHandlers.onHover?.(element));
+        }
+        if (this.eventHandlers.onLeave) {
+            element.addEventListener('mouseleave', () => this.eventHandlers.onLeave?.(element));
+        }
+        if (this.eventHandlers.onClick) {
+            element.addEventListener('click', () => this.eventHandlers.onClick?.(element));
+        }
+    }
 
-		element = element.closest('a, strong, em') || element;
-		element.classList.add('word-exit');
+    replaceWord(
+        newWord: string,
+        element: HTMLElement,
+        onWordChange: (data: { newWord: string; wordIndex: number }) => void
+    ) {
+        if (!this.isValidFormattedWord(newWord)) {
+            console.error('Invalid word format');
+            return;
+        }
 
-		setTimeout(() => {
-			const span = document.createElement('span');
-			span.className = 'hv';
-			span.dataset.wordIndex = actualIndex.toString();
-			span.textContent = newWord.startsWith('**')
-				? newWord.slice(2, -2)
-				: newWord.startsWith('*')
-					? newWord.slice(1, -1)
-					: newWord.startsWith('[')
-						? newWord.match(/^\[(.+?)\]/)?.[1] || newWord
-						: newWord;
+        const actualIndex = this.wordIndicesMap.get(element);
+        if (actualIndex === undefined) return;
 
-			this.attachEventListeners(span);
+        element = element.closest('a, strong, em') || element;
+        element.classList.add('word-exit');
 
-			let replacement: Element = span;
-			if (newWord.startsWith('[') && false) {
-				const [, , url] = newWord.match(/^\[(.+)\]\((.+)\)$/) || [];
-				const anchor = document.createElement('a');
-				anchor.href = url;
-				anchor.appendChild(span);
-				replacement = anchor;
-			} else if (newWord.startsWith('**')) {
-				const strong = document.createElement('strong');
-				strong.appendChild(span);
-				replacement = strong;
-			} else if (newWord.startsWith('*')) {
-				const em = document.createElement('em');
-				em.appendChild(span);
-				replacement = em;
-			}
+        setTimeout(() => {
+            const span = document.createElement('span');
+            span.className = 'hv';
+            span.dataset.wordIndex = actualIndex.toString();
+            span.textContent = newWord.startsWith('**')
+                ? newWord.slice(2, -2)
+                : newWord.startsWith('*')
+                    ? newWord.slice(1, -1)
+                    : newWord.startsWith('[')
+                        ? newWord.match(/^\[(.+?)\]/)?.[1] || newWord
+                        : newWord;
 
-			this.wordIndicesMap.set(span, actualIndex);
-			this.wordIndicesMap.delete(element);
+            this.attachEventListeners(span);
 
-			element.replaceWith(replacement);
-			span.classList.add('word-enter');
-			setTimeout(() => span.classList.remove('word-enter'), 500);
-		}, 300);
+            let replacement: Element = span;
+            if (newWord.startsWith('[')) {
+                const match = newWord.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+                if (match) {
+                    const [, linkText, url] = match;
 
-		onWordChange?.({ newWord, wordIndex: actualIndex });
-	}
+                    if (url.startsWith('http://') || url.startsWith('https://')) {
+                        const anchor = document.createElement('a');
+                        anchor.href = url;
+                        anchor.textContent = linkText;
+                        anchor.rel = 'noopener noreferrer';
+                        anchor.target = '_blank';
+                        replacement = anchor;
+                    } else {
+                        replacement = span;
+                        span.textContent = linkText;
+                    }
+                }
+            } else if (newWord.startsWith('**')) {
+                const strong = document.createElement('strong');
+                strong.appendChild(span);
+                replacement = strong;
+            } else if (newWord.startsWith('*')) {
+                const em = document.createElement('em');
+                em.appendChild(span);
+                replacement = em;
+            }
 
-	private createWordSpan(word: string, contentWords: string[]): HTMLSpanElement {
-		const span = document.createElement('span');
-		span.textContent = word;
-		span.className = 'hv';
+            this.wordIndicesMap.set(span, actualIndex);
+            this.wordIndicesMap.delete(element);
 
-		const actualIndex = contentWords.findIndex((w: string, idx: number) => {
-			if (Array.from(this.wordIndicesMap.values()).includes(idx)) return false;
+            element.replaceWith(replacement);
+            span.classList.add('word-enter');
+            setTimeout(() => span.classList.remove('word-enter'), 500);
+        }, 300);
 
-			// Remove markdown syntax for comparison
-			const cleanWord = word.replace(/[*_.,]/g, '');
-			const cleanW = w.replace(/[*_.,]/g, '');
+        onWordChange?.({ newWord, wordIndex: actualIndex });
+    }
 
-			if (cleanW.startsWith('[')) {
-				const closingBracket = cleanW.indexOf(']');
-				return closingBracket !== -1 ? cleanW.substring(1, closingBracket) === cleanWord : false;
-			}
-			return cleanW === cleanWord;
-		});
+    private createWordSpan(word: string): HTMLSpanElement {
+        const span = document.createElement('span');
+        span.textContent = word;
+        span.className = 'hv';
 
-		if (actualIndex !== -1) {
-			this.wordIndicesMap.set(span, actualIndex);
-			span.dataset.wordIndex = actualIndex.toString();
-		}
+        const cleanedWord = this.cleanContentWord(word);
+        const possibleIndices = this.cleanedWordToIndices.get(cleanedWord) || [];
+        let actualIndex = -1;
 
-		this.attachEventListeners(span);
+        for (const index of possibleIndices) {
+            if (!this.usedIndices.has(index)) {
+                actualIndex = index;
+                this.usedIndices.add(index);
+                break;
+            }
+        }
 
-		return span;
-	}
+        if (actualIndex !== -1) {
+            this.wordIndicesMap.set(span, actualIndex);
+            span.dataset.wordIndex = actualIndex.toString();
+        }
 
-	wrapTextNodes(element: Element) {
-		const contentWords = this.content.split(/\s+/);
-		const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-			acceptNode: (node) => {
-				if (!node.textContent?.trim() || node.parentElement?.classList.contains('hv')) {
-					return NodeFilter.FILTER_REJECT;
-				}
-				return NodeFilter.FILTER_ACCEPT;
-			}
-		});
+        this.attachEventListeners(span);
+        return span;
+    }
 
-		const nodes: Text[] = [];
-		let node;
-		while ((node = walker.nextNode())) nodes.push(node as Text);
+    wrapTextNodes(element: Element) {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+            acceptNode: (node) => {
+                if (!node.textContent?.trim() || node.parentElement?.classList.contains('hv')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
 
-		nodes.reverse().forEach((textNode) => {
-			const isInLink = textNode.parentElement?.tagName === 'A';
-			if (isInLink) {
-				const span = this.createWordSpan(textNode.textContent || '', contentWords);
-				textNode.parentNode?.replaceChild(span, textNode);
-			} else {
-				const words = textNode.textContent?.split(/\s+/) ?? [];
-				const fragment = document.createDocumentFragment();
+        const nodes: Text[] = [];
+        let node;
+        while ((node = walker.nextNode())) nodes.push(node as Text);
 
-				words.forEach((word) => {
-					if (!word.trim()) return;
-					const span = this.createWordSpan(word, contentWords);
-					fragment.appendChild(span);
-					fragment.appendChild(document.createTextNode(' '));
-				});
+        nodes.reverse().forEach((textNode) => {
+            const isInLink = textNode.parentElement?.tagName === 'A';
+            if (isInLink) {
+                const span = this.createWordSpan(textNode.textContent || '');
+                textNode.parentNode?.replaceChild(span, textNode);
+            } else {
+                const words = textNode.textContent?.split(/\s+/) ?? [];
+                const fragment = document.createDocumentFragment();
 
-				textNode.parentNode?.replaceChild(fragment, textNode);
-			}
-		});
-	}
+                words.forEach((word) => {
+                    if (!word.trim()) return;
+                    const span = this.createWordSpan(word);
+                    fragment.appendChild(span);
+                    fragment.appendChild(document.createTextNode(' '));
+                });
 
-	getElementByWordIndex(index: number): HTMLElement | null {
-		for (const [element, wordIndex] of this.wordIndicesMap.entries()) {
-			if (wordIndex === index) return element;
-		}
-		return null;
-	}
+                textNode.parentNode?.replaceChild(fragment, textNode);
+            }
+        });
+    }
+
+    getElementByWordIndex(index: number): HTMLElement | null {
+        for (const [element, wordIndex] of this.wordIndicesMap.entries()) {
+            if (wordIndex === index) return element;
+        }
+        return null;
+    }
 }
