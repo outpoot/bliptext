@@ -8,7 +8,7 @@
 	} from '$lib/components/ui/card';
 	import LogoBlink from '$lib/components/self/LogoBlink.svelte';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Paintbrush } from 'lucide-svelte';
+	import Paintbrush from 'lucide-svelte/icons/paintbrush';
 </script>
 
 <section class="py-10 text-center">

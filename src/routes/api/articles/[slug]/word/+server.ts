@@ -17,7 +17,7 @@ export async function PUT({ params, request }) {
 
 	if (!isValidWord(newWord)) {
 		return json({
-			error: 'Word must be either plain text, bold (**word**), italic (*word*), or a link ([word](url))'
+			error: 'Word must be 30 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))'
 		}, { status: 400 });
 	}
 

@@ -54,7 +54,7 @@
 
 	function handleInput(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
-		const newWord = input.value.replace(/\s+/g, '').slice(0, 20);
+		const newWord = input.value.replace(/\s+/g, '').slice(0, 30);
 		selectedWord = newWord;
 		showFloatingWord = Boolean(newWord);
 	}

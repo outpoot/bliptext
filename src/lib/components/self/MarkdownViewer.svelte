@@ -3,7 +3,6 @@
 	import Markdown from 'svelte-exmarkdown';
 	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
 	import type { Plugin } from 'svelte-exmarkdown';
-	import rehypeHighlight from 'rehype-highlight';
 	import 'highlight.js/styles/github-dark.css';
 	import { cooldown } from '$lib/stores/cooldown';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -21,6 +20,7 @@
 	import { toast } from 'svelte-sonner';
 	import Users from 'lucide-svelte/icons/users';
 	import { activeUsers } from '$lib/stores/activeUsers';
+	import SafeLink from "./SafeLink.svelte";
 
 	let {
 		content,
@@ -53,12 +53,12 @@
 	// Plugin configuration
 	const plugins: Plugin[] = [
 		gfmPlugin(),
-		{ rehypePlugin: [rehypeHighlight, { ignoreMissing: true }] },
 		{
 			renderer: {
 				h1: WikiBox,
 				// @ts-ignore
-				p: Summary
+				p: Summary,
+				a: SafeLink
 			}
 		}
 	];
