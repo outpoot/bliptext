@@ -1,6 +1,5 @@
 import type { ServerWebSocket } from 'bun';
 import Redis from 'ioredis';
-import path from 'path';
 
 const redis = new Redis(process.env.REDIS_URL!);
 const normalRedis = new Redis(process.env.REDIS_URL!);
@@ -26,17 +25,18 @@ redis.on('message', (channel, msg) => {
 
 type WebSocketData = {
 	articleId?: string;
-	user: {
+	user?: {
 		id: string;
+		isBanned: boolean;
 	};
-	connectionType: 'editor' | 'viewer';
+	connectionType?: 'editor' | 'viewer';
 };
 
 const articleUsers = new Map<string, Set<string>>();
 const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
 const editorSockets = new Map<string, ServerWebSocket<WebSocketData>>();
 
-async function validateAuth(request: Request): Promise<{ id: string } | null> {
+async function validateAuth(request: Request): Promise<{ id: string; isBanned: boolean } | null> {
 	const token = new URL(request.url).searchParams.get('token');
 	if (!token) return null;
 
@@ -44,11 +44,10 @@ async function validateAuth(request: Request): Promise<{ id: string } | null> {
 		const sessionData = await normalRedis.get(`ws:${token}`);
 		if (!sessionData) return null;
 
-		const { userId } = JSON.parse(sessionData);
-
+		const { userId, isBanned } = JSON.parse(sessionData);
 		await normalRedis.del(`ws:${token}`);
 
-		return { id: userId };
+		return userId ? { id: userId, isBanned } : null;
 	} catch (error) {
 		console.error('Auth validation error:', error);
 		return null;
@@ -71,7 +70,11 @@ async function handleSetArticle(
 	ws: ServerWebSocket<WebSocketData>,
 	articleId: string
 ): Promise<void> {
-	const userId = ws.data.user.id;
+	const userId = ws.data.user?.id;
+	if (!userId) {
+		ws.close(4001, 'Authentication required');
+		return;
+	}
 
 	if (ws.data.connectionType === 'editor') {
 		const existingEditorSocket = editorSockets.get(userId);
@@ -154,28 +157,30 @@ const server = Bun.serve<WebSocketData>({
 	port: Number(process.env.PORT) || 8080,
 
 	async fetch(request, server) {
-		const user = await validateAuth(request);
-		if (!user) {
-			const url = new URL(request.url);
+		const authResult = await validateAuth(request);
+		const url = new URL(request.url);
 
-			if (url.searchParams.get('banned') === 'true') {
-				return new Response('User is banned', { status: 403 });
-			}
-			return new Response(null, { status: 401 });
+		if (authResult?.isBanned) {
+			return new Response('User is banned', { status: 403 });
 		}
 
-		const url = new URL(request.url);
-		const connectionType = url.searchParams.get('type') === 'editor' ? 'editor' : 'viewer';
+		const connectionType = authResult
+			? url.searchParams.get('type') === 'editor' ? 'editor' : 'viewer'
+			: undefined;
 
-		if (connectionType === 'editor') {
-			const existingEditorSocket = editorSockets.get(user.id);
+		if (authResult && connectionType === 'editor') {
+			const existingEditorSocket = editorSockets.get(authResult.id);
 			if (existingEditorSocket) {
 				existingEditorSocket.close(4000, 'New editor connection opened elsewhere');
 			}
 		}
 
 		const upgraded = server.upgrade(request, {
-			data: { user, articleId: null, connectionType }
+			data: {
+				user: authResult || undefined,
+				articleId: null,
+				connectionType
+			}
 		});
 
 		return upgraded ? undefined : new Response('Upgrade failed', { status: 500 });

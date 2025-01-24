@@ -2,8 +2,6 @@
 	import type { Article } from '$lib/server/db/schema';
 	import MarkdownViewer from '$lib/components/self/MarkdownViewer.svelte';
 	import FloatingWord from '$lib/components/self/FloatingWord.svelte';
-	import TableOfContents from '$lib/components/self/TableOfContents.svelte';
-	import Tools from '$lib/components/self/Tools.svelte';
 	import { onMount } from 'svelte';
 	import { currentUser } from '$lib/stores/user';
 	import type { Session } from 'better-auth';
@@ -16,7 +14,6 @@
 	import WebSocketManager, {
 		type WebSocketManagerHandle
 	} from '$lib/components/self/WebSocketManager.svelte';
-	import Eye from 'lucide-svelte/icons/eye';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 	let wsManager = $state<WebSocketManagerHandle | undefined>();
@@ -30,8 +27,6 @@
 	let showFloatingWord = $state(false);
 	let showTos = $state(!$tosAccepted);
 	let showConfirm = $state(false);
-	let showMobileTools = $state(false);
-	let showMobileContents = $state(false);
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -153,9 +148,9 @@
 			selfId={$currentUser?.id}
 			onInputKeyDown={handleInputKeyDown}
 			onInput={handleInput}
-			onMouseMove={handleMouseMove}
+			ws={wsManager?.ws}
 		/>
-		
+
 		{#if showFloatingWord && selectedWord}
 			<FloatingWord word={selectedWord} x={mouseX + 10} y={mouseY + 10} />
 		{/if}

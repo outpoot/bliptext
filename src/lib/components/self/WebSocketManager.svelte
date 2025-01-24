@@ -1,6 +1,7 @@
 <script lang="ts">
 	export interface WebSocketManagerHandle {
 		send: (data: any) => void;
+		ws: WebSocket | null;
 	}
 
 	import { onMount } from 'svelte';
@@ -77,12 +78,6 @@
 		return ws;
 	}
 
-	export const send: WebSocketManagerHandle['send'] = (data: any) => {
-		if (ws?.readyState === WebSocket.OPEN) {
-			ws.send(JSON.stringify(data));
-		}
-	};
-
 	onMount(() => {
 		getWebSocketToken().then((token) => initializeWebSocket(token));
 
@@ -91,6 +86,14 @@
 			ws = null;
 		};
 	});
+
+	export { ws as ws };
+
+	export const send: WebSocketManagerHandle['send'] = (data) => {
+		if (ws?.readyState === WebSocket.OPEN) {
+			ws.send(JSON.stringify(data));
+		}
+	};
 </script>
 
 {@render children?.({ send })}

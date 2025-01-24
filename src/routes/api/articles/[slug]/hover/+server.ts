@@ -26,7 +26,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
         const { wordIndex, newWord } = await request.json();
 
         if (typeof wordIndex !== 'number' || !newWord?.trim() || !isValidWord(newWord)) {
-            return json({ error: 'Invalid word format' }, { status: 400 });
+            return json({ error: 'Invalid word format or length' }, { status: 400 });
         }
 
         const article = await db.query.articles.findFirst({
