@@ -12,26 +12,16 @@ export async function GET({ url }) {
             id: string;
             title: string;
             slug: string;
-            content: string;
         }
 
         const results = await db.execute(sql`
             SELECT 
                 id,
                 title,
-                slug,
-                SUBSTRING(
-                    REGEXP_REPLACE(
-                        REGEXP_REPLACE(content, ':::.*?:::\s*', '', 'gs'),
-                        '[^a-z0-9 ]', '', 'gi'
-                    ), 1, 200
-                ) AS content
+                slug
             FROM ${articles}
-            WHERE websearch_to_tsquery('english', ${query}) IS NOT NULL
-            ORDER BY ts_rank_cd(
-                to_tsvector('english', title || ' ' || content),
-                websearch_to_tsquery('english', ${query})
-            ) DESC
+            WHERE title ILIKE ${'%' + query + '%'}
+            ORDER BY title
             LIMIT 10
         `) as unknown as QueryResult[];
 
@@ -40,10 +30,11 @@ export async function GET({ url }) {
                 id: row.id,
                 title: row.title.slice(0, 200),
                 slug: row.slug,
-                content: row.content.slice(0, 200)
+                content: "LOL!"
             }))
         });
-    } catch {
+    } catch (error) {
+        console.error('Search error:', error);
         return json({ results: [] });
     }
 }

@@ -24,3 +24,7 @@ vite.config.ts.timestamp-*
 
 src/serverside_utils/input.txt
 src/serverside_utils/output.md
+src/serverside_utils/enwiki-20241201-pages-articles-multistream.xml
+src/serverside_utils/wikipedia_raw.jsonl
+src/serverside_utils/structure.json
+src/serverside_utils/doc.json
