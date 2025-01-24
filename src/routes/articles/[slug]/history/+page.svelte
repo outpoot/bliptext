@@ -9,6 +9,7 @@
 	import Gavel from 'lucide-svelte/icons/gavel';
 
 	import { currentUser } from '$lib/stores/user';
+	import { styles } from '$lib/utils/styles';
 
 	interface RevisionWithUser {
 		id: string;
@@ -165,11 +166,11 @@
 							<Button
 								variant="destructive"
 								size="sm"
-								class="flex items-center gap-2"
+								class="group"
 								onclick={() => banUser(revision.user.id)}
 								disabled={revision.user.id === $currentUser?.id}
 							>
-								<Gavel class="h-4 w-4" />
+								<Gavel class={`${styles.iconClass} mr-0`} />
 								Ban
 							</Button>
 						{/if}

@@ -28,6 +28,7 @@
 	import Ban from 'lucide-svelte/icons/ban';
 	import X from 'lucide-svelte/icons/x';
 	import { Button } from '$lib/components/ui/button';
+	import { styles } from '$lib/utils/styles';
 	let searchDialogOpen = $state(false);
 
 	async function handleSignIn() {
@@ -121,10 +122,7 @@
 							<Folder class="h-6 w-6" />
 						</a>
 					</Button>
-					<Button 
-						variant="outline"
-						onclick={() => (searchDialogOpen = true)}
-					>
+					<Button variant="outline" onclick={() => (searchDialogOpen = true)}>
 						<SearchIcon class="h-6 w-6" />
 					</Button>
 				</div>
@@ -145,42 +143,42 @@
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem>
-									<a href="/legal/privacy" class="flex w-full items-center">
-										<Shield class="mr-2 h-4 w-4" />
+									<a href="/legal/privacy" class={styles.buttonClass}>
+										<Shield class={styles.iconClass} />
 										<span>Privacy Policy</span>
 									</a>
 								</DropdownMenuItem>
 								<DropdownMenuItem>
-									<a href="/legal/terms" class="flex w-full items-center">
-										<Book class="mr-2 h-4 w-4" />
+									<a href="/legal/terms" class={styles.buttonClass}>
+										<Book class={styles.iconClass} />
 										<span>Terms of Service</span>
 									</a>
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								{#if $currentUser.isAdmin}
 									<DropdownMenuItem class="text-primary">
-										<a href="/admin/new" class="flex w-full items-center">
-											<FilePlus class="mr-2 h-4 w-4" />
+										<a href="/admin/new" class={styles.buttonClass}>
+											<FilePlus class={styles.iconClass} />
 											<span>New</span>
 										</a>
 									</DropdownMenuItem>
 									<DropdownMenuItem class="text-primary">
-										<a href="/admin/bans" class="flex w-full items-center">
-											<Ban class="mr-2 h-4 w-4" />
+										<a href="/admin/bans" class={styles.buttonClass}>
+											<Ban class={styles.iconClass} />
 											<span>Bans</span>
 										</a>
 									</DropdownMenuItem>
 								{/if}
 								<DropdownMenuSeparator />
-								<DropdownMenuItem onclick={handleSignOut} class="cursor-pointer">
-									<LogOut class="mr-2 h-4 w-4" />
+								<DropdownMenuItem onclick={handleSignOut} class="group cursor-pointer">
+									<LogOut class={styles.iconClass} />
 									<span>Sign out</span>
 								</DropdownMenuItem>
 								<DropdownMenuItem
-									class="cursor-pointer text-destructive"
+									class="group cursor-pointer text-destructive"
 									onclick={handleDeleteAccount}
 								>
-									<UserX class="mr-2 h-4 w-4" />
+									<UserX class={styles.iconClass} />
 									<span>Delete account</span>
 								</DropdownMenuItem>
 							</DropdownMenuContent>
@@ -229,10 +227,10 @@
 		<div class="relative w-full max-w-lg">
 			<div class="mb-2 flex items-center justify-end">
 				<button
-					class="rounded-md bg-secondary px-2.5 py-2 text-sm font-medium hover:bg-secondary/80"
+					class="rounded-md bg-secondary px-2.5 py-2 text-sm font-medium hover:bg-secondary/80 group"
 					onclick={() => (searchDialogOpen = false)}
 				>
-					<X class="h-4 w-4" />
+					<X class={styles.iconClass} />
 				</button>
 			</div>
 

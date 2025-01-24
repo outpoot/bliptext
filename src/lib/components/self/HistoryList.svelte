@@ -7,6 +7,7 @@
 	import { toast } from 'svelte-sonner';
 	import Gavel from 'lucide-svelte/icons/gavel';
 	import { currentUser } from '$lib/stores/user';
+	import { styles } from '$lib/utils/styles';
 
 	export let revisions: any[];
 	export let loading = false;
@@ -69,11 +70,11 @@
 						<Button
 							variant="destructive"
 							size="sm"
-							class="flex items-center gap-2"
+							class="flex items-center gap-2 group"
 							onclick={() => onBanUser(revision.user.id)}
 							disabled={revision.user.id === $currentUser?.id}
 						>
-							<Gavel class="h-4 w-4" />
+							<Gavel class={styles.iconClass} />
 							Ban
 						</Button>
 					{/if}

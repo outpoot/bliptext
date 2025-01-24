@@ -11,6 +11,7 @@
 	import Info from 'lucide-svelte/icons/info';
 
 	import type { Article } from '$lib/server/db/schema';
+	import { styles } from '$lib/utils/styles';
 	let { article, isEditPage = false } = $props<{
 		article: Article;
 		isEditPage?: boolean;
@@ -56,6 +57,8 @@
 		window.URL.revokeObjectURL(url);
 		document.body.removeChild(a);
 	}
+
+	const buttonClass = "w-full justify-start group";
 </script>
 
 <div class="sticky top-4">
@@ -71,27 +74,27 @@
 	<div class="space-y-1 overflow-hidden text-sm" class:h-0={isCollapsed}>
 		<Button
 			variant="ghost"
-			class="w-full justify-start"
+			class={buttonClass}
 			href={isEditPage ? `../${slug}` : `${slug}/edit`}
 		>
-			<Pen class="mr-2 h-4 w-4" />
+			<Pen class={styles.iconClass} />
 			{isEditPage ? 'View original' : 'Edit'}
 		</Button>
-		<Button variant="ghost" class="w-full justify-start" href={`${slug}/history`}>
-			<History class="mr-2 h-4 w-4" /> History
+		<Button variant="ghost" class={buttonClass} href={`${slug}/history`}>
+			<History class={styles.iconClass} /> History
 		</Button>
-		<Button variant="ghost" class="w-full justify-start" onclick={handleCopy}>
+		<Button variant="ghost" class={buttonClass} onclick={handleCopy}>
 			{#if showCopyCheck}
 				<Check class="copy-check mr-2 h-4 w-4" /> Copied!
 			{:else}
-				<Link class="mr-2 h-4 w-4" /> Copy link
+				<Link class={styles.iconClass} /> Copy link
 			{/if}
 		</Button>
-		<Button variant="ghost" class="w-full justify-start" onclick={handleDownload}>
-			<Download class="mr-2 h-4 w-4" /> Download
+		<Button variant="ghost" class={buttonClass} onclick={handleDownload}>
+			<Download class={styles.iconClass} /> Download
 		</Button>
-		<Button variant="ghost" class="w-full justify-start" onclick={() => (showPageInfo = true)}>
-			<Info class="mr-2 h-4 w-4" /> Page information
+		<Button variant="ghost" class={buttonClass} onclick={() => (showPageInfo = true)}>
+			<Info class={styles.iconClass} /> Page information
 		</Button>
 	</div>
 </div>

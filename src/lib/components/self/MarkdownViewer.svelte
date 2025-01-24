@@ -28,6 +28,7 @@
 	import X from 'lucide-svelte/icons/x';
 	import Pen from 'lucide-svelte/icons/pen';
 	import Eye from 'lucide-svelte/icons/eye';
+	import Badge from '../ui/badge/badge.svelte';
 
 	let showMobileTools = $state(false);
 	let showMobileContents = $state(false);
@@ -43,7 +44,7 @@
 		selfId = '',
 		ws,
 		onInputKeyDown = undefined,
-		onInput = undefined,
+		onInput = undefined
 	} = $props<{
 		content: string;
 		title?: string;
@@ -333,7 +334,15 @@
 				<div class="mb-4 ml-3 flex items-baseline gap-2">
 					<FileText class="h-5 w-5 text-muted-foreground" />
 					<h1 id="title" class="text-3xl font-bold">{article.title || 'Untitled'}</h1>
+
+					<div class="ml-auto">
+						<Badge variant="outline">
+							<Users class="mr-1.5 h-3 w-3" />
+							<span>{$activeUsers}</span>
+						</Badge>
+					</div>
 				</div>
+
 				<Separator class="mb-8" />
 			{/if}
 			<div class="markdown-content px-4 md:px-0">
@@ -352,9 +361,11 @@
 				<FileText class="h-5 w-5 text-muted-foreground" />
 				<h1 id="title" class="text-3xl font-bold">{article?.title || 'Untitled'}</h1>
 
-				<div class="ml-auto flex items-center gap-1.5 text-muted-foreground">
-					<Users class="h-4 w-4" />
-					<span class="text-sm font-medium">{$activeUsers}</span>
+				<div class="ml-auto">
+					<Badge variant="secondary">
+						<Users class="mr-1.5 h-3 w-3" />
+						<span>{$activeUsers}</span>
+					</Badge>
 				</div>
 			</div>
 			<Separator class="mb-8" />
@@ -496,11 +507,7 @@
 	{#if true}
 		{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
 		{#if element}
-			<FloatingWord 
-				word={hover.word} 
-				element={element} 
-				image={hover.editorImage} 
-			/>
+			<FloatingWord word={hover.word} {element} image={hover.editorImage} />
 		{/if}
 	{/if}
 {/each}
