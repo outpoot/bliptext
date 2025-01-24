@@ -1,9 +1,10 @@
 <script lang="ts">
-	let { word, x, y, image } = $props<{
+	let { word, image, element, x, y } = $props<{
 		word: string;
-		x: number;
-		y: number;
 		image?: string;
+		element?: HTMLElement;
+		x?: number;
+		y?: number;
 	}>();
 
 	const colors = ['#fecaca', '#fed7aa', '#fef08a', '#bbf7d0', '#bae6fd', '#ddd6fe', '#fbcfe8'];
@@ -21,14 +22,43 @@
 					? (word.match(/\[(.*?)\]/)?.[1] ?? word)
 					: word
 	);
+
+	let floatingEl: HTMLDivElement;
+
+	function updatePosition() {
+		if (!floatingEl) return;
+
+		if (element) {
+			const rect = element.getBoundingClientRect();
+			floatingEl.style.position = 'fixed';
+			floatingEl.style.left = `${rect.left}px`;
+			floatingEl.style.top = `${rect.top - 10}px`;
+		} else if (x !== undefined && y !== undefined) {
+			floatingEl.style.position = 'fixed';
+			floatingEl.style.left = `${x}px`;
+			floatingEl.style.top = `${y}px`;
+		}
+	}
+
+	$effect(() => {
+		updatePosition();
+		if (element) {
+			window.addEventListener('scroll', updatePosition);
+			window.addEventListener('resize', updatePosition);
+		}
+		
+		return () => {
+			window.removeEventListener('scroll', updatePosition);
+			window.removeEventListener('resize', updatePosition);
+		};
+	});
 </script>
 
 <div
-	class="pointer-events-none fixed z-50 rotate-3 select-none p-1 font-mono text-sm shadow-lg {image
+	bind:this={floatingEl}
+	class="pointer-events-none z-50 rotate-3 select-none p-1 font-mono text-sm shadow-lg {image
 		? 'opacity-90'
 		: ''}"
-	style:left="{x}px"
-	style:top="{y}px"
 	style:background-color={backgroundColor}
 >
 	<div class="relative flex items-center gap-2">

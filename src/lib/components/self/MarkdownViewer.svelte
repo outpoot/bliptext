@@ -495,9 +495,12 @@
 {#each Object.entries(otherUsersHovers) as [_, hover]}
 	{#if true}
 		{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
-		{@const rect = element?.getBoundingClientRect()}
-		{#if element && rect}
-			<FloatingWord word={hover.word} x={rect.left} y={rect.top - 10} image={hover.editorImage} />
+		{#if element}
+			<FloatingWord 
+				word={hover.word} 
+				element={element} 
+				image={hover.editorImage} 
+			/>
 		{/if}
 	{/if}
 {/each}
