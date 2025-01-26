@@ -63,6 +63,7 @@
 		"rehype-highlight": "^7.0.1",
 		"svelte-exmarkdown": "^4.0.2",
 		"svelte-sonner": "^0.3.28",
+		"svelte-turnstile": "^0.10.0",
 		"tempy": "^3.1.0",
 		"wtf_wikipedia": "^10.3.2"
 	}

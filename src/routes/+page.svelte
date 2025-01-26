@@ -2,6 +2,7 @@
 	import LogoBlink from '$lib/components/self/LogoBlink.svelte';
 	import { Label } from '$lib/components/ui/label';
 	import { Separator } from '$lib/components/ui/separator';
+	import { page } from '$app/state';
 
 	import { fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -108,7 +109,7 @@
 	<meta property="og:title" content="Bliptext" />
 	<meta property="og:description" content="A wiki where you can edit one word every 30 seconds. Let chaos ensue :)" />
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content={window.location.href} />
+	<meta property="og:url" content={page.url.href} />
 	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 

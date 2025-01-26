@@ -1,15 +1,17 @@
 <script lang="ts">
 	import type { Article } from '$lib/server/db/schema';
 	import MarkdownViewer from '$lib/components/self/MarkdownViewer.svelte';
+	import { page } from '$app/state';
 
 	let { data } = $props<{ data: { article: Article } }>();
 
-	const summary = data.article.content
-		?.split(':::')?.[2]
-		.slice(200)
-		.replace(/\*\*(.*?)\*\*/g, '$1')
-		.replace(/([*_])(.*?)\1/g, '$2')
-		.replace(/\[(.*?)\]\(.*?\)/g, '$1') + "...";
+	const summary =
+		data.article.content
+			?.split(':::')?.[2]
+			.slice(200)
+			.replace(/\*\*(.*?)\*\*/g, '$1')
+			.replace(/([*_])(.*?)\1/g, '$2')
+			.replace(/\[(.*?)\]\(.*?\)/g, '$1') + '...';
 </script>
 
 <svelte:head>
@@ -18,8 +20,7 @@
 	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
 	<meta property="og:title" content={data.article.title} />
 	<meta property="og:description" content={summary} />
-	<meta property="og:type" content="website" />
-	<meta property="og:url" content={window.location.href} />
+	<meta property="og:url" content={page.url.href} />
 	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 

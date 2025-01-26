@@ -36,9 +36,39 @@ const articleUsers = new Map<string, Set<string>>();
 const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
 const editorSockets = new Map<string, ServerWebSocket<WebSocketData>>();
 
+async function validateTurnstile(token: string): Promise<boolean> {
+	const SECRET_KEY = process.env.TURNSTILE_SECRET_KEY!;
+	const formData = new FormData();
+	formData.append('secret', SECRET_KEY);
+	formData.append('response', token);
+
+	try {
+		const response = await fetch(
+			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+			{ method: 'POST', body: formData }
+		);
+		const data = await response.json();
+		return data.success;
+	} catch (error) {
+		console.error('Turnstile validation error:', error);
+		return false;
+	}
+}
+
 async function validateAuth(request: Request): Promise<{ id: string; isBanned: boolean } | null> {
-	const token = new URL(request.url).searchParams.get('token');
+	const url = new URL(request.url);
+	const token = url.searchParams.get('token');
+	const captchaToken = url.searchParams.get('captcha');
+	const connectionType = url.searchParams.get('type');
+
 	if (!token) return null;
+
+	if (connectionType === 'editor') {
+		if (!captchaToken || !await validateTurnstile(captchaToken)) {
+			console.error('CAPTCHA validation failed for editor');
+			return null;
+		}
+	}
 
 	try {
 		const sessionData = await normalRedis.get(`ws:${token}`);

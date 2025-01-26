@@ -9,6 +9,8 @@
 	import LogoBlink from '$lib/components/self/LogoBlink.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import Paintbrush from 'lucide-svelte/icons/paintbrush';
+	import { page } from '$app/state';
+
 </script>
 
 <svelte:head>
@@ -18,7 +20,7 @@
 	<meta property="og:title" content="About: Bliptext" />
 	<meta property="og:description" content="Learn more about Bliptext, the wiki where you edit 1 word each 30 seconds." />
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content={window.location.href} />
+	<meta property="og:url" content={page.url.href} />
 	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 

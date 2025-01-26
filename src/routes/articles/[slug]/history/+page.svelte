@@ -7,6 +7,7 @@
 	import { fade } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
 	import Gavel from 'lucide-svelte/icons/gavel';
+	import { page } from '$app/state';
 
 	import { currentUser } from '$lib/stores/user';
 	import { styles } from '$lib/utils/styles';
@@ -122,7 +123,7 @@
 		content="View the revisions for this article on Bliptext!"
 	/>
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content={window.location.href} />
+	<meta property="og:url" content={page.url.href} />
 	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 

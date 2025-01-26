@@ -100,6 +100,7 @@ cp .env.example .env
 ```plaintext
 REDIS_URL=<your-redis-url>
 SITE_URL=http://localhost:3000
+TURNSTILE_SECRET_KEY=<your-turnstile-secret-key>
 ```
 
 3. Run the server:

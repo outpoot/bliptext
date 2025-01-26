@@ -9,6 +9,7 @@
 	import WebSocketManager, {
 		type WebSocketManagerHandle
 	} from '$lib/components/self/WebSocketManager.svelte';
+	import { page } from '$app/state';
 
 	let activeArticles = $state<
 		Array<{
@@ -56,7 +57,7 @@
 	<meta property="og:title" content="Bliptext" />
 	<meta property="og:description" content="A wiki where you can edit one word every 30 seconds. Let chaos ensue :)" />
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content={window.location.href} />
+	<meta property="og:url" content={page.url.href} />
 	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 

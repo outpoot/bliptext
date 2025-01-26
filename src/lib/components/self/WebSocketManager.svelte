@@ -6,8 +6,9 @@
 
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
+	import { PUBLIC_WEBSOCKET_URL, PUBLIC_TURNSTILE_SITE_KEY } from '$env/static/public';
 	import { currentUser } from '$lib/stores/user';
+	import { Turnstile } from 'svelte-turnstile';
 
 	type WebSocketType = 'viewer' | 'editor';
 
@@ -29,6 +30,9 @@
 
 	let ws = $state<WebSocket | null>(null);
 	let reconnectAttempts = $state(0);
+	let captchaVerified = $state(false);
+	let captchaToken = $state<string | null>(null);
+	let captchaError = $state<string | null>(null);
 	const MAX_RECONNECT_ATTEMPTS = 5;
 	const BASE_DELAY = 1000;
 
@@ -43,8 +47,14 @@
 		return (await res.json()).token;
 	}
 
-	async function initializeWebSocket(token: string) {
-		ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${token}&type=${type}`);
+	async function initializeWebSocket(wsToken: string) {
+		if (type === 'editor' && !captchaToken) {
+			throw new Error('CAPTCHA verification required');
+		}
+
+		ws = new WebSocket(
+			`${PUBLIC_WEBSOCKET_URL}?token=${wsToken}&captcha=${captchaToken}&type=${type}`
+		);
 
 		ws.addEventListener('open', () => {
 			reconnectAttempts = 0;
@@ -67,20 +77,40 @@
 				return;
 			}
 
+			// Reset CAPTCHA state for reconnect
+			captchaVerified = false;
+			captchaToken = null;
+
 			const delay = BASE_DELAY * Math.pow(2, reconnectAttempts);
 			reconnectAttempts++;
 
 			await new Promise((resolve) => setTimeout(resolve, delay));
-			const newToken = await getWebSocketToken();
-			initializeWebSocket(newToken);
+			handleReconnect();
 		});
-
-		return ws;
 	}
 
-	onMount(() => {
-		getWebSocketToken().then((token) => initializeWebSocket(token));
+	async function handleReconnect() {
+		try {
+			const token = await getWebSocketToken();
+			await initializeWebSocket(token);
+		} catch (error) {
+			console.error('Reconnect failed:', error);
+		}
+	}
 
+	$effect(() => {
+		if (captchaVerified && captchaToken && !ws) {
+			getWebSocketToken()
+				.then(initializeWebSocket)
+				.catch((error) => {
+					toast.error(`Connection failed: ${error.message}`);
+					captchaVerified = false;
+					captchaToken = null;
+				});
+		}
+	});
+
+	onMount(() => {
 		return () => {
 			ws?.close();
 			ws = null;
@@ -96,4 +126,53 @@
 	};
 </script>
 
+{#if !captchaVerified && !$currentUser?.isBanned && type === 'editor'}
+	<div class="captcha-overlay">
+		<div class="captcha-container">
+			<Turnstile
+				siteKey={PUBLIC_TURNSTILE_SITE_KEY}
+				on:callback={({ detail: { token } }) => {
+					captchaVerified = true;
+					captchaToken = token;
+					captchaError = null;
+				}}
+				on:error={({ detail: { code } }) => {
+					captchaError = `CAPTCHA error: ${code}`;
+					captchaVerified = false;
+				}}
+				theme="dark"
+				size="normal"
+			/>
+			{#if captchaError}
+				<p class="text-destructive">{captchaError}</p>
+			{/if}
+			<p class="text-muted-foreground text-sm mt-2">
+				Please verify you're human to continue
+			</p>
+		</div>
+	</div>
+{/if}
+
 {@render children?.({ send })}
+
+<style>
+	.captcha-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.8);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.captcha-container {
+		background: white;
+		padding: 2rem;
+		border-radius: 8px;
+		text-align: center;
+	}
+</style>

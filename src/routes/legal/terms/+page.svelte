@@ -4,6 +4,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import ScrollText from 'lucide-svelte/icons/scroll-text';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 
 	const LAST_UPDATED = 'January 20, 2024';
 </script>
@@ -15,7 +16,7 @@
 	<meta property="og:title" content="Terms of Service: Bliptext" />
 	<meta property="og:description" content="Read the terms of service of Bliptext, the wiki where you edit 1 word each 30 seconds." />
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content={window.location.href} />
+	<meta property="og:url" content={page.url.href} />
 	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 
