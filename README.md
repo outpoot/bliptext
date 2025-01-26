@@ -18,9 +18,9 @@ Desktop
 Mobile
 
 <div style="display: flex; gap: 10px;">
-    <img src="github_assets/mobile_bliptext_1.png" width="300" />
-    <img src="github_assets/mobile_bliptext_2.png" width="300" />
-    <img src="github_assets/mobile_bliptext_3.png" width="300" />
+    <img src="github_assets/mobile_bliptext_1.png" width="200" />
+    <img src="github_assets/mobile_bliptext_2.png" width="200" />
+    <img src="github_assets/mobile_bliptext_3.png" width="200" />
 </div>
 
 Custom markdown flavor
