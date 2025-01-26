@@ -6,7 +6,7 @@ We ported **2,112,863** (2.1 million) Wikipedia articles and removed edit restri
 
 Create an account, find any article (or pick from the most active ones), and edit it live alongside others.
 
-// vid here
+https://github.com/user-attachments/assets/1be617e2-c907-4d90-8d79-86b9216b6169
 
 Get your friends to vandalize pages, completely rewrite them and shape Bliptext into a misinformation-fest!
 
@@ -18,9 +18,9 @@ Desktop
 Mobile
 
 <div style="display: flex; gap: 10px;">
-    <img src="github_assets/mobile_bliptext_1.png" width="300" />
-    <img src="github_assets/mobile_bliptext_2.png" width="300" />
-    <img src="github_assets/mobile_bliptext_3.png" width="300" />
+    <img src="github_assets/mobile_bliptext_1.png" width="200" />
+    <img src="github_assets/mobile_bliptext_2.png" width="200" />
+    <img src="github_assets/mobile_bliptext_3.png" width="200" />
 </div>
 
 Custom markdown flavor
