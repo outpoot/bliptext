@@ -64,12 +64,18 @@ This renders:
 	let imageDetails = $state<ImageDetails | null>(null);
 	let infoItems = $state<InfoItem[]>([]);
 
-	let isSummary = $derived(
+	const isSummary = $derived(
 		node?.type === 'element' &&
 			node?.tagName === 'p' &&
-			node?.children?.[0]?.type === 'text' &&
-			node?.children?.[0]?.value?.startsWith(':::summary')
+			(node.children || [])
+				.filter((c) => c.type === 'text')
+				.map((c) => c.value || '')
+				.join('')
+				.trim()
+				.startsWith(':::summary')
 	);
+
+	const hasContent = $derived(!!imageDetails || infoItems.length > 0);
 
 	$effect(() => {
 		if (!isSummary || !node.children) return;
@@ -92,29 +98,30 @@ This renders:
 		let currentLabel = '';
 		let currentContent: InfoItem['content'] = [];
 		let items: InfoItem[] = [];
+		let isCollecting = false;
 
-		// loop thru haystack
 		node.children.forEach((child) => {
-			// extract bold elements & push them
 			if (child.type === 'element' && child.tagName === 'strong' && child.children?.[0]) {
 				if (currentLabel) {
 					items.push({ label: currentLabel, content: currentContent });
 				}
 				currentLabel = child.children[0].value || '';
 				currentContent = [];
-			} // extract hyperlinks & push them
-			else if (child.type === 'element' && child.tagName === 'a') {
-				const linkText = child.children?.[0]?.value || '';
-				const href = child.properties?.href || '';
-				currentContent.push({ type: 'link', value: linkText, href });
-			} // EOF
-			else if (
-				child.type === 'text' &&
-				child.value &&
-				!child.value.includes(':::summary') &&
-				!child.value.includes(':::')
-			) {
-				currentContent.push({ type: 'text', value: child.value });
+				isCollecting = true;
+			} else if (child.type === 'text' && child.value && isCollecting) {
+				const closingIdx = child.value.indexOf(':::');
+				if (closingIdx !== -1) {
+					const value = child.value.slice(0, closingIdx).trim();
+					if (value) {
+						currentContent.push({ type: 'text', value });
+					}
+					isCollecting = false; // Stop collecting after closing
+				} else {
+					const trimmed = child.value.trim();
+					if (trimmed) {
+						currentContent.push({ type: 'text', value: trimmed });
+					}
+				}
 			}
 		});
 
@@ -127,29 +134,31 @@ This renders:
 </script>
 
 {#if isSummary}
-	<Card
-		class="float-right clear-right mb-6 ml-4 max-w-sm overflow-hidden rounded-lg border bg-card"
-	>
-		{#if imageDetails}
-			<img src={imageDetails.src} alt={imageDetails.alt} class="summary-image" />
-		{/if}
-		<CardContent class="space-y-2 p-4">
-			{#each infoItems as { label, content }}
-				<div class="flex gap-2">
-					<span class="min-w-24 font-bold">{label}</span>
-					<span class="flex-1">
-						{#each content as part}
-							{#if part.type === 'link'}
-								<a href={part.href} class="text-primary hover:underline">{part.value}</a>
-							{:else}
-								{part.value}
-							{/if}
-						{/each}
-					</span>
-				</div>
-			{/each}
-		</CardContent>
-	</Card>
+	{#if hasContent}
+		<Card
+			class="float-right clear-right mb-6 ml-4 max-w-sm overflow-hidden rounded-lg border bg-card"
+		>
+			{#if imageDetails}
+				<img src={imageDetails.src} alt={imageDetails.alt} class="summary-image" />
+			{/if}
+			<CardContent class="space-y-2 p-4">
+				{#each infoItems as { label, content }}
+					<div class="flex gap-2">
+						<span class="min-w-24 font-bold">{label}</span>
+						<span class="flex-1">
+							{#each content as part}
+								{#if part.type === 'link'}
+									<a href={part.href} class="text-primary hover:underline">{part.value}</a>
+								{:else}
+									{part.value}
+								{/if}
+							{/each}
+						</span>
+					</div>
+				{/each}
+			</CardContent>
+		</Card>
+	{/if}
 {:else}
 	<p>
 		{@render children?.()}
