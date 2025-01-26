@@ -6,7 +6,7 @@ We ported **2,112,863** (2.1 million) Wikipedia articles and removed edit restri
 
 Create an account, find any article (or pick from the most active ones), and edit it live alongside others.
 
-// vid here
+https://github.com/user-attachments/assets/1be617e2-c907-4d90-8d79-86b9216b6169
 
 Get your friends to vandalize pages, completely rewrite them and shape Bliptext into a misinformation-fest!
 
