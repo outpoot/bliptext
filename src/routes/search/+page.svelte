@@ -34,6 +34,17 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Search Results: Bliptext</title>
+	<meta name="description" content="Search results for '{query}' on Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta name="keywords" content="search, results, Bliptext" />
+	<meta property="og:title" content="Search Results: Bliptext" />
+	<meta property="og:description" content="Search results for '{query}' on Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={window.location.href} />
+	<meta property="og:image" content="/favicon.svg" />
+</svelte:head>
+
 <div class="container mx-auto py-8">
 	<div class="mb-8 flex items-center gap-4">
 		<Button variant="ghost" onclick={handleBack} class="p-2">

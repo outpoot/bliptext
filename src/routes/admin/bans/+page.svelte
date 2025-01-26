@@ -50,6 +50,11 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Banned Users - Admin</title>
+	<meta name="description" content="Manage banned users in the admin panel. Unban users and view details about banned users." />
+</svelte:head>
+
 <div class="container mx-auto px-4 py-4 sm:py-8">
 	<div class="mb-4 sm:mb-8">
 		<h1 class="text-2xl font-bold sm:text-3xl">Bans</h1>

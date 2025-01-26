@@ -101,6 +101,17 @@
 	];
 </script>
 
+<svelte:head>
+	<title>Bliptext</title>
+	<meta name="description" content="A wiki where you can edit one word every 30 seconds. Let chaos ensue :)" />
+	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
+	<meta property="og:title" content="Bliptext" />
+	<meta property="og:description" content="A wiki where you can edit one word every 30 seconds. Let chaos ensue :)" />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={window.location.href} />
+	<meta property="og:image" content="/favicon.svg" />
+</svelte:head>
+
 <div class="relative min-h-screen w-full overflow-x-hidden">
 	<div class="mx-auto max-w-7xl px-4">
 		<div

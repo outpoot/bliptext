@@ -50,6 +50,11 @@ Dog is a [domesticated](articles/domestication) [carnivorous](articles/carnivoro
 	}
 </script>
 
+<svelte:head>
+	<title>New Article - Admin</title>
+	<meta name="description" content="Create new articles as an admin." />
+</svelte:head>
+
 {#if $currentUser?.isAdmin}
 	<div class="container mx-auto py-8">
 		<h1 class="mb-8 text-3xl font-bold">Create</h1>

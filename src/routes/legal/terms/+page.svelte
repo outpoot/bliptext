@@ -8,6 +8,17 @@
 	const LAST_UPDATED = 'January 20, 2024';
 </script>
 
+<svelte:head>
+	<title>Terms of Service: Bliptext</title>
+	<meta name="description" content="Read the terms of service of Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta name="keywords" content="terms, service, agreement, bliptext" />
+	<meta property="og:title" content="Terms of Service: Bliptext" />
+	<meta property="og:description" content="Read the terms of service of Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={window.location.href} />
+	<meta property="og:image" content="/favicon.svg" />
+</svelte:head>
+
 <div class="container mx-auto max-w-4xl py-10">
 	<Card.Root class="p-6">
 		<div class="mb-8 flex items-center gap-3">

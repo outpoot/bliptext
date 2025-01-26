@@ -92,7 +92,28 @@
 			$activeUsers = 1;
 		};
 	});
+
+	const summary = article.content
+		?.split(':::')?.[2]
+		.slice(200)
+		.replace(/\*\*(.*?)\*\*/g, '$1')
+		.replace(/([*_])(.*?)\1/g, '$2')
+		.replace(/\[(.*?)\]\(.*?\)/g, '$1') + "...";
 </script>
+
+<svelte:head>
+	<title>{'Edit: ' + article.title}</title>
+	<meta name="description" content={summary} />
+	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
+	<meta property="og:title" content={article.title} />
+	<meta
+		property="og:description"
+		content={summary}
+	/>
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={window.location.href} />
+	<meta property="og:image" content="/favicon.svg" />
+</svelte:head>
 
 <svelte:window onmousemove={handleMouseMove} />
 

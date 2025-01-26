@@ -112,6 +112,20 @@
 	}
 </script>
 
+<svelte:head>
+	<title>{'History: ' + data.article.title}</title>
+	<meta name="description" content="View the revisions for this article on Bliptext!" />
+	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
+	<meta property="og:title" content={data.article.title} />
+	<meta
+		property="og:description"
+		content="View the revisions for this article on Bliptext!"
+	/>
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={window.location.href} />
+	<meta property="og:image" content="/favicon.svg" />
+</svelte:head>
+
 <div class="container mx-auto px-4 py-4 sm:py-8">
 	<div class="mb-4 sm:mb-8">
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">

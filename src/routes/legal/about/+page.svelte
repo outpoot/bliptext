@@ -11,6 +11,17 @@
 	import Paintbrush from 'lucide-svelte/icons/paintbrush';
 </script>
 
+<svelte:head>
+	<title>About: Bliptext</title>
+	<meta name="description" content="Learn more about Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
+	<meta property="og:title" content="About: Bliptext" />
+	<meta property="og:description" content="Learn more about Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={window.location.href} />
+	<meta property="og:image" content="/favicon.svg" />
+</svelte:head>
+
 <section class="py-10 text-center">
 	<div class="container mx-auto px-4">
 		<div class="flex items-center justify-center gap-3">

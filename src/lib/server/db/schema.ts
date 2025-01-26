@@ -23,7 +23,7 @@ export const articles = pgTable('articles', {
 	id: uuid('id').defaultRandom().primaryKey(),
 	title: varchar('title', { length: 255 }).notNull(),
 	slug: varchar('slug', { length: 255 }).notNull().unique(),
-	content: varchar('content', { length: 100_000 }).notNull(),
+	content: text('content').notNull(),
 	currentRevision: uuid('current_revision').references((): any => revisions.id, {
 		onDelete: 'set null'
 	}),

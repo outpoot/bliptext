@@ -22,7 +22,6 @@
 	import Shield from 'lucide-svelte/icons/shield';
 	import Book from 'lucide-svelte/icons/book';
 
-	import Folder from 'lucide-svelte/icons/folder'; // Example categories icon
 	import SearchIcon from 'lucide-svelte/icons/search';
 	import FilePlus from 'lucide-svelte/icons/file-plus';
 	import Ban from 'lucide-svelte/icons/ban';
@@ -108,20 +107,9 @@
 				<div class="hidden flex-1 px-16 md:block">
 					<SearchBar class="mx-auto w-full md:max-w-2xl" />
 				</div>
-				<a
-					href="/categories"
-					class="hidden rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground md:inline"
-				>
-					Categories
-				</a>
 
 				<!-- Small screen icons for search & categories -->
 				<div class="flex items-center gap-4 md:hidden">
-					<Button variant="outline">
-						<a href="/categories">
-							<Folder class="h-6 w-6" />
-						</a>
-					</Button>
 					<Button variant="outline" onclick={() => (searchDialogOpen = true)}>
 						<SearchIcon class="h-6 w-6" />
 					</Button>
