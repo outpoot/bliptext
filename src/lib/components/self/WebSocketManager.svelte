@@ -9,6 +9,7 @@
 	import { PUBLIC_WEBSOCKET_URL, PUBLIC_TURNSTILE_SITE_KEY } from '$env/static/public';
 	import { currentUser } from '$lib/stores/user';
 	import { Turnstile } from 'svelte-turnstile';
+	import { captchaToken } from '$lib/stores/captcha';
 
 	type WebSocketType = 'viewer' | 'editor';
 
@@ -31,7 +32,6 @@
 	let ws = $state<WebSocket | null>(null);
 	let reconnectAttempts = $state(0);
 	let captchaVerified = $state(false);
-	let captchaToken = $state<string | null>(null);
 	let captchaError = $state<string | null>(null);
 	const MAX_RECONNECT_ATTEMPTS = 5;
 	const BASE_DELAY = 1000;
@@ -48,12 +48,12 @@
 	}
 
 	async function initializeWebSocket(wsToken: string) {
-		if (type === 'editor' && !captchaToken) {
+		if (type === 'editor' && !$captchaToken) {
 			throw new Error('CAPTCHA verification required');
 		}
 
 		ws = new WebSocket(
-			`${PUBLIC_WEBSOCKET_URL}?token=${wsToken}&captcha=${captchaToken}&type=${type}`
+			`${PUBLIC_WEBSOCKET_URL}?token=${wsToken}&captcha=${$captchaToken}&type=${type}`
 		);
 
 		ws.addEventListener('open', () => {
@@ -79,7 +79,7 @@
 
 			// Reset CAPTCHA state for reconnect
 			captchaVerified = false;
-			captchaToken = null;
+			$captchaToken = null;
 
 			const delay = BASE_DELAY * Math.pow(2, reconnectAttempts);
 			reconnectAttempts++;
@@ -99,13 +99,13 @@
 	}
 
 	$effect(() => {
-		if (captchaVerified && captchaToken && !ws) {
+		if (captchaVerified && $captchaToken && !ws) {
 			getWebSocketToken()
 				.then(initializeWebSocket)
 				.catch((error) => {
 					toast.error(`Connection failed: ${error.message}`);
 					captchaVerified = false;
-					captchaToken = null;
+					$captchaToken = null;
 				});
 		}
 	});
@@ -133,7 +133,7 @@
 				siteKey={PUBLIC_TURNSTILE_SITE_KEY}
 				on:callback={({ detail: { token } }) => {
 					captchaVerified = true;
-					captchaToken = token;
+					$captchaToken = token;
 					captchaError = null;
 				}}
 				on:error={({ detail: { code } }) => {

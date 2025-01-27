@@ -29,6 +29,7 @@
 	import Pen from 'lucide-svelte/icons/pen';
 	import Eye from 'lucide-svelte/icons/eye';
 	import Badge from '../ui/badge/badge.svelte';
+	import { captchaToken } from '$lib/stores/captcha';
 
 	let showMobileTools = $state(false);
 	let showMobileContents = $state(false);
@@ -279,7 +280,7 @@
 	async function handleWordChanged({ newWord, wordIndex }: { newWord: string; wordIndex: number }) {
 		const res = await fetch(`/api/articles/${article.slug}/word`, {
 			method: 'PUT',
-			body: JSON.stringify({ wordIndex, newWord })
+			body: JSON.stringify({ wordIndex, newWord, captchaToken: $captchaToken })
 		});
 
 		const data = await res.json();
