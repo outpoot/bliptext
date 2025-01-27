@@ -282,7 +282,7 @@
 	});
 
 	async function handleWordChanged({ newWord, wordIndex }: { newWord: string; wordIndex: number }) {
-		if (!$currentUser && !$captchaVerified) {
+		if (!$captchaVerified) {
 			captchaManager.startVerification();
 			await tick();
 			while (!$captchaVerified) {
