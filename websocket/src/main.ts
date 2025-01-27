@@ -137,7 +137,8 @@ async function handleGetActiveArticles(ws: ServerWebSocket<WebSocketData>): Prom
 
 					const article = await response.json();
 					return {
-						...article,
+						title: article.title,
+						slug: article.slug,
 						activeUsers: articleUsers.get(articleId)?.size ?? 0
 					};
 				} catch (error) {
