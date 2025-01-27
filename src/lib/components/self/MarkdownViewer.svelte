@@ -334,13 +334,6 @@
 				<div class="mb-4 ml-3 flex items-baseline gap-2">
 					<FileText class="h-5 w-5 text-muted-foreground" />
 					<h1 id="title" class="text-3xl font-bold">{article.title || 'Untitled'}</h1>
-
-					<div class="ml-auto">
-						<Badge variant="outline">
-							<Users class="mr-1.5 h-3 w-3" />
-							<span>{$activeUsers}</span>
-						</Badge>
-					</div>
 				</div>
 
 				<Separator class="mb-8" />
