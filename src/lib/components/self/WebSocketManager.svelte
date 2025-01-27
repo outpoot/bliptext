@@ -79,7 +79,7 @@
 
 			// Reset CAPTCHA state for reconnect
 			captchaVerified = false;
-			$captchaToken = null;
+			captchaToken.set(null);
 
 			const delay = BASE_DELAY * Math.pow(2, reconnectAttempts);
 			reconnectAttempts++;
@@ -105,7 +105,7 @@
 				.catch((error) => {
 					toast.error(`Connection failed: ${error.message}`);
 					captchaVerified = false;
-					$captchaToken = null;
+					captchaToken.set(null);;
 				});
 		}
 	});
@@ -133,7 +133,7 @@
 				siteKey={PUBLIC_TURNSTILE_SITE_KEY}
 				on:callback={({ detail: { token } }) => {
 					captchaVerified = true;
-					$captchaToken = token;
+					captchaToken.set(token);
 					captchaError = null;
 				}}
 				on:error={({ detail: { code } }) => {
@@ -142,7 +142,7 @@
 				}}
 				on:expired={() => {
 					captchaVerified = false;
-					$captchaToken = null;
+					captchaToken.set(null);
 				}}
 				theme="dark"
 				size="normal"

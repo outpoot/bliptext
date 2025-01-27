@@ -11,7 +11,7 @@
 		inputProps?: any;
 		onNavigate?: () => void;
 	}>();
-	let isCollapsed = $state(false);
+	let isCollapsed = $state(true);
 
 	let items = $state<{ id: string; level: number; text: string }[]>([]);
 
