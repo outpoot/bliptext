@@ -8,8 +8,13 @@ import {
 	boolean,
 	index,
 	uniqueIndex,
+	type AnyPgColumn,
+	unique,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
+
+// Add this BEFORE table definitions
+export const pgTrigram = sql.raw('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
 
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
@@ -34,24 +39,25 @@ export const user = pgTable("user", {
 	bannedByIdx: index("user_banned_by_idx").on(table.bannedBy),
 }));
 
-export const articles = pgTable('articles', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	title: varchar('title', { length: 255 }).notNull(),
-	slug: varchar('slug', { length: 255 }).notNull().unique(),
-	content: text('content').notNull(),
-	currentRevision: uuid('current_revision').references((): any => revisions.id, {
-		onDelete: 'set null'
-	}),
-	createdBy: text('created_by').references(() => user.id).notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => ({
-	slugIdx: uniqueIndex("articles_slug_idx").on(table.slug),
-	creatorIdx: index("articles_creator_idx")
-		.on(table.createdBy, table.createdAt.desc()),
-	revisionIdx: index("articles_revision_idx").on(table.currentRevision),
-	titleIdx: index("articles_title_idx").on(table.title),
-}));
+export const articles = pgTable("articles", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	title: varchar("title", { length: 255 }).notNull(),
+	slug: varchar("slug", { length: 255 }).notNull(),
+	content: text("content").notNull(),
+	current_revision: uuid("current_revision").references((): AnyPgColumn => revisions.id, { onDelete: "set null" }),
+	created_by: text("created_by").notNull().references(() => user.id),
+	created_at: timestamp("created_at").defaultNow().notNull(),
+	updated_at: timestamp("updated_at").defaultNow().notNull(),
+	search_vector: text("search_vector").notNull().default('')
+}, (table) => {
+	return {
+		creator_idx: index("articles_creator_idx").using("btree", table.created_by, table.created_at),
+		revision_idx: index("articles_revision_idx").using("btree", table.current_revision),
+		slug_idx: uniqueIndex("articles_slug_idx").using("btree", table.slug),
+		title_idx: index("articles_title_idx").using("btree", table.title),
+		articles_slug_unique: unique("articles_slug_unique").on(table.slug),
+	}
+});
 
 export const revisions = pgTable('revisions', {
 	id: uuid('id').defaultRandom().primaryKey(),

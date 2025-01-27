@@ -9,16 +9,23 @@ export async function GET({ url }) {
 
     try {
         const startTime = Date.now();
-        
+
         const results = await db
             .select({
                 id: articles.id,
                 title: articles.title,
-                slug: articles.slug
+                slug: articles.slug,
+                rank: sql<number>`
+                    (ts_rank(${articles.search_vector}, websearch_to_tsquery('english', ${query})) +
+                    similarity(${articles.title}, ${query}))
+                `.as('rank')
             })
             .from(articles)
-            .where(sql`${articles.title} ILIKE ${'%' + query + '%'}`)
-            .orderBy(articles.title)
+            .where(
+                sql`${articles.search_vector} @@ websearch_to_tsquery('english', ${query}) OR 
+                    similarity(${articles.title}, ${query}) > 0.1`
+            )
+            .orderBy(sql`rank DESC`)
             .limit(10);
 
         console.log(`Search for "${query}" took ${Date.now() - startTime}ms`);
@@ -33,9 +40,9 @@ export async function GET({ url }) {
         });
     } catch (error) {
         console.error('Search error:', error);
-        return json({ 
+        return json({
             results: [],
-            error: "Search temporarily unavailable" 
+            error: "Search temporarily unavailable"
         }, { status: 500 });
     }
 }

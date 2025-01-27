@@ -5,64 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1736499403233,
-      "tag": "0000_yellow_rick_jones",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1736512083776,
-      "tag": "0001_foamy_tombstone",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1737305657779,
-      "tag": "0002_dusty_stepford_cuckoos",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1737306846342,
-      "tag": "0003_messy_jack_murdock",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1737400959822,
-      "tag": "0004_icy_caretaker",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1737401200933,
-      "tag": "0005_glorious_the_anarchist",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1737401316254,
-      "tag": "0006_noisy_ikaris",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1737817494381,
-      "tag": "0007_noisy_trish_tilby",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1738000349603,
-      "tag": "0008_striped_caretaker",
+      "when": 1738003893819,
+      "tag": "0000_smooth_betty_ross",
       "breakpoints": true
     }
   ]
