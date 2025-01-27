@@ -140,15 +140,17 @@
 					captchaError = `CAPTCHA error: ${code}`;
 					captchaVerified = false;
 				}}
+				on:expired={() => {
+					captchaVerified = false;
+					$captchaToken = null;
+				}}
 				theme="dark"
 				size="normal"
 			/>
 			{#if captchaError}
 				<p class="text-destructive">{captchaError}</p>
 			{/if}
-			<p class="text-muted-foreground text-sm mt-2">
-				Please verify you're human to continue
-			</p>
+			<p class="mt-2 text-sm text-muted-foreground">Please verify you're human to continue</p>
 		</div>
 	</div>
 {/if}
