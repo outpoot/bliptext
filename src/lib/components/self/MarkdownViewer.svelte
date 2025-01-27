@@ -29,10 +29,14 @@
 	import Pen from 'lucide-svelte/icons/pen';
 	import Eye from 'lucide-svelte/icons/eye';
 	import Badge from '../ui/badge/badge.svelte';
-	import { captchaToken } from '$lib/stores/captcha';
+	import { captchaToken, captchaVerified } from '$lib/stores/captcha';
+	import CaptchaManager from './CaptchaManager.svelte';
+	import { currentUser } from '$lib/stores/user';
+	import { tick } from 'svelte';
 
 	let showMobileTools = $state(false);
 	let showMobileContents = $state(false);
+	let captchaManager: CaptchaManager;
 
 	let {
 		content,
@@ -278,6 +282,14 @@
 	});
 
 	async function handleWordChanged({ newWord, wordIndex }: { newWord: string; wordIndex: number }) {
+		if (!$currentUser && !$captchaVerified) {
+			captchaManager.startVerification();
+			await tick();
+			while (!$captchaVerified) {
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			}
+		}
+
 		const res = await fetch(`/api/articles/${article.slug}/word`, {
 			method: 'PUT',
 			body: JSON.stringify({ wordIndex, newWord, captchaToken: $captchaToken })
@@ -296,6 +308,7 @@
 			return;
 		}
 
+		$captchaVerified = false;
 		// update UI after successful edit
 		wordProcessor.replaceWord(newWord, selectedElement!, () => {});
 		cooldown.startCooldown(30000);
@@ -314,6 +327,8 @@
 		showLinkDialog = false;
 	}
 </script>
+
+<CaptchaManager bind:this={captchaManager} />
 
 <!-- Template -->
 {#if showSidebars}
