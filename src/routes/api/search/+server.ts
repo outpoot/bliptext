@@ -8,33 +8,34 @@ export async function GET({ url }) {
     if (!query || query.length < 2) return json({ results: [] });
 
     try {
-        interface QueryResult {
-            id: string;
-            title: string;
-            slug: string;
-        }
+        const startTime = Date.now();
+        
+        const results = await db
+            .select({
+                id: articles.id,
+                title: articles.title,
+                slug: articles.slug
+            })
+            .from(articles)
+            .where(sql`${articles.title} ILIKE ${'%' + query + '%'}`)
+            .orderBy(articles.title)
+            .limit(10);
 
-        const results = await db.execute(sql`
-            SELECT 
-                id,
-                title,
-                slug
-            FROM ${articles}
-            WHERE title ILIKE ${'%' + query + '%'}
-            ORDER BY title
-            LIMIT 10
-        `) as unknown as QueryResult[];
+        console.log(`Search for "${query}" took ${Date.now() - startTime}ms`);
 
         return json({
             results: results.map(row => ({
                 id: row.id,
                 title: row.title.slice(0, 200),
                 slug: row.slug,
-                content: "LOL!"
+                content: "View article about " + row.title.slice(0, 100) + "..."
             }))
         });
     } catch (error) {
         console.error('Search error:', error);
-        return json({ results: [] });
+        return json({ 
+            results: [],
+            error: "Search temporarily unavailable" 
+        }, { status: 500 });
     }
 }
