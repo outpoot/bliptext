@@ -13,43 +13,54 @@ FROM base AS build
 
 # Install packages needed to build node modules
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    node-gyp \
+    pkg-config \
+    python-is-python3 && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install node modules
-COPY .npmrc package-lock.json package.json ./
+COPY --chown=node:node package*.json ./
 RUN npm ci --include=dev
 
-# Copy application code
-COPY . .
+# Copy application code and .env first
+COPY --chown=node:node .env .env
+COPY --chown=node:node . .
 
-# Environment variables for build
-ENV PUBLIC_BETTER_AUTH_URL="https://beta.bliptext.com"
+# Set public URLs and load environment variables from .env
+ENV PUBLIC_BETTER_AUTH_URL="https://bliptext.com"
 ENV PUBLIC_WEBSOCKET_URL="wss://ws.bliptext.com"
-
-ARG DISCORD_CLIENT_ID
-ARG DISCORD_CLIENT_SECRET
-ARG DATABASE_URL
-ARG REDIS_URL
-ARG REDIS_TOKEN
+ENV $(grep -v '^#' .env | xargs)
 
 # Build application
-RUN DISCORD_CLIENT_ID=$DISCORD_CLIENT_ID \
-    DISCORD_CLIENT_SECRET=$DISCORD_CLIENT_SECRET \
-    DATABASE_URL=$DATABASE_URL \
-    REDIS_URL=$REDIS_URL \
-    REDIS_TOKEN=$REDIS_TOKEN \
-    npm run build
+RUN npm run build && ls -la
 
 # Remove development dependencies
 RUN npm prune --omit=dev
 
-# Production stage
-FROM base
+# Final production stage
+FROM base AS production
 
-# Copy built application
-COPY --from=build /app/build ./build
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json .
+# Create app directory and set permissions
+RUN mkdir -p /app && chown node:node /app
+WORKDIR /app
 
+# Copy only necessary files from build stage
+COPY --from=build --chown=node:node /app/build ./build
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/package.json .
+COPY --from=build --chown=node:node /app/.env .
+
+# Use node user instead of creating a new one
+USER node
+
+# Expose port
 EXPOSE 3000
-CMD ["node", "build/index.js"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD node -e "fetch('http://localhost:3000').then(r => process.exit(r.ok ? 0 : 1))"
+
+# Start the application, sourcing the .env file
+CMD ["/bin/sh", "-c", "set -a && . ./.env && exec node build/index.js"]
