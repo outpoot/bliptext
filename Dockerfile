@@ -11,7 +11,6 @@ ENV NODE_ENV="production"
 # Build stage
 FROM base AS build
 
-# Install packages needed to build node modules
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     build-essential \
@@ -24,17 +23,11 @@ RUN apt-get update -qq && \
 COPY --chown=node:node package*.json ./
 RUN npm ci --include=dev
 
-# Copy application code and .env first
-COPY --chown=node:node .env .env
+# Copy entire project
 COPY --chown=node:node . .
 
-# Set public URLs and load environment variables from .env
-ENV PUBLIC_BETTER_AUTH_URL="https://bliptext.com"
-ENV PUBLIC_WEBSOCKET_URL="wss://ws.bliptext.com"
-ENV $(grep -v '^#' .env | xargs)
-
 # Build application
-RUN npm run build && ls -la
+RUN npm run build
 
 # Remove development dependencies
 RUN npm prune --omit=dev
@@ -42,25 +35,19 @@ RUN npm prune --omit=dev
 # Final production stage
 FROM base AS production
 
-# Create app directory and set permissions
-RUN mkdir -p /app && chown node:node /app
 WORKDIR /app
 
 # Copy only necessary files from build stage
 COPY --from=build --chown=node:node /app/build ./build
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/package.json .
-COPY --from=build --chown=node:node /app/.env .
+COPY --from=build --chown=node:node /app/.env .env
 
-# Use node user instead of creating a new one
+# Use node user
 USER node
 
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD node -e "fetch('http://localhost:3000').then(r => process.exit(r.ok ? 0 : 1))"
-
-# Start the application, sourcing the .env file
-CMD ["/bin/sh", "-c", "set -a && . ./.env && exec node build/index.js"]
+# Start the application
+CMD ["node", "build/index.js"]

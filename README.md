@@ -65,13 +65,26 @@ TURNSTILE_SECRET_KEY=<your-turnstile-secret-key>
 ```
 
 ### 2. Database Setup
+You can set up the database in two ways:
 
+----
+#### Option A: Using Docker Compose
+Modify the `docker-compose.yml` by putting your .env vars in it. Yeah, yeah, I know this is a bad practice, but I couldn't be bothered to make it read `.env`. If you do, make a PR :)
+
+Then run:
+```bash
+docker-compose up -d
+```
+
+#### Option B: Manual PostgreSQL Setup
 Start PostgreSQL using Docker:
 ```bash
 npm run db:start
 ```
 
-Push the database schema:
+----
+
+For both options, push the database schema:
 ```bash
 npm run db:push
 ```
@@ -111,16 +124,10 @@ bun main.ts
 
 Build and run using Docker:
 ```bash
-docker build \
-  --build-arg DISCORD_CLIENT_ID=your_discord_id \
-  --build-arg DISCORD_CLIENT_SECRET=your_discord_secret \
-  --build-arg DATABASE_URL=your_database_url \
-  --build-arg REDIS_URL=your_redis_url \
-  --build-arg REDIS_TOKEN=your_redis_token \
-  -t app-name .
+docker build -t bliptext .
 
 # Run the container
-docker run -p 3000:3000 app-name
+docker run -p 3000:3000 bliptext
 ```
 
 # Contributing
