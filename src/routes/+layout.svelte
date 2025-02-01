@@ -97,7 +97,14 @@
 			currentUser.set(null);
 		}
 	});
+
+	let coverImageUrl = "images/cover.png"
 </script>
+
+<svelte:head>
+  <meta property="og:image" content={coverImageUrl} />
+  <meta name="twitter:image" content={coverImageUrl} />
+</svelte:head>
 
 <Toaster />
 {#if isHomePage}
