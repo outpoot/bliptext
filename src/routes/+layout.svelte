@@ -75,6 +75,19 @@
 	let showConfirm = $state(false);
 
 	onMount(async () => {
+		console.log(
+			'%c                                             ___   \n    _____                                   /\\  \\  \n   /::\\  \\                     ___         /::\\  \\ \n  /:/\\:\\  \\                   /\\__\\       /:/\\:\\__\\\n /:/ /::\\__\\   ___     ___   /:/__/      /:/ /:/  /\n/:/_/:/\\:|__| /\\  \\   /\\__\\ /::\\  \\     /:/_/:/  / \n\\:\\/:/ /:/  / \\:\\  \\ /:/  / \\/\\:\\  \\__  \\:\\/:/  /  \n \\::/_/:/  /   \\:\\  /:/  /   ~~\\:\\/\\__\\  \\::/__/   \n  \\:\\/:/  /     \\:\\/:/  /       \\::/  /   \\:\\  \\   \n   \\::/  /       \\::/  /        /:/  /     \\:\\__\\  \n    \\/__/         \\/__/         \\/__/       \\/__/',
+			'color: #4962ee; font-family: monospace; font-size: 12px; font-weight: bold; text-shadow: 2px 2px rgba(0,0,0,0.2);'
+		);
+		console.log(
+			'%c Welcome to Bliptext! DO NOT FUCKING PASTE ANYTHING IN THE CONSOLE UNLESS YOU KNOW WHAT YOU ARE DOING.',
+			'color: #4962ee; font-family: monospace; font-size: 12px; font-weight: bold; text-shadow: 2px 2px rgba(0,0,0,0.2);'
+		);
+		console.log(
+			'%c A product by Outpoot.com',
+			'color: #4962ee; font-family: monospace; font-size: 12px; font-weight: bold; text-shadow: 2px 2px rgba(0,0,0,0.2);'
+		);
+
 		const { data } = await getSession();
 
 		if (data?.user) {
@@ -215,7 +228,7 @@
 		<div class="relative w-full max-w-lg">
 			<div class="mb-2 flex items-center justify-end">
 				<button
-					class="rounded-md bg-secondary px-2.5 py-2 text-sm font-medium hover:bg-secondary/80 group"
+					class="group rounded-md bg-secondary px-2.5 py-2 text-sm font-medium hover:bg-secondary/80"
 					onclick={() => (searchDialogOpen = false)}
 				>
 					<X class={styles.iconClass} />
