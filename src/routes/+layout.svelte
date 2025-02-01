@@ -98,7 +98,7 @@
 		}
 	});
 
-	let coverImageUrl = "images/cover.png"
+	let coverImageUrl = "https://bliptext.com/images/cover.png"
 </script>
 
 <svelte:head>
