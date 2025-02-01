@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Turnstile } from 'svelte-turnstile';
-	import { PUBLIC_TURNSTILE_SITE_KEY } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { captchaToken, captchaVerified } from '$lib/stores/captcha';
 	import { toast } from 'svelte-sonner';
 
@@ -25,7 +25,7 @@
 	<div class="captcha-overlay">
 		<div class="captcha-container">
 			<Turnstile
-				siteKey={PUBLIC_TURNSTILE_SITE_KEY}
+				siteKey={env.PUBLIC_TURNSTILE_SITE_KEY}
 				on:callback={({ detail: { token } }) => handleVerified(token)}
 				on:error={({ detail: { code } }) => {
 					captchaError = `CAPTCHA error: ${code}`;

@@ -5,7 +5,7 @@
 	}
 
 	import { onMount } from 'svelte';
-	import { PUBLIC_WEBSOCKET_URL } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { currentUser } from '$lib/stores/user';
 	import CaptchaManager from './CaptchaManager.svelte';
 	import { toast } from 'svelte-sonner';
@@ -45,7 +45,7 @@
 	}
 
 	async function initializeWebSocket(wsToken: string) {
-		ws = new WebSocket(`${PUBLIC_WEBSOCKET_URL}?token=${wsToken}&type=${type}`);
+		ws = new WebSocket(`${env.PUBLIC_WEBSOCKET_URL}?token=${wsToken}&type=${type}`);
 
 		ws.addEventListener('open', () => {
 			reconnectAttempts = 0;
