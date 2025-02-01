@@ -124,7 +124,6 @@
 	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={page.url.href} />
-	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 
 <div class="container mx-auto px-4 py-4 sm:py-8">

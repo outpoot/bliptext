@@ -21,7 +21,6 @@
 	<meta property="og:title" content={data.article.title} />
 	<meta property="og:description" content={summary} />
 	<meta property="og:url" content={page.url.href} />
-	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 
 <div class="container-2xl mx-auto py-8">

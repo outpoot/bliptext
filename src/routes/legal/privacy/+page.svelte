@@ -17,7 +17,6 @@
 	<meta property="og:description" content="Read the privacy policy of Bliptext, the wiki where you edit 1 word each 30 seconds." />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={page.url.href} />
-	<meta property="og:image" content="/favicon.svg" />
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl py-10">
