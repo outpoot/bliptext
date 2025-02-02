@@ -1,30 +1,32 @@
 <script lang="ts">
-	import type { Article } from '$lib/server/db/schema';
-	import MarkdownViewer from '$lib/components/self/MarkdownViewer.svelte';
-	import FloatingWord from '$lib/components/self/FloatingWord.svelte';
-	import { onMount } from 'svelte';
-	import { currentUser } from '$lib/stores/user';
-	import type { Session } from 'better-auth';
-	import { toast } from 'svelte-sonner';
-	import { activeUsers } from '$lib/stores/activeUsers';
-	import TosOverlay from '$lib/components/self/TosOverlay.svelte';
-	import { tosAccepted } from '$lib/stores/tosAccepted';
-	import { signIn } from '$lib/auth-client';
-	import SignInConfirmDialog from '$lib/components/self/SignInConfirmDialog.svelte';
+	import type { Article } from "$lib/server/db/schema";
+	import MarkdownViewer from "$lib/components/self/MarkdownViewer.svelte";
+	import FloatingWord from "$lib/components/self/FloatingWord.svelte";
+	import { onMount } from "svelte";
+	import { currentUser } from "$lib/stores/user";
+	import type { Session } from "better-auth";
+	import { toast } from "svelte-sonner";
+	import { activeUsers } from "$lib/stores/activeUsers";
+	import TosOverlay from "$lib/components/self/TosOverlay.svelte";
+	import { tosAccepted } from "$lib/stores/tosAccepted";
+	import { signIn } from "$lib/auth-client";
+	import SignInConfirmDialog from "$lib/components/self/SignInConfirmDialog.svelte";
 	import WebSocketManager, {
-		type WebSocketManagerHandle
-	} from '$lib/components/self/WebSocketManager.svelte';
-	import { page } from '$app/state';
-	import hoverSound from '$lib/sounds/hover.wav';
-	import clickSound from '$lib/sounds/click.wav';
-	import swapSound from '$lib/sounds/swap.wav';
+		type WebSocketManagerHandle,
+	} from "$lib/components/self/WebSocketManager.svelte";
+	import { page } from "$app/state";
 
-	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
+	const hoverSound = "/sound/hover.wav";
+	const swapSound = "/sound/swap.wav";
+
+	let { data } = $props<{
+		data: { article: Article | null; session: Session };
+	}>();
 	let wsManager = $state<WebSocketManagerHandle | undefined>();
 
 	let article = $state(data.article);
 
-	let selectedWord = $state('');
+	let selectedWord = $state("");
 
 	let mouseX = $state(0);
 	let mouseY = $state(0);
@@ -34,8 +36,8 @@
 
 	async function handleSignIn() {
 		await signIn.social({
-			provider: 'discord',
-			callbackURL: '/home'
+			provider: "discord",
+			callbackURL: "/home",
 		});
 	}
 
@@ -51,18 +53,18 @@
 	}
 
 	function handleInputKeyDown(e: KeyboardEvent) {
-		if (e.key === 'Enter' && selectedWord) {
+		if (e.key === "Enter" && selectedWord) {
 			showFloatingWord = true;
-		} else if (e.key === 'Escape') {
+		} else if (e.key === "Escape") {
 			showFloatingWord = false;
-		} else if (e.key === ' ') {
+		} else if (e.key === " ") {
 			e.preventDefault(); // Prevent spaces
 		}
 	}
 
 	function handleInput(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
-		const newWord = input.value.replace(/\s+/g, '').slice(0, 30);
+		const newWord = input.value.replace(/\s+/g, "").slice(0, 30);
 		selectedWord = newWord;
 		showFloatingWord = Boolean(newWord);
 	}
@@ -74,26 +76,29 @@
 	});
 
 	function handleMessage(data: any) {
-		if (data.type === 'active_users_update') {
+		if (data.type === "active_users_update") {
 			$activeUsers = data.data.count;
 		}
 	}
 
 	function handleOpen() {
 		wsManager?.send({
-			type: 'set_article',
+			type: "set_article",
 			article: {
 				id: data.article?.id,
-				slug: data.article?.slug
-			}
+				slug: data.article?.slug,
+			},
 		});
 	}
 
 	function handleClose(event: CloseEvent) {
 		if (event.code === 4000) {
-			toast.error('Disconnected: You opened this article on another device.', {
-				duration: Infinity
-			});
+			toast.error(
+				"Disconnected: You opened this article on another device.",
+				{
+					duration: Infinity,
+				},
+			);
 		}
 	}
 
@@ -103,23 +108,27 @@
 		};
 	});
 
-	const summary = article.content
-		?.split(':::')?.[2]
-		.slice(200)
-		.replace(/\*\*(.*?)\*\*/g, '$1')
-		.replace(/([*_])(.*?)\1/g, '$2')
-		.replace(/\[(.*?)\]\(.*?\)/g, '$1') + "...";
+	const summary =
+		article.content
+			?.split(":::")?.[2]
+			.slice(200)
+			.replace(/\*\*(.*?)\*\*/g, "$1")
+			.replace(/([*_])(.*?)\1/g, "$2")
+			.replace(/\[(.*?)\]\(.*?\)/g, "$1") + "...";
 
 	$effect(() => {
 		if (!wsManager?.ws) return;
 
-		wsManager.ws.addEventListener('message', (event: { data: string }) => {
+		wsManager.ws.addEventListener("message", (event: { data: string }) => {
 			const data = JSON.parse(event.data);
-			if (data.type === 'word_hover') {
+			if (data.type === "word_hover") {
 				playSound(hoverSound);
-			} else if (data.type === 'word_leave' || data.type === 'user_disconnected') {
+			} else if (
+				data.type === "word_leave" ||
+				data.type === "user_disconnected"
+			) {
 				// ...existing code...
-			} else if (data.type === 'word_replace') {
+			} else if (data.type === "word_replace") {
 				playSound(swapSound);
 			}
 		});
@@ -127,14 +136,11 @@
 </script>
 
 <svelte:head>
-	<title>{'Edit: ' + article.title}</title>
+	<title>{"Edit: " + article.title}</title>
 	<meta name="description" content={summary} />
 	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
 	<meta property="og:title" content={article.title} />
-	<meta
-		property="og:description"
-		content={summary}
-	/>
+	<meta property="og:description" content={summary} />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={page.url.href} />
 </svelte:head>
@@ -147,7 +153,10 @@
 			<p>You must be logged in to edit articles.</p>
 			<br />
 			<p>
-				Please <button onclick={() => (showConfirm = true)} class="text-primary hover:underline">
+				Please <button
+					onclick={() => (showConfirm = true)}
+					class="text-primary hover:underline"
+				>
 					sign in
 				</button> to continue.
 			</p>
@@ -158,18 +167,24 @@
 {:else if $currentUser?.isBanned}
 	<div class="container mx-auto py-8">
 		<div class="rounded-lg bg-destructive/10 p-4 text-destructive">
-			<p>Access to article editing has been restricted due to an account suspension.</p>
-			<br />
 			<p>
-				While suspensions are carefully reviewed and rarely incorrect, you may <a
-					href="https://discord.gg/cKWNV2uZUP"
-					class="text-primary hover:underline">appeal here</a
-				>. Note that banned accounts may also be restricted from the Discord server.
+				Access to article editing has been restricted due to an account
+				suspension.
 			</p>
 			<br />
 			<p>
-				During this suspension period (indefinite), your account has limited access to interactive
-				features, including article editing and viewing active content.
+				While suspensions are carefully reviewed and rarely incorrect,
+				you may <a
+					href="https://discord.gg/cKWNV2uZUP"
+					class="text-primary hover:underline">appeal here</a
+				>. Note that banned accounts may also be restricted from the
+				Discord server.
+			</p>
+			<br />
+			<p>
+				During this suspension period (indefinite), your account has
+				limited access to interactive features, including article
+				editing and viewing active content.
 			</p>
 		</div>
 	</div>
