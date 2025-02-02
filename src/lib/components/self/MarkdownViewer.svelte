@@ -32,6 +32,7 @@
 	import { captchaToken, captchaVerified } from "$lib/stores/captcha";
 	import CaptchaManager from "./CaptchaManager.svelte";
 	import { tick } from "svelte";
+	import { soundMuted } from '$lib/stores/soundMuted';
 
 	const clickSound = "/sound/click.mp3";
 	const swapSound = "/sound/swap.mp3";
@@ -110,6 +111,8 @@
 	const SOUND_DEBOUNCE = 50;
 
 	function playSound(sound: string) {
+		if ($soundMuted) return;
+		
 		const now = Date.now();
 		if (now - lastSoundPlayed < SOUND_DEBOUNCE) return;
 
