@@ -115,7 +115,10 @@
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
 		if (!selectedWord && self) return;
 		element.classList.add("shake");
-		playSound(hoverSound);
+
+		if (selectedWord) {
+			playSound(hoverSound);
+		}
 
 		if (self) hoverTimeout = setTimeout(() => handleHover(element), 150);
 	}

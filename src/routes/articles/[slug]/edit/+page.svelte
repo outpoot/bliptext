@@ -49,7 +49,6 @@
 	function handleMouseMove(e: MouseEvent) {
 		mouseX = e.clientX;
 		mouseY = e.clientY;
-		playSound(hoverSound);
 	}
 
 	function handleInputKeyDown(e: KeyboardEvent) {
