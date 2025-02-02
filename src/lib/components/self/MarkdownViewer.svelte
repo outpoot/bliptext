@@ -243,6 +243,7 @@
 					}
 
 					wordProcessor.replaceWord(newWord, element, () => {});
+					playSound(swapSound);
 					return;
 				}
 
@@ -285,7 +286,10 @@
 				const newHovers = { ...otherUsersHovers };
 				delete newHovers[editorId];
 				otherUsersHovers = newHovers;
-			} else if (data.type === "word_replace" || data.type === "word_hover" && data.data.replace) {
+			} else if (
+				data.type === "word_replace" ||
+				(data.type === "word_hover" && data.data.replace)
+			) {
 				playSound(swapSound);
 			}
 		});
