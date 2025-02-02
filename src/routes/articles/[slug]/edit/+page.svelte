@@ -16,8 +16,6 @@
 	} from "$lib/components/self/WebSocketManager.svelte";
 	import { page } from "$app/state";
 
-	const swapSound = "/sound/swap.mp3";
-
 	let { data } = $props<{
 		data: { article: Article | null; session: Session };
 	}>();
@@ -38,11 +36,6 @@
 			provider: "discord",
 			callbackURL: "/home",
 		});
-	}
-
-	function playSound(sound: string) {
-		const audio = new Audio(sound);
-		audio.play();
 	}
 
 	function handleMouseMove(e: MouseEvent) {
@@ -113,17 +106,6 @@
 			.replace(/\*\*(.*?)\*\*/g, "$1")
 			.replace(/([*_])(.*?)\1/g, "$2")
 			.replace(/\[(.*?)\]\(.*?\)/g, "$1") + "...";
-
-	$effect(() => {
-		if (!wsManager?.ws) return;
-
-		wsManager.ws.addEventListener("message", (event: { data: string }) => {
-			const data = JSON.parse(event.data);
-			if (data.type === "word_replace") {
-				playSound(swapSound);
-			}
-		});
-	});
 </script>
 
 <svelte:head>
