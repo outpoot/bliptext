@@ -33,9 +33,9 @@
 	import CaptchaManager from "./CaptchaManager.svelte";
 	import { tick } from "svelte";
 
-	const hoverSound = "/sound/hover.wav";
-	const clickSound = "/sound/click.wav";
-	const swapSound = "/sound/swap.wav";
+	const hoverSound = "/sound/hover.mp3";
+	const clickSound = "/sound/click.mp3";
+	const swapSound = "/sound/swap.mp3";
 
 	let showMobileTools = $state(false);
 	let showMobileContents = $state(false);

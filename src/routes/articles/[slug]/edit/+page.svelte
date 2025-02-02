@@ -16,8 +16,8 @@
 	} from "$lib/components/self/WebSocketManager.svelte";
 	import { page } from "$app/state";
 
-	const hoverSound = "/sound/hover.wav";
-	const swapSound = "/sound/swap.wav";
+	const hoverSound = "/sound/hover.mp3";
+	const swapSound = "/sound/swap.mp3";
 
 	let { data } = $props<{
 		data: { article: Article | null; session: Session };
