@@ -107,16 +107,23 @@
 	let showLinkDialog = $state(false);
 	let pendingUrl = $state("");
 
+	let lastSoundPlayed = 0;
+	const SOUND_DEBOUNCE = 50;
+
 	function playSound(sound: string) {
+		const now = Date.now();
+		if (now - lastSoundPlayed < SOUND_DEBOUNCE) return;
+
 		const audio = new Audio(sound);
-		audio.play().catch(() => {}); // Ignore errors if sound fails
+		audio.play().catch(() => {}); // fuck
+		lastSoundPlayed = now;
 	}
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
 		if (!selectedWord && self) return;
 		element.classList.add("shake");
 
-		if (selectedWord) {
+		if (selectedWord && self) {
 			playSound(hoverSound);
 		}
 
@@ -264,7 +271,6 @@
 						editorImage,
 					},
 				};
-				playSound(hoverSound);
 			} else if (
 				data.type === "word_leave" ||
 				data.type === "user_disconnected"

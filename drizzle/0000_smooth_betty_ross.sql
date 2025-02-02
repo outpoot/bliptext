@@ -153,29 +153,30 @@ CREATE INDEX IF NOT EXISTS "verification_expiry_idx" ON "verification" USING btr
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Drop the old column and add new one
-ALTER TABLE articles DROP COLUMN IF EXISTS search_vector;
-ALTER TABLE articles ADD COLUMN search_vector tsvector DEFAULT to_tsvector('english', '');
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS search_vector tsvector DEFAULT to_tsvector('english', '');
 
--- Create indexes
-DROP INDEX IF EXISTS articles_title_trgm_idx;
-DROP INDEX IF EXISTS articles_search_vector_idx;
-CREATE INDEX articles_title_trgm_idx ON articles USING gin(title gin_trgm_ops);
 CREATE INDEX articles_search_vector_idx ON articles USING gin(search_vector);
 
--- Update existing rows
-UPDATE articles SET search_vector = to_tsvector('english', coalesce(title, ''));
-
--- Create trigger function
 CREATE OR REPLACE FUNCTION articles_search_vector_trigger() RETURNS trigger AS $$
 begin
-    new.search_vector := to_tsvector('english', coalesce(new.title, ''));
+    new.search_vector := to_tsvector(
+        'english',
+        regexp_replace(
+            regexp_replace(
+                coalesce(new.title, '') || ' ' || coalesce(new.content, ''),
+                '[<>]',
+                '',
+                'g'
+            ),
+            '(\S{255,})',
+            '',
+            'g'
+        )
+    );
     return new;
 end
 $$ LANGUAGE plpgsql;
 
--- Create trigger
-DROP TRIGGER IF EXISTS articles_search_vector_update ON articles;
 CREATE TRIGGER articles_search_vector_update
     BEFORE INSERT OR UPDATE ON articles
     FOR EACH ROW
