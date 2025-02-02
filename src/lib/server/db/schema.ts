@@ -48,7 +48,8 @@ export const articles = pgTable("articles", {
 	created_by: text("created_by").notNull().references(() => user.id),
 	created_at: timestamp("created_at").defaultNow().notNull(),
 	updated_at: timestamp("updated_at").defaultNow().notNull(),
-	search_vector: text("search_vector").notNull().default('')
+	search_vector: text("search_vector").notNull().default(''),
+	search_content: text("search_content").notNull().default(''),
 }, (table) => {
 	return {
 		creator_idx: index("articles_creator_idx").using("btree", table.created_by, table.created_at),

@@ -1,38 +1,41 @@
 <script lang="ts">
-	import type { Article } from '$lib/server/db/schema';
-	import type { Plugin } from 'svelte-exmarkdown';
-	import Markdown from 'svelte-exmarkdown';
-	import { gfmPlugin } from 'svelte-exmarkdown/gfm';
+	import type { Article } from "$lib/server/db/schema";
+	import type { Plugin } from "svelte-exmarkdown";
+	import Markdown from "svelte-exmarkdown";
+	import { gfmPlugin } from "svelte-exmarkdown/gfm";
 
-	import { cooldown } from '$lib/stores/cooldown';
-	import { activeUsers } from '$lib/stores/activeUsers';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Button } from '$lib/components/ui/button';
-	import { Separator } from '$lib/components/ui/separator';
+	import { cooldown } from "$lib/stores/cooldown";
+	import { activeUsers } from "$lib/stores/activeUsers";
+	import * as Dialog from "$lib/components/ui/dialog";
+	import { Button } from "$lib/components/ui/button";
+	import { Separator } from "$lib/components/ui/separator";
 
-	import WikiBox from '$lib/components/self/WikiBox.svelte';
-	import Summary from '$lib/components/self/Summary.svelte';
-	import TableOfContents from './TableOfContents.svelte';
-	import Tools from './Tools.svelte';
-	import FloatingWord from './FloatingWord.svelte';
-	import SafeLink from './SafeLink.svelte';
-	import WordInput from './WordInput.svelte';
+	import WikiBox from "$lib/components/self/WikiBox.svelte";
+	import Summary from "$lib/components/self/Summary.svelte";
+	import TableOfContents from "./TableOfContents.svelte";
+	import Tools from "./Tools.svelte";
+	import FloatingWord from "./FloatingWord.svelte";
+	import SafeLink from "./SafeLink.svelte";
+	import WordInput from "./WordInput.svelte";
 
-	import { WordProcessor } from '$lib/utils/wordProcessor';
-	import { toast } from 'svelte-sonner';
+	import { WordProcessor } from "$lib/utils/wordProcessor";
+	import { toast } from "svelte-sonner";
 
-	import FileText from 'lucide-svelte/icons/file-text';
-	import Users from 'lucide-svelte/icons/users';
-	import ListTree from 'lucide-svelte/icons/list-tree';
-	import Wrench from 'lucide-svelte/icons/wrench';
-	import X from 'lucide-svelte/icons/x';
-	import Pen from 'lucide-svelte/icons/pen';
-	import Eye from 'lucide-svelte/icons/eye';
-	import Badge from '../ui/badge/badge.svelte';
-	import { captchaToken, captchaVerified } from '$lib/stores/captcha';
-	import CaptchaManager from './CaptchaManager.svelte';
-	import { currentUser } from '$lib/stores/user';
-	import { tick } from 'svelte';
+	import FileText from "lucide-svelte/icons/file-text";
+	import Users from "lucide-svelte/icons/users";
+	import ListTree from "lucide-svelte/icons/list-tree";
+	import Wrench from "lucide-svelte/icons/wrench";
+	import X from "lucide-svelte/icons/x";
+	import Pen from "lucide-svelte/icons/pen";
+	import Eye from "lucide-svelte/icons/eye";
+	import Badge from "../ui/badge/badge.svelte";
+	import { captchaToken, captchaVerified } from "$lib/stores/captcha";
+	import CaptchaManager from "./CaptchaManager.svelte";
+	import { tick } from "svelte";
+
+	const hoverSound = "/sound/hover.wav";
+	const clickSound = "/sound/click.wav";
+	const swapSound = "/sound/swap.wav";
 
 	let showMobileTools = $state(false);
 	let showMobileContents = $state(false);
@@ -40,16 +43,16 @@
 
 	let {
 		content,
-		title = '',
+		title = "",
 		showSidebars = true,
 		showHeader = false,
 		isEditPage = false,
 		article = { title, content },
-		selectedWord = $bindable(''),
-		selfId = '',
+		selectedWord = $bindable(""),
+		selfId = "",
 		ws,
 		onInputKeyDown = undefined,
-		onInput = undefined
+		onInput = undefined,
 	} = $props<{
 		content: string;
 		title?: string;
@@ -67,7 +70,7 @@
 	const wordProcessor = new WordProcessor(content, {
 		onHover: (element) => handleElementHover(element),
 		onLeave: (element) => handleElementLeave(element),
-		onClick: (element) => handleElementClick(element)
+		onClick: (element) => handleElementClick(element),
 	});
 
 	// Plugin configuration
@@ -78,9 +81,9 @@
 				h1: WikiBox,
 				// @ts-ignore
 				p: Summary,
-				a: SafeLink
-			}
-		}
+				a: SafeLink,
+			},
+		},
 	];
 
 	// State management
@@ -102,17 +105,23 @@
 	}>({});
 
 	let showLinkDialog = $state(false);
-	let pendingUrl = $state('');
+	let pendingUrl = $state("");
+
+	function playSound(sound: string) {
+		const audio = new Audio(sound);
+		audio.play().catch(() => {}); // Ignore errors if sound fails
+	}
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
 		if (!selectedWord && self) return;
-		element.classList.add('shake');
+		element.classList.add("shake");
+		playSound(hoverSound);
 
 		if (self) hoverTimeout = setTimeout(() => handleHover(element), 150);
 	}
 
 	async function handleElementLeave(element: HTMLElement) {
-		element.classList.remove('shake');
+		element.classList.remove("shake");
 
 		if (hoverTimeout) {
 			clearTimeout(hoverTimeout);
@@ -131,14 +140,14 @@
 			if (actualIndex !== undefined && !$cooldown.isActive) {
 				try {
 					await fetch(`/api/articles/${article.slug}/hover`, {
-						method: 'DELETE',
-						headers: { 'Content-Type': 'application/json' },
+						method: "DELETE",
+						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
-							wordIndex: actualIndex
-						})
+							wordIndex: actualIndex,
+						}),
 					});
 				} catch (error) {
-					console.error('Failed to send hover leave:', error);
+					console.error("Failed to send hover leave:", error);
 				}
 			}
 		}, 125);
@@ -146,10 +155,14 @@
 
 	function handleElementClick(element: HTMLElement) {
 		if (!selectedWord) return;
-		if (selectedElement) selectedElement.classList.remove('selected');
+		playSound(clickSound);
+		if (navigator?.vibrate) {
+			navigator.vibrate(100);
+		}
+		if (selectedElement) selectedElement.classList.remove("selected");
 
 		selectedElement = element;
-		element.classList.add('selected');
+		element.classList.add("selected");
 		isReplacing = true;
 
 		const rect = element.getBoundingClientRect();
@@ -164,14 +177,17 @@
 		if (actualIndex === undefined) return;
 
 		try {
-			const response = await fetch(`/api/articles/${article.slug}/hover`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					wordIndex: actualIndex,
-					newWord: selectedWord
-				})
-			});
+			const response = await fetch(
+				`/api/articles/${article.slug}/hover`,
+				{
+					method: "PUT",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						wordIndex: actualIndex,
+						newWord: selectedWord,
+					}),
+				},
+			);
 
 			const data = await response.json();
 
@@ -180,9 +196,9 @@
 				return;
 			}
 
-			if (!response.ok) throw new Error('Hover update failed');
+			if (!response.ok) throw new Error("Hover update failed");
 		} catch (error) {
-			console.error('Failed to send hover update:', error);
+			console.error("Failed to send hover update:", error);
 		}
 	}
 
@@ -191,16 +207,27 @@
 
 		let currentHoveredElement: HTMLElement | null = null;
 
-		ws.addEventListener('message', (event: { data: string }) => {
+		ws.addEventListener("message", (event: { data: string }) => {
 			const data = JSON.parse(event.data);
 
-			if (data.type === 'word_hover') {
-				const { wordIndex, newWord, replace, editorId, editorName, editorImage } = data.data;
+			if (data.type === "word_hover") {
+				const {
+					wordIndex,
+					newWord,
+					replace,
+					editorId,
+					editorName,
+					editorImage,
+				} = data.data;
 
 				if (replace) {
-					const element = wordProcessor.getElementByWordIndex(wordIndex);
+					const element =
+						wordProcessor.getElementByWordIndex(wordIndex);
 					if (!element) {
-						console.error('Element from update not found, index:', wordIndex);
+						console.error(
+							"Element from update not found, index:",
+							wordIndex,
+						);
 						return;
 					}
 
@@ -216,7 +243,8 @@
 
 				if (editorId === selfId) return;
 
-				if (currentHoveredElement) handleElementLeave(currentHoveredElement);
+				if (currentHoveredElement)
+					handleElementLeave(currentHoveredElement);
 
 				const element = wordProcessor.getElementByWordIndex(wordIndex);
 				if (element) {
@@ -230,15 +258,21 @@
 						word: newWord,
 						wordIndex,
 						editorName,
-						editorImage
-					}
+						editorImage,
+					},
 				};
-			} else if (data.type === 'word_leave' || data.type === 'user_disconnected') {
+				playSound(hoverSound);
+			} else if (
+				data.type === "word_leave" ||
+				data.type === "user_disconnected"
+			) {
 				const { editorId } = data.data;
 
 				const userHover = otherUsersHovers[editorId];
 				if (userHover) {
-					const element = wordProcessor.getElementByWordIndex(userHover.wordIndex);
+					const element = wordProcessor.getElementByWordIndex(
+						userHover.wordIndex,
+					);
 					if (element) {
 						handleElementLeave(element);
 					}
@@ -247,41 +281,54 @@
 				const newHovers = { ...otherUsersHovers };
 				delete newHovers[editorId];
 				otherUsersHovers = newHovers;
+			} else if (data.type === "word_replace") {
+				playSound(swapSound);
 			}
 		});
 	});
 
 	$effect(() => {
-		const content = document.querySelector('.markdown-content');
+		const content = document.querySelector(".markdown-content");
 		if (!content) return;
 
 		if (isEditPage) {
 			wordProcessor.wordIndicesMap.clear();
-			content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, a, li').forEach((element) => {
-				wordProcessor.wrapTextNodes(element);
-			});
+			content
+				.querySelectorAll("p, h1, h2, h3, h4, h5, h6, a, li")
+				.forEach((element) => {
+					wordProcessor.wrapTextNodes(element);
+				});
 
 			content
-				.querySelectorAll('a')
-				.forEach((link) => link.addEventListener('click', (e) => e.preventDefault()));
+				.querySelectorAll("a")
+				.forEach((link) =>
+					link.addEventListener("click", (e) => e.preventDefault()),
+				);
 		} else {
 			const handleViewModeClick = (e: Event) => {
 				const target = e.target as HTMLElement;
-				const link = target.closest('a');
+				const link = target.closest("a");
 				if (link) {
 					e.preventDefault();
 					e.stopPropagation();
-					pendingUrl = link.getAttribute('href') || '';
+					pendingUrl = link.getAttribute("href") || "";
 					showLinkDialog = true;
 				}
 			};
 
-			content.addEventListener('click', handleViewModeClick, true);
-			return () => content.removeEventListener('click', handleViewModeClick, true);
+			content.addEventListener("click", handleViewModeClick, true);
+			return () =>
+				content.removeEventListener("click", handleViewModeClick, true);
 		}
 	});
 
-	async function handleWordChanged({ newWord, wordIndex }: { newWord: string; wordIndex: number }) {
+	async function handleWordChanged({
+		newWord,
+		wordIndex,
+	}: {
+		newWord: string;
+		wordIndex: number;
+	}) {
 		if (!$captchaVerified) {
 			captchaManager.startVerification();
 			await tick();
@@ -291,8 +338,12 @@
 		}
 
 		const res = await fetch(`/api/articles/${article.slug}/word`, {
-			method: 'PUT',
-			body: JSON.stringify({ wordIndex, newWord, captchaToken: $captchaToken })
+			method: "PUT",
+			body: JSON.stringify({
+				wordIndex,
+				newWord,
+				captchaToken: $captchaToken,
+			}),
 		});
 
 		const data = await res.json();
@@ -312,18 +363,19 @@
 		// update UI after successful edit
 		wordProcessor.replaceWord(newWord, selectedElement!, () => {});
 		cooldown.startCooldown(30000);
+		playSound(swapSound);
 
 		isReplacing = false;
-		selectedWord = '';
+		selectedWord = "";
 		showSubmitButton = false;
 		if (selectedElement) {
-			selectedElement.classList.remove('selected');
+			selectedElement.classList.remove("selected");
 			selectedElement = null;
 		}
 	}
 
 	function handleConfirmNavigation() {
-		window.open(pendingUrl, '_blank');
+		window.open(pendingUrl, "_blank");
 		showLinkDialog = false;
 	}
 </script>
@@ -339,7 +391,11 @@
 				{title}
 				wordInput={isEditPage}
 				inputProps={isEditPage
-					? { onkeydown: onInputKeyDown, oninput: onInput, value: selectedWord }
+					? {
+							onkeydown: onInputKeyDown,
+							oninput: onInput,
+							value: selectedWord,
+						}
 					: undefined}
 				onNavigate={() => (showMobileContents = false)}
 			/>
@@ -349,7 +405,9 @@
 			{#if showHeader}
 				<div class="mb-4 ml-3 flex items-baseline gap-2">
 					<FileText class="h-5 w-5 text-muted-foreground" />
-					<h1 id="title" class="text-3xl font-bold">{article.title || 'Untitled'}</h1>
+					<h1 id="title" class="text-3xl font-bold">
+						{article.title || "Untitled"}
+					</h1>
 
 					<div class="ml-auto">
 						<Badge variant="outline">
@@ -375,7 +433,9 @@
 		{#if showHeader}
 			<div class="mb-4 flex items-baseline gap-2">
 				<FileText class="h-5 w-5 text-muted-foreground" />
-				<h1 id="title" class="text-3xl font-bold">{article?.title || 'Untitled'}</h1>
+				<h1 id="title" class="text-3xl font-bold">
+					{article?.title || "Untitled"}
+				</h1>
 
 				<div class="ml-auto">
 					<Badge variant="secondary">
@@ -402,7 +462,7 @@
 					inputProps={{
 						onkeydown: onInputKeyDown,
 						oninput: onInput,
-						value: selectedWord
+						value: selectedWord,
 					}}
 				/>
 			{/if}
@@ -461,9 +521,15 @@
 			onclick={() => (showMobileTools = false)}
 			aria-label="Close tools"
 		></button>
-		<div class="absolute inset-x-4 bottom-4 rounded-lg border bg-background p-4 shadow-lg">
+		<div
+			class="absolute inset-x-4 bottom-4 rounded-lg border bg-background p-4 shadow-lg"
+		>
 			<div class="mb-2 flex items-center justify-between">
-				<Button variant="ghost" size="icon" onclick={() => (showMobileTools = false)}>
+				<Button
+					variant="ghost"
+					size="icon"
+					onclick={() => (showMobileTools = false)}
+				>
 					<X class="h-4 w-4" />
 				</Button>
 			</div>
@@ -478,12 +544,19 @@
 			type="button"
 			class="absolute inset-0 bg-background/80 backdrop-blur-sm"
 			onclick={() => (showMobileContents = false)}
-			onkeydown={(e) => e.key === 'Escape' && (showMobileContents = false)}
+			onkeydown={(e) =>
+				e.key === "Escape" && (showMobileContents = false)}
 			aria-label="Close contents"
 		></button>
-		<div class="absolute inset-x-4 bottom-4 rounded-lg border bg-background p-4 shadow-lg">
+		<div
+			class="absolute inset-x-4 bottom-4 rounded-lg border bg-background p-4 shadow-lg"
+		>
 			<div class="mb-2 flex items-center justify-between">
-				<Button variant="ghost" size="icon" onclick={() => (showMobileContents = false)}>
+				<Button
+					variant="ghost"
+					size="icon"
+					onclick={() => (showMobileContents = false)}
+				>
 					<X class="h-4 w-4" />
 				</Button>
 			</div>
@@ -495,7 +568,7 @@
 					? {
 							onkeydown: onInputKeyDown,
 							oninput: onInput,
-							value: selectedWord
+							value: selectedWord,
 						}
 					: undefined}
 				onNavigate={() => (showMobileContents = false)}
@@ -509,9 +582,14 @@
 		class="fixed z-50"
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 		onclick={() => {
-			const actualIndex = wordProcessor.wordIndicesMap.get(selectedElement!);
+			const actualIndex = wordProcessor.wordIndicesMap.get(
+				selectedElement!,
+			);
 			if (actualIndex !== undefined) {
-				handleWordChanged({ newWord: selectedWord, wordIndex: actualIndex });
+				handleWordChanged({
+					newWord: selectedWord,
+					wordIndex: actualIndex,
+				});
 			}
 		}}
 	>
@@ -523,7 +601,11 @@
 	{#if true}
 		{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
 		{#if element}
-			<FloatingWord word={hover.word} {element} image={hover.editorImage} />
+			<FloatingWord
+				word={hover.word}
+				{element}
+				image={hover.editorImage}
+			/>
 		{/if}
 	{/if}
 {/each}
@@ -536,12 +618,15 @@
 				You're about to visit: {pendingUrl}
 				<br />
 				<br />
-				We <strong>STRONGLY</strong> recommend you don't visit any external links.
+				We <strong>STRONGLY</strong> recommend you don't visit any external
+				links.
 			</Dialog.Description>
 		</Dialog.Header>
 		<div class="flex justify-end gap-3 pt-6">
 			<Dialog.Close>No, take me back</Dialog.Close>
-			<Button onclick={handleConfirmNavigation} variant="destructive">Yes</Button>
+			<Button onclick={handleConfirmNavigation} variant="destructive"
+				>Yes</Button
+			>
 		</div>
 	</Dialog.Content>
 </Dialog.Root>

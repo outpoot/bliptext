@@ -15,6 +15,9 @@
 		type WebSocketManagerHandle
 	} from '$lib/components/self/WebSocketManager.svelte';
 	import { page } from '$app/state';
+	import hoverSound from '$lib/sounds/hover.wav';
+	import clickSound from '$lib/sounds/click.wav';
+	import swapSound from '$lib/sounds/swap.wav';
 
 	let { data } = $props<{ data: { article: Article | null; session: Session } }>();
 	let wsManager = $state<WebSocketManagerHandle | undefined>();
@@ -36,9 +39,15 @@
 		});
 	}
 
+	function playSound(sound: string) {
+		const audio = new Audio(sound);
+		audio.play();
+	}
+
 	function handleMouseMove(e: MouseEvent) {
 		mouseX = e.clientX;
 		mouseY = e.clientY;
+		playSound(hoverSound);
 	}
 
 	function handleInputKeyDown(e: KeyboardEvent) {
@@ -100,6 +109,21 @@
 		.replace(/\*\*(.*?)\*\*/g, '$1')
 		.replace(/([*_])(.*?)\1/g, '$2')
 		.replace(/\[(.*?)\]\(.*?\)/g, '$1') + "...";
+
+	$effect(() => {
+		if (!wsManager?.ws) return;
+
+		wsManager.ws.addEventListener('message', (event: { data: string }) => {
+			const data = JSON.parse(event.data);
+			if (data.type === 'word_hover') {
+				playSound(hoverSound);
+			} else if (data.type === 'word_leave' || data.type === 'user_disconnected') {
+				// ...existing code...
+			} else if (data.type === 'word_replace') {
+				playSound(swapSound);
+			}
+		});
+	});
 </script>
 
 <svelte:head>

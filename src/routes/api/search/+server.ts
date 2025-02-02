@@ -10,23 +10,17 @@ export async function GET({ url }) {
     try {
         const startTime = Date.now();
 
+        // Simple, fast query using to_tsquery with prefix matching
         const results = await db
             .select({
                 id: articles.id,
                 title: articles.title,
                 slug: articles.slug,
-                rank: sql<number>`
-                    (ts_rank(${articles.search_vector}, websearch_to_tsquery('english', ${query})) +
-                    similarity(${articles.title}, ${query}))
-                `.as('rank')
             })
             .from(articles)
-            .where(
-                sql`${articles.search_vector} @@ websearch_to_tsquery('english', ${query}) OR 
-                    similarity(${articles.title}, ${query}) > 0.1`
-            )
-            .orderBy(sql`rank DESC`)
-            .limit(10);
+            .where(sql`${articles.search_vector} @@ to_tsquery('english', ${query + ':*'})`)
+            .limit(10)
+            .execute();
 
         console.log(`Search for "${query}" took ${Date.now() - startTime}ms`);
 
