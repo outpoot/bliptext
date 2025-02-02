@@ -16,7 +16,6 @@
 	} from "$lib/components/self/WebSocketManager.svelte";
 	import { page } from "$app/state";
 
-	const hoverSound = "/sound/hover.mp3";
 	const swapSound = "/sound/swap.mp3";
 
 	let { data } = $props<{
@@ -120,14 +119,7 @@
 
 		wsManager.ws.addEventListener("message", (event: { data: string }) => {
 			const data = JSON.parse(event.data);
-			if (data.type === "word_hover") {
-				playSound(hoverSound);
-			} else if (
-				data.type === "word_leave" ||
-				data.type === "user_disconnected"
-			) {
-				// ...existing code...
-			} else if (data.type === "word_replace") {
+			if (data.type === "word_replace") {
 				playSound(swapSound);
 			}
 		});

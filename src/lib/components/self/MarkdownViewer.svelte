@@ -33,7 +33,6 @@
 	import CaptchaManager from "./CaptchaManager.svelte";
 	import { tick } from "svelte";
 
-	const hoverSound = "/sound/hover.mp3";
 	const clickSound = "/sound/click.mp3";
 	const swapSound = "/sound/swap.mp3";
 
@@ -122,10 +121,6 @@
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
 		if (!selectedWord && self) return;
 		element.classList.add("shake");
-
-		if (selectedWord && self) {
-			playSound(hoverSound);
-		}
 
 		if (self) hoverTimeout = setTimeout(() => handleHover(element), 150);
 	}
