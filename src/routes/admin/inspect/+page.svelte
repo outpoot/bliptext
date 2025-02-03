@@ -5,6 +5,8 @@
     import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
     import { toast } from 'svelte-sonner';
     import HistoryList from '$lib/components/self/HistoryList.svelte';
+    import { page } from '$app/state';
+    import { goto } from '$app/navigation';
 
     let userId = $state('');
     let userInfo = $state<{
@@ -70,6 +72,26 @@
     function formatDate(date: string) {
         return new Date(date).toLocaleString();
     }
+
+    function updateUrl() {
+        if (userId) {
+            goto(`?userId=${userId}`, { keepFocus: true });
+        } else {
+            goto('.', { keepFocus: true });
+        }
+    }
+
+    $effect(() => {
+        if (page.url.searchParams.get('userId') && !userInfo) {
+            userId = page.url.searchParams.get('userId') || '';
+            fetchUser();
+        }
+    });
+
+    function handleInput(e: Event) {
+        userId = (e.target as HTMLInputElement).value;
+        updateUrl();
+    }
 </script>
 
 <div class="container mx-auto p-4">
@@ -79,7 +101,8 @@
         <Input 
             type="text" 
             placeholder="Enter user ID" 
-            bind:value={userId}
+            value={userId}
+            oninput={handleInput}
             class="max-w-xs"
         />
         <Button variant="secondary" onclick={fetchUser}>Inspect</Button>

@@ -6,6 +6,7 @@ import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
+import { sendDiscordWebhook } from '$lib/discord';
 // import { validateTurnstile } from '$lib/turnstile';
 
 export async function PUT({ params, request }) {
@@ -97,6 +98,15 @@ export async function PUT({ params, request }) {
 				}
 			})
 		);
+
+		await sendDiscordWebhook({
+			oldWord,
+			newWord,
+			articleTitle: article.title,
+			articleSlug: article.slug,
+			editorName: session.user.name,
+			editorId: session.user.id
+		});
 
 		cooldownManager.addCooldown(session.user.id);
 
