@@ -18,18 +18,20 @@ This renders:
 :::
  */
 
-	import { getAstNode } from 'svelte-exmarkdown';
-	import { Card, CardContent } from '$lib/components/ui/card';
+	import { getAstNode } from "svelte-exmarkdown";
+	import { Card, CardContent } from "$lib/components/ui/card";
+	import { transformWikiImageUrl } from "$lib/utils/imageUtils";
 
 	interface ImageDetails {
 		src: string;
 		alt: string;
+		fallback?: string;
 	}
 
 	interface InfoItem {
 		label: string;
 		content: {
-			type: 'text' | 'link';
+			type: "text" | "link";
 			value: string;
 			href?: string;
 		}[];
@@ -53,7 +55,7 @@ This renders:
 
 	function decodeWikiUrl(url: string) {
 		if (!url) return url;
-		return url.replace(/\/\/\//g, '_');
+		return url.replace(/\/\/\//g, "_");
 	}
 
 	const astContext = getAstNode();
@@ -63,16 +65,17 @@ This renders:
 
 	let imageDetails = $state<ImageDetails | null>(null);
 	let infoItems = $state<InfoItem[]>([]);
+	let hasError = $state(false);
 
 	const isSummary = $derived(
-		node?.type === 'element' &&
-			node?.tagName === 'p' &&
+		node?.type === "element" &&
+			node?.tagName === "p" &&
 			(node.children || [])
-				.filter((c) => c.type === 'text')
-				.map((c) => c.value || '')
-				.join('')
+				.filter((c) => c.type === "text")
+				.map((c) => c.value || "")
+				.join("")
 				.trim()
-				.startsWith(':::summary')
+				.startsWith(":::summary"),
 	);
 
 	const hasContent = $derived(!!imageDetails || infoItems.length > 0);
@@ -82,44 +85,56 @@ This renders:
 
 		// find the image node
 		const imageNode = node.children.find(
-			(child) => child.type === 'element' && child.tagName === 'img'
+			(child) => child.type === "element" && child.tagName === "img",
 		);
 
 		// set image shit
 		if (imageNode?.properties?.src) {
-			const decodedSrc = decodeWikiUrl(imageNode.properties.src);
-			imageDetails = {
-				src: decodedSrc.startsWith('http') ? decodedSrc : 'https://' + decodedSrc,
-				alt: imageNode.properties.alt || ''
-			};
+			transformWikiImageUrl(imageNode.properties.src).then(
+				({ primary, fallback }) => {
+					const src = primary;
+					imageDetails = {
+						src,
+						alt: imageNode.properties.alt || "",
+						fallback,
+					};
+				},
+			);
 		}
 
 		// needles
-		let currentLabel = '';
-		let currentContent: InfoItem['content'] = [];
+		let currentLabel = "";
+		let currentContent: InfoItem["content"] = [];
 		let items: InfoItem[] = [];
 		let isCollecting = false;
 
 		node.children.forEach((child) => {
-			if (child.type === 'element' && child.tagName === 'strong' && child.children?.[0]) {
+			if (
+				child.type === "element" &&
+				child.tagName === "strong" &&
+				child.children?.[0]
+			) {
 				if (currentLabel) {
-					items.push({ label: currentLabel, content: currentContent });
+					items.push({
+						label: currentLabel,
+						content: currentContent,
+					});
 				}
-				currentLabel = child.children[0].value || '';
+				currentLabel = child.children[0].value || "";
 				currentContent = [];
 				isCollecting = true;
-			} else if (child.type === 'text' && child.value && isCollecting) {
-				const closingIdx = child.value.indexOf(':::');
+			} else if (child.type === "text" && child.value && isCollecting) {
+				const closingIdx = child.value.indexOf(":::");
 				if (closingIdx !== -1) {
 					const value = child.value.slice(0, closingIdx).trim();
 					if (value) {
-						currentContent.push({ type: 'text', value });
+						currentContent.push({ type: "text", value });
 					}
 					isCollecting = false; // Stop collecting after closing
 				} else {
 					const trimmed = child.value.trim();
 					if (trimmed) {
-						currentContent.push({ type: 'text', value: trimmed });
+						currentContent.push({ type: "text", value: trimmed });
 					}
 				}
 			}
@@ -131,6 +146,15 @@ This renders:
 
 		infoItems = items;
 	});
+
+	const handleError = (ev: Event) => {
+		if (imageDetails?.fallback) {
+			imageDetails = {
+				...imageDetails,
+				src: imageDetails.fallback,
+			};
+		}
+	};
 </script>
 
 {#if isSummary}
@@ -139,7 +163,12 @@ This renders:
 			class="float-right clear-right mb-6 ml-4 max-w-sm overflow-hidden rounded-lg border bg-card"
 		>
 			{#if imageDetails}
-				<img src={imageDetails.src} alt={imageDetails.alt} class="summary-image" />
+				<img
+					src={imageDetails.src}
+					alt={imageDetails.alt}
+					on:error={handleError}
+					class="summary-image"
+				/>
 			{/if}
 			<CardContent class="space-y-2 p-4">
 				{#each infoItems as { label, content }}
@@ -147,8 +176,12 @@ This renders:
 						<span class="min-w-24 font-bold">{label}</span>
 						<span class="flex-1">
 							{#each content as part}
-								{#if part.type === 'link'}
-									<a href={part.href} class="text-primary hover:underline">{part.value}</a>
+								{#if part.type === "link"}
+									<a
+										href={part.href}
+										class="text-primary hover:underline"
+										>{part.value}</a
+									>
 								{:else}
 									{part.value}
 								{/if}

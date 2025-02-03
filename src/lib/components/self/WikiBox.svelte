@@ -1,37 +1,49 @@
 <script lang="ts">
-	import { getAstNode } from 'svelte-exmarkdown';
-
-	function decodeWikiUrl(url: string) {
-		if (!url) return url;
-		return url.replace(/\/\/\//g, '_');
-	}
+	import { getAstNode } from "svelte-exmarkdown";
+	import { transformWikiImageUrl } from "$lib/utils/imageUtils";
 
 	const astContext = getAstNode();
 	const node = $astContext;
-	const rawContent = node?.children?.[0]?.value ?? '';
+	const rawContent = node?.children?.[0]?.value ?? "";
 
-	const bracketContent = rawContent.match(/\[(.*)\]/)?.[1] ?? '';
-	const parts = bracketContent.split('|').map((s) => s.trim());
+	const bracketContent = rawContent.match(/\[(.*)\]/)?.[1] ?? "";
+	const parts = bracketContent.split("|").map((s) => s.trim());
 	const isWikiBox = parts.length >= 2 && parts.length <= 3;
 
-	let title = '';
-	let imageUrl = '';
-	let content = '';
+	let title = "";
+	let imageUrl = "";
+	let content = "";
+	let transformedImageUrl = ""; // Add this line
+	let imageUrls: { primary: string; fallback: string | null } | null = null;
+	let hasError = false;
+	let currentSrc = '';
 
 	if (isWikiBox) {
-		[title, imageUrl, content = ''] = parts;
+		[title, imageUrl, content = ""] = parts;
 
 		if (imageUrl) {
-			imageUrl = !imageUrl.startsWith('https://') ? `https://${imageUrl}` : imageUrl;
-			imageUrl = decodeWikiUrl(imageUrl);
+			transformWikiImageUrl(imageUrl).then(urls => {
+				imageUrls = urls;
+				currentSrc = urls.primary;
+			});
 		}
 	}
+
+	const handleError = (ev: Event) => {
+		if (imageUrls?.fallback) {
+			currentSrc = imageUrls.fallback;
+		}
+	};
 </script>
 
 {#if isWikiBox}
 	<figure class="wiki-image-box">
-		{#if imageUrl}
-			<img src={imageUrl} alt={title} />
+		{#if currentSrc}
+			<img
+				src={currentSrc}
+				alt={title}
+				on:error={handleError}
+			/>
 		{/if}
 		<figcaption>
 			{#if title}

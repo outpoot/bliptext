@@ -30,16 +30,15 @@
 	import Eye from "lucide-svelte/icons/eye";
 	import Badge from "../ui/badge/badge.svelte";
 	import { captchaToken, captchaVerified } from "$lib/stores/captcha";
-	import CaptchaManager from "./CaptchaManager.svelte";
-	import { tick } from "svelte";
-	import { soundMuted } from '$lib/stores/soundMuted';
+	// import { tick } from "svelte";
+	import { soundMuted } from "$lib/stores/soundMuted";
 
 	const clickSound = "/sound/click.mp3";
 	const swapSound = "/sound/swap.mp3";
 
 	let showMobileTools = $state(false);
 	let showMobileContents = $state(false);
-	let captchaManager: CaptchaManager;
+	// let captchaManager: CaptchaManager;
 
 	let {
 		content,
@@ -112,7 +111,7 @@
 
 	function playSound(sound: string) {
 		if ($soundMuted) return;
-		
+
 		const now = Date.now();
 		if (now - lastSoundPlayed < SOUND_DEBOUNCE) return;
 
@@ -340,13 +339,13 @@
 		newWord: string;
 		wordIndex: number;
 	}) {
-		if (!$captchaVerified) {
-			captchaManager.startVerification();
-			await tick();
-			while (!$captchaVerified) {
-				await new Promise((resolve) => setTimeout(resolve, 100));
-			}
-		}
+		// if (!$captchaVerified) {
+		// 	captchaManager.startVerification();
+		// 	await tick();
+		// 	while (!$captchaVerified) {
+		// 		await new Promise((resolve) => setTimeout(resolve, 100));
+		// 	}
+		// }
 
 		const res = await fetch(`/api/articles/${article.slug}/word`, {
 			method: "PUT",
@@ -391,7 +390,7 @@
 	}
 </script>
 
-<CaptchaManager bind:this={captchaManager} />
+<!-- <CaptchaManager bind:this={captchaManager} /> -->
 
 <!-- Template -->
 {#if showSidebars}

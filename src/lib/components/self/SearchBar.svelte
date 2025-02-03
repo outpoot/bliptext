@@ -25,7 +25,7 @@
 			const res = await fetch('/api/random');
 			if (!res.ok) throw new Error('Failed to fetch random article');
 			const { slug } = await res.json();
-			await goto(`/articles/${slug}/edit`);
+			await goto(`/articles/${slug}`);
 			onNavigate();
 		} catch (error) {
 			console.error('Error navigating to random article:', error);

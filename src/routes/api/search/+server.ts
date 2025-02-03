@@ -10,15 +10,16 @@ export async function GET({ url }) {
     try {
         const startTime = Date.now();
 
-        // Simple, fast query using to_tsquery with prefix matching
         const results = await db
             .select({
                 id: articles.id,
                 title: articles.title,
                 slug: articles.slug,
+                rank: sql<number>`ts_rank_cd(${articles.search_vector}, websearch_to_tsquery('english', ${query}))`,
             })
             .from(articles)
-            .where(sql`${articles.search_vector} @@ to_tsquery('english', ${query + ':*'})`)
+            .where(sql`${articles.search_vector} @@ websearch_to_tsquery('english', ${query})`)
+            .orderBy(sql`ts_rank_cd(${articles.search_vector}, websearch_to_tsquery('english', ${query})) DESC`)
             .limit(10)
             .execute();
 
@@ -29,7 +30,8 @@ export async function GET({ url }) {
                 id: row.id,
                 title: row.title.slice(0, 200),
                 slug: row.slug,
-                content: "View article about " + row.title.slice(0, 100) + "..."
+                content: "View article about " + row.title.slice(0, 100) + "...",
+                relevance: row.rank
             }))
         });
     } catch (error) {

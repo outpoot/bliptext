@@ -111,8 +111,8 @@
 	};
 </script>
 
-{#if type === 'editor' && !$currentUser?.isBanned}
+<!-- {#if type === 'editor' && !$currentUser?.isBanned}
 	<CaptchaManager />
-{/if}
+{/if} -->
 
 {@render children?.({ send })}

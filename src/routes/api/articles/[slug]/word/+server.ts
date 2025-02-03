@@ -6,20 +6,20 @@ import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
-import { validateTurnstile } from '$lib/turnstile';
+// import { validateTurnstile } from '$lib/turnstile';
 
 export async function PUT({ params, request }) {
-	const { wordIndex, newWord, captchaToken } = await request.json();
+	const { wordIndex, newWord } = await request.json();
 	const { slug } = params;
 
-	if (!captchaToken) {
-		return json({ error: 'CAPTCHA verification required' }, { status: 400 });
-	}
+	// if (!captchaToken) {
+	// 	return json({ error: 'CAPTCHA verification required' }, { status: 400 });
+	// }
 
-	const isCaptchaValid = await validateTurnstile(captchaToken);
-	if (!isCaptchaValid) {
-		return json({ error: 'CAPTCHA verification failed' }, { status: 400 });
-	}
+	// const isCaptchaValid = await validateTurnstile(captchaToken);
+	// if (!isCaptchaValid) {
+	// 	return json({ error: 'CAPTCHA verification failed' }, { status: 400 });
+	// }
 
 	if (typeof wordIndex !== 'number' || !newWord) {
 		return json({ error: 'Word index and new word are required' }, { status: 400 });
@@ -78,8 +78,8 @@ export async function PUT({ params, request }) {
 			.update(articles)
 			.set({
 				content: newContent,
-				currentRevision: revision.id,
-				updatedAt: new Date()
+				current_revision: revision.id,
+				updated_at: new Date()
 			})
 			.where(eq(articles.id, article.id));
 
