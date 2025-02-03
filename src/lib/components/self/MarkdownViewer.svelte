@@ -89,7 +89,8 @@
 	let selectedElement: HTMLElement | null = $state(null);
 	let showSubmitButton = $state(false);
 	let submitButtonPosition = $state({ x: 0, y: 0 });
-	let isReplacing = $state(false);
+	let isReplacing = $state(false); // For click/selection state
+	let isPending = $state(false); // For request pending state
 
 	let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 	let leaveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -339,48 +340,46 @@
 		newWord: string;
 		wordIndex: number;
 	}) {
-		// if (!$captchaVerified) {
-		// 	captchaManager.startVerification();
-		// 	await tick();
-		// 	while (!$captchaVerified) {
-		// 		await new Promise((resolve) => setTimeout(resolve, 100));
-		// 	}
-		// }
+		isPending = true;
+		try {
+			const res = await fetch(`/api/articles/${article.slug}/word`, {
+				method: "PUT",
+				body: JSON.stringify({
+					wordIndex,
+					newWord,
+					captchaToken: $captchaToken,
+				}),
+			});
 
-		const res = await fetch(`/api/articles/${article.slug}/word`, {
-			method: "PUT",
-			body: JSON.stringify({
-				wordIndex,
-				newWord,
-				captchaToken: $captchaToken,
-			}),
-		});
+			const data = await res.json();
 
-		const data = await res.json();
+			if (res.status === 429) {
+				cooldown.startCooldown(data.remainingTime);
+				toast.error(data.error);
+				return;
+			}
 
-		if (res.status === 429) {
-			cooldown.startCooldown(data.remainingTime);
-			toast.error(data.error);
-			return;
-		}
+			if (!res.ok) {
+				toast.error(data.error);
+				return;
+			}
 
-		if (!res.ok) {
-			toast.error(data.error);
-			return;
-		}
+			// $captchaVerified = false;
 
-		$captchaVerified = false;
-		// update UI after successful edit
-		wordProcessor.replaceWord(newWord, selectedElement!, () => {});
-		cooldown.startCooldown(30000);
-		playSound(swapSound);
+			// update UI after successful edit
+			wordProcessor.replaceWord(newWord, selectedElement!, () => {});
+			cooldown.startCooldown(30000);
+			playSound(swapSound);
 
-		isReplacing = false;
-		selectedWord = "";
-		showSubmitButton = false;
-		if (selectedElement) {
-			selectedElement.classList.remove("selected");
-			selectedElement = null;
+			isReplacing = false;
+			selectedWord = "";
+			showSubmitButton = false;
+			if (selectedElement) {
+				selectedElement.classList.remove("selected");
+				selectedElement = null;
+			}
+		} finally {
+			isPending = false;
 		}
 	}
 
@@ -591,19 +590,20 @@
 	<Button
 		class="fixed z-50"
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
-		onclick={() => {
+		disabled={isPending}
+		onclick={async () => {
 			const actualIndex = wordProcessor.wordIndicesMap.get(
 				selectedElement!,
 			);
 			if (actualIndex !== undefined) {
-				handleWordChanged({
+				await handleWordChanged({
 					newWord: selectedWord,
 					wordIndex: actualIndex,
 				});
 			}
 		}}
 	>
-		Replace
+		{isPending ? "Loading..." : "Replace"}
 	</Button>
 {/if}
 

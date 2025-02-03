@@ -62,16 +62,14 @@ export const flyAndScale = (
 };
 
 export function getWordAtIndex(content: string, index: number): string | null {
-	const words = content.split(/\s+/).filter(Boolean);
-	if (index < 0 || index >= words.length) return null;
-
-	const word = words[index];
-	return word
+	const words = content.match(/\[.+?\]\([^)]+\)|[^\s]+/g);
+	if (!words || index < 0 || index >= words.length) return null;
+	return words[index];
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-	const words = content.split(/\s+/).filter(Boolean);
-	if (index < 0 || index >= words.length) return content;
+	const words = content.match(/\[.+?\]\([^)]+\)|[^\s]+/g);
+	if (!words || index < 0 || index >= words.length) return content;
 
 	let startIndex = 0;
 	for (let i = 0; i < index; i++) {
@@ -81,9 +79,7 @@ export function replaceWordAtIndex(content: string, index: number, newWord: stri
 	startIndex = content.indexOf(words[index], startIndex);
 	const endIndex = startIndex + words[index].length;
 
-	const newContent = content.slice(0, startIndex) + newWord + content.slice(endIndex);
-
-	return newContent;
+	return content.slice(0, startIndex) + newWord + content.slice(endIndex);
 }
 
 export function slugify(text: string): string {
@@ -126,7 +122,7 @@ export function isValidWord(newWord: string): boolean {
 	if (newWord.length > 30) return false;
 
 	const isBoldOrItalic = /^\*\*\w+\*\*$/.test(newWord) || /^\*\w+\*$/.test(newWord);
-	const isLink = /^\[\w+\]\([^\s]{1,50}\)$/.test(newWord);
+	const isLink = /^\[[\w\s]+\]\([^\s]{1,50}\)$/.test(newWord); // Changed regex to allow spaces in link text
 	const isPlainWord = /^\w+$/.test(newWord);
 
 	return isBoldOrItalic || isLink || isPlainWord;

@@ -42,7 +42,7 @@
 			<img
 				src={currentSrc}
 				alt={title}
-				on:error={handleError}
+				onerror={handleError}
 			/>
 		{/if}
 		<figcaption>

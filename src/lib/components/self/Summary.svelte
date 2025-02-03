@@ -166,7 +166,7 @@ This renders:
 				<img
 					src={imageDetails.src}
 					alt={imageDetails.alt}
-					on:error={handleError}
+					onerror={handleError}
 					class="summary-image"
 				/>
 			{/if}

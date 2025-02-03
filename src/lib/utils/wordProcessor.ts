@@ -18,7 +18,8 @@ export class WordProcessor {
         this.cleanedWordToIndices = new Map();
         this.usedIndices = new Set();
 
-        const contentWords = this.content.split(/\s+/);
+        const contentWords = this.content.match(/\[.+?\]\([^)]+\)|[^\s]+/g) || [];
+
         contentWords.forEach((word, index) => {
             const cleaned = this.cleanContentWord(word);
             if (!this.cleanedWordToIndices.has(cleaned)) {
@@ -33,7 +34,7 @@ export class WordProcessor {
         if (cleaned.startsWith('[')) {
             const closingBracket = cleaned.indexOf(']');
             if (closingBracket !== -1) {
-                cleaned = cleaned.substring(1, closingBracket);
+                cleaned = cleaned.substring(1, closingBracket).trim();
             }
         }
         return cleaned;
@@ -44,8 +45,8 @@ export class WordProcessor {
         if (/^\*\*\w+\*\*$/.test(word) || /^\*\w+\*$/.test(word)) {
             return true;
         }
-        // hyperlink with url up to 50 chars
-        if (/^\[\w+\]\([^\s]{1,50}\)$/.test(word)) {
+        // hyperlink with multi-word text and url up to 50 chars
+        if (/^\[[\w\s]+\]\([^\s]{1,50}\)$/.test(word)) {
             return true;
         }
         // unformatted word
