@@ -10,6 +10,7 @@ export const auth = betterAuth({
     baseURL: env.PUBLIC_BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     appName: "Bliptext",
+    trustedOrigins: env.TRUSTED_ORIGINS?.split(',') || [],
 
     database: drizzleAdapter(db, {
         provider: "pg",
