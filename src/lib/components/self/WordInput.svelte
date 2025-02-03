@@ -1,20 +1,23 @@
 <script lang="ts">
-	import { Input } from '../ui/input';
-	import { cooldown } from '$lib/stores/cooldown';
+	import { Input } from "../ui/input";
+	import { cooldown } from "$lib/stores/cooldown";
 
-	let { inputProps = {}, class: className = '' } = $props();
+	let { inputProps = {}, class: className = "" } = $props();
 
-	let err = $state('');
+	let err = $state("");
 
 	function validateInput(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const value = input.value;
 
-		if (value && !/^(\*\*\w+\*\*|\*\w+\*|\[\w+\]\([^\s]{1,50}\)|\w+)$/.test(value)) {
+		if (
+			value &&
+			!/^(\*\*\w+\*\*|\*\w+\*|\[\w+\]\([^\s]{1,50}\)|\w+)$/.test(value)
+		) {
 			err =
-				'Please enter a single word, optionally formatted with *word*, **word**, or [word](url)';
+				"Please enter a single word, optionally formatted with *word*, **word**, or [word](url)";
 		} else {
-			err = '';
+			err = "";
 		}
 	}
 </script>
@@ -28,7 +31,11 @@
 		disabled={$cooldown.isActive}
 	/>
 	{#if $cooldown.isActive}
-		<div class="absolute inset-0 flex items-center justify-center" role="status" aria-live="polite">
+		<div
+			class="absolute inset-0 flex items-center justify-center"
+			role="status"
+			aria-live="polite"
+		>
 			<span class="text-md text-muted-foreground md:text-sm">
 				Wait {$cooldown.remainingTime}s
 			</span>

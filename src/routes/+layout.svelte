@@ -29,8 +29,10 @@
 	import FilePlus from "lucide-svelte/icons/file-plus";
 	import Ban from "lucide-svelte/icons/ban";
 	import X from "lucide-svelte/icons/x";
+	import Users from "lucide-svelte/icons/users";
 	import { Button } from "$lib/components/ui/button";
 	import { styles } from "$lib/utils/styles";
+    import Search from "lucide-svelte/icons/search";
 	let searchDialogOpen = $state(false);
 
 	async function handleSignIn() {
@@ -212,6 +214,15 @@
 										>
 											<Ban class={styles.iconClass} />
 											<span>Bans</span>
+										</a>
+									</DropdownMenuItem>
+									<DropdownMenuItem>
+										<a
+											href="/admin/inspect"
+											class="text-primary {styles.buttonClass}"
+										>
+											<Search class={styles.iconClass} />
+											<span>Inspect</span>
 										</a>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />

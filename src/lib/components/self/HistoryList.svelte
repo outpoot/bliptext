@@ -4,16 +4,17 @@
 	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
 	import { getWordAtIndex } from '$lib/utils';
 	import { fade } from 'svelte/transition';
-	import { toast } from 'svelte-sonner';
 	import Gavel from 'lucide-svelte/icons/gavel';
 	import { currentUser } from '$lib/stores/user';
 	import { styles } from '$lib/utils/styles';
+	import type { RevisionWithUser } from '$lib/utils/revision';
 
-	export let revisions: any[];
+	export let revisions: RevisionWithUser[];
 	export let loading = false;
 	export let hasMore = false;
 	export let onLoadMore: () => void;
 	export let onBanUser: (userId: string) => void;
+	export let showBanButton = true;
 
 	let container: HTMLElement;
 
@@ -66,7 +67,7 @@
 							</div>
 						</div>
 					</div>
-					{#if $currentUser?.isAdmin && !revision.user.isBanned}
+					{#if $currentUser?.isAdmin && !revision.user.isBanned && showBanButton}
 						<Button
 							variant="destructive"
 							size="sm"
