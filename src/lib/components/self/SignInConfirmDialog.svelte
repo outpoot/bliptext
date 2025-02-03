@@ -5,7 +5,8 @@
 	export let open = false;
 	export let onConfirm: () => void;
 
-	function handleConfirm() {
+	async function handleConfirm(e: MouseEvent) {
+		e.preventDefault();
 		onConfirm();
 	}
 </script>
@@ -36,6 +37,7 @@
 		<div class="mt-6 flex justify-end gap-3">
 			<Dialog.Close>Cancel</Dialog.Close>
 			<Button
+				type="button"
 				variant="default"
 				onclick={handleConfirm}
 			>
