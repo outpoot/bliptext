@@ -60,8 +60,7 @@ DISCORD_CLIENT_SECRET=<your-discord-client-secret>
 JWT_SECRET=<generate-a-random-string>
 REDIS_URL=<your-redis-url>
 SITE_URL=http://localhost:3000
-PUBLIC_TURNSTILE_SITE_KEY=<your-turnstile-site-key>
-TURNSTILE_SECRET_KEY=<your-turnstile-secret-key>
+DISCORD_WEBHOOK_URL=<your-discord-webhook-optional>
 ```
 
 ### 2. Database Setup
