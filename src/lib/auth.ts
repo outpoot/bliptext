@@ -5,7 +5,6 @@ import { db } from "$lib/server/db";
 
 if (!env.DISCORD_CLIENT_ID) throw new Error('DISCORD_CLIENT_ID is not set');
 if (!env.DISCORD_CLIENT_SECRET) throw new Error('DISCORD_CLIENT_SECRET is not set');
-if (!env.ORIGIN) throw new Error('ORIGIN is not set');
 
 export const auth = betterAuth({
     baseURL: env.PUBLIC_BETTER_AUTH_URL,
