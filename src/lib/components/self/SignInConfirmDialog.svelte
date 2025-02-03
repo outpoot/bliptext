@@ -4,6 +4,10 @@
 
 	export let open = false;
 	export let onConfirm: () => void;
+
+	function handleConfirm() {
+		onConfirm();
+	}
 </script>
 
 <Dialog.Root bind:open>
@@ -33,10 +37,7 @@
 			<Dialog.Close>Cancel</Dialog.Close>
 			<Button
 				variant="default"
-				onclick={() => {
-					onConfirm();
-					open = false;
-				}}
+				onclick={handleConfirm}
 			>
 				I Agree
 			</Button>

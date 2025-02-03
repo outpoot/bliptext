@@ -38,7 +38,7 @@
 	async function handleSignIn() {
 		await signIn.social({
 			provider: "discord",
-			callbackURL: "/home",
+			callbackURL: page.url.pathname,
 		});
 	}
 
