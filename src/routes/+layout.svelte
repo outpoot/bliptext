@@ -32,14 +32,19 @@
 	import Users from "lucide-svelte/icons/users";
 	import { Button } from "$lib/components/ui/button";
 	import { styles } from "$lib/utils/styles";
-    import Search from "lucide-svelte/icons/search";
+	import Search from "lucide-svelte/icons/search";
 	let searchDialogOpen = $state(false);
 
 	async function handleSignIn() {
-		await signIn.social({
+		const authUrl = await signIn.social({
 			provider: "discord",
 			callbackURL: page.url.pathname,
+			disableRedirect: true,
 		});
+
+		if (authUrl?.data?.url) {
+			window.location.href = authUrl.data.url;
+		}
 	}
 
 	async function handleSignOut() {
