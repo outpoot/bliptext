@@ -62,13 +62,13 @@ export const flyAndScale = (
 };
 
 export function getWordAtIndex(content: string, index: number): string | null {
-	const words = content.match(/\[.+?\]\([^)]+\)|[^\s]+/g);
+	const words = content.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g);
 	if (!words || index < 0 || index >= words.length) return null;
 	return words[index];
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-	const words = content.match(/\[.+?\]\([^)]+\)|[^\s]+/g);
+	const words = content.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g);
 	if (!words || index < 0 || index >= words.length) return content;
 
 	let startIndex = 0;
@@ -119,11 +119,19 @@ export function fuzzySearch(text: string, query: string): number {
 }
 
 export function isValidWord(newWord: string): boolean {
-	if (newWord.length > 50) return false;
+    if (newWord.length > 100) return false; // Increased limit for multi-word content
 
-	const isBoldOrItalic = /^\*\*\w+\*\*$/.test(newWord) || /^\*\w+\*$/.test(newWord);
-	const isLink = /^\[[\w\s]+\]\([^\s]{1,50}\)$/.test(newWord); // Changed regex to allow spaces in link text
-	const isPlainWord = /^\w+$/.test(newWord);
+    // Allow any text within bold/italic markers
+    const isBoldOrItalic = (
+        /^\*\*[\s\w\d\p{P}]+\*\*$/u.test(newWord) || 
+        /^\*[\s\w\d\p{P}]+\*$/u.test(newWord)
+    );
+    
+    // Allow more characters in link text and URLs
+    const isLink = /^\[[\w\s\d\p{P}]+\]\([^\s]{1,100}\)$/u.test(newWord);
+    
+    // Plain words remain restricted
+    const isPlainWord = /^[\w\d]+$/.test(newWord);
 
-	return isBoldOrItalic || isLink || isPlainWord;
+    return isBoldOrItalic || isLink || isPlainWord;
 }

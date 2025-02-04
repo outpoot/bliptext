@@ -18,51 +18,67 @@ export class WordProcessor {
         this.cleanedWordToIndices = new Map();
         this.usedIndices = new Set();
 
-        const contentWords = this.content.match(/\[.+?\]\([^)]+\)|[^\s]+/g) || [];
-
+        const contentWords = this.content.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
         contentWords.forEach((word, index) => {
             const cleaned = this.cleanContentWord(word);
-            if (!this.cleanedWordToIndices.has(cleaned)) {
-                this.cleanedWordToIndices.set(cleaned, []);
-            }
-            this.cleanedWordToIndices.get(cleaned)?.push(index);
+            this.cleanedWordToIndices.set(cleaned, [...(this.cleanedWordToIndices.get(cleaned) || []), index]);
         });
     }
 
     private cleanContentWord(word: string): string {
-        let cleaned = word.replace(/[*_.,]/g, '');
-        if (cleaned.startsWith('[')) {
-            const closingBracket = cleaned.indexOf(']');
-            if (closingBracket !== -1) {
-                cleaned = cleaned.substring(1, closingBracket).trim();
-            }
+        if (word.startsWith('**') && word.endsWith('**')) return word.slice(2, -2);
+        if (word.startsWith('*') && word.endsWith('*')) return word.slice(1, -1);
+        if (word.startsWith('[')) {
+            const closingBracket = word.indexOf(']');
+            return closingBracket !== -1 ? word.substring(1, closingBracket).trim() : word;
         }
-        return cleaned;
+        return word.replace(/[*_.,]/g, '');
     }
 
     isValidFormattedWord(word: string): boolean {
-        // bold/italic
-        if (/^\*\*\w+\*\*$/.test(word) || /^\*\w+\*$/.test(word)) {
-            return true;
-        }
-        // hyperlink with multi-word text and url up to 50 chars
-        if (/^\[[\w\s]+\]\([^\s]{1,50}\)$/.test(word)) {
-            return true;
-        }
-        // unformatted word
-        return /^\w+$/.test(word);
+        return [/^\*\*[^*]+\*\*$/, /^\*[^*]+\*$/, /^\[[\w\s]+\]\([^\s]{1,50}\)$/, /^\w+$/]
+            .some(pattern => pattern.test(word));
     }
 
     private attachEventListeners(element: HTMLElement) {
-        if (this.eventHandlers.onHover) {
-            element.addEventListener('mouseenter', () => this.eventHandlers.onHover?.(element));
+        const { onHover, onLeave, onClick } = this.eventHandlers;
+        onHover && element.addEventListener('mouseenter', () => onHover(element));
+        onLeave && element.addEventListener('mouseleave', () => onLeave(element));
+        onClick && element.addEventListener('click', () => onClick(element));
+    }
+
+    private createWrapperElement(tagName: 'strong' | 'em' | 'a', span: HTMLElement, url?: string): HTMLElement {
+        const wrapper = document.createElement(tagName);
+        if (tagName === 'a' && url) {
+            wrapper.setAttribute('href', url);
+            wrapper.setAttribute('rel', 'noopener noreferrer');
+            wrapper.setAttribute('target', '_blank');
         }
-        if (this.eventHandlers.onLeave) {
-            element.addEventListener('mouseleave', () => this.eventHandlers.onLeave?.(element));
+        wrapper.appendChild(span);
+        return wrapper;
+    }
+
+    private createBaseSpan(text: string): HTMLElement {
+        const span = document.createElement('span');
+        span.className = 'hv';
+        span.textContent = text;
+        return span;
+    }
+
+    private determineWordElement(word: string, baseSpan: HTMLElement): HTMLElement {
+        if (word.startsWith('**') && word.endsWith('**')) {
+            return this.createWrapperElement('strong', baseSpan);
         }
-        if (this.eventHandlers.onClick) {
-            element.addEventListener('click', () => this.eventHandlers.onClick?.(element));
+        if (word.startsWith('*') && word.endsWith('*')) {
+            return this.createWrapperElement('em', baseSpan);
         }
+        if (word.startsWith('[')) {
+            const match = word.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+            if (match && (match[2].startsWith('http://') || match[2].startsWith('https://'))) {
+                return this.createWrapperElement('a', baseSpan, match[2]);
+            }
+        }
+        return baseSpan;
     }
 
     replaceWord(
@@ -70,10 +86,7 @@ export class WordProcessor {
         element: HTMLElement,
         onWordChange: (data: { newWord: string; wordIndex: number }) => void
     ) {
-        if (!this.isValidFormattedWord(newWord)) {
-            console.error('Invalid word format');
-            return;
-        }
+        if (!this.isValidFormattedWord(newWord)) return console.error('Invalid word format');
 
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
@@ -82,123 +95,84 @@ export class WordProcessor {
         element.classList.add('word-exit');
 
         setTimeout(() => {
-            const span = document.createElement('span');
-            span.className = 'hv';
-            span.dataset.wordIndex = actualIndex.toString();
-            span.textContent = newWord.startsWith('**')
-                ? newWord.slice(2, -2)
-                : newWord.startsWith('*')
-                    ? newWord.slice(1, -1)
-                    : newWord.startsWith('[')
-                        ? newWord.match(/^\[(.+?)\]/)?.[1] || newWord
-                        : newWord;
+            const baseSpan = this.createBaseSpan(this.cleanContentWord(newWord));
+            const replacement = this.determineWordElement(newWord, baseSpan);
 
-            this.attachEventListeners(span);
-
-            let replacement: Element = span;
-            if (newWord.startsWith('[')) {
-                const match = newWord.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-                if (match) {
-                    const [, linkText, url] = match;
-
-                    if (url.startsWith('http://') || url.startsWith('https://')) {
-                        const anchor = document.createElement('a');
-                        anchor.href = url;
-                        anchor.textContent = linkText;
-                        anchor.rel = 'noopener noreferrer';
-                        anchor.target = '_blank';
-                        replacement = anchor;
-                    } else {
-                        replacement = span;
-                        span.textContent = linkText;
-                    }
-                }
-            } else if (newWord.startsWith('**')) {
-                const strong = document.createElement('strong');
-                strong.appendChild(span);
-                replacement = strong;
-            } else if (newWord.startsWith('*')) {
-                const em = document.createElement('em');
-                em.appendChild(span);
-                replacement = em;
-            }
-
-            this.wordIndicesMap.set(span, actualIndex);
+            baseSpan.dataset.wordIndex = actualIndex.toString();
+            this.wordIndicesMap.set(baseSpan, actualIndex);
             this.wordIndicesMap.delete(element);
+            this.attachEventListeners(baseSpan);
 
             element.replaceWith(replacement);
-            span.classList.add('word-enter');
-            setTimeout(() => span.classList.remove('word-enter'), 500);
+            baseSpan.classList.add('word-enter');
+            setTimeout(() => baseSpan.classList.remove('word-enter'), 500);
         }, 300);
 
         onWordChange?.({ newWord, wordIndex: actualIndex });
     }
 
-    private createWordSpan(word: string): HTMLSpanElement {
-        const span = document.createElement('span');
-        span.textContent = word;
-        span.className = 'hv';
+    private createWordSpan(word: string): HTMLElement {
+        const baseSpan = this.createBaseSpan(this.cleanContentWord(word));
+        const element = this.determineWordElement(word, baseSpan);
 
         const cleanedWord = this.cleanContentWord(word);
         const possibleIndices = this.cleanedWordToIndices.get(cleanedWord) || [];
-        let actualIndex = -1;
-
-        for (const index of possibleIndices) {
-            if (!this.usedIndices.has(index)) {
-                actualIndex = index;
-                this.usedIndices.add(index);
-                break;
-            }
-        }
+        const actualIndex = possibleIndices.find(index => !this.usedIndices.has(index)) ?? -1;
 
         if (actualIndex !== -1) {
-            this.wordIndicesMap.set(span, actualIndex);
-            span.dataset.wordIndex = actualIndex.toString();
+            this.usedIndices.add(actualIndex);
+            this.wordIndicesMap.set(baseSpan, actualIndex);
+            baseSpan.dataset.wordIndex = actualIndex.toString();
         }
 
-        this.attachEventListeners(span);
-        return span;
+        this.attachEventListeners(baseSpan);
+        return element;
     }
 
     wrapTextNodes(element: Element) {
+        const nodes: Text[] = [];
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-            acceptNode: (node) => {
-                if (!node.textContent?.trim() || node.parentElement?.classList.contains('hv')) {
-                    return NodeFilter.FILTER_REJECT;
-                }
-                return NodeFilter.FILTER_ACCEPT;
-            }
+            acceptNode: node => (
+                node.textContent?.trim() && !node.parentElement?.classList.contains('hv')
+                    ? NodeFilter.FILTER_ACCEPT
+                    : NodeFilter.FILTER_REJECT
+            )
         });
 
-        const nodes: Text[] = [];
-        let node;
-        while ((node = walker.nextNode())) nodes.push(node as Text);
+        while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+        nodes.reverse().forEach(textNode => {
+            const parent = textNode.parentElement;
+            const text = textNode.textContent || '';
 
-        nodes.reverse().forEach((textNode) => {
-            const isInLink = textNode.parentElement?.tagName === 'A';
-            if (isInLink) {
-                const span = this.createWordSpan(textNode.textContent || '');
-                textNode.parentNode?.replaceChild(span, textNode);
-            } else {
-                const words = textNode.textContent?.split(/\s+/) ?? [];
-                const fragment = document.createDocumentFragment();
-
-                words.forEach((word) => {
-                    if (!word.trim()) return;
-                    const span = this.createWordSpan(word);
-                    fragment.appendChild(span);
-                    fragment.appendChild(document.createTextNode(' '));
-                });
-
-                textNode.parentNode?.replaceChild(fragment, textNode);
+            if (parent?.matches('strong, em, a')) {
+                const formatted = parent instanceof HTMLAnchorElement
+                    ? `[${text}](${parent.href})`
+                    : parent.tagName === 'STRONG' ? `**${text}**` : `*${text}*`;
+                parent.replaceWith(this.createWordSpan(formatted));
+                return;
             }
+
+            const fragment = document.createDocumentFragment();
+            const words = text.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+            let lastIndex = 0;
+
+            words.forEach(match => {
+                const preSpace = text.slice(lastIndex, text.indexOf(match, lastIndex));
+                if (preSpace) fragment.appendChild(document.createTextNode(preSpace));
+                fragment.appendChild(this.createWordSpan(match));
+                lastIndex = text.indexOf(match, lastIndex) + match.length;
+            });
+
+            if (lastIndex < text.length) {
+                fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+            }
+
+            textNode.replaceWith(fragment);
         });
     }
 
     getElementByWordIndex(index: number): HTMLElement | null {
-        for (const [element, wordIndex] of this.wordIndicesMap.entries()) {
-            if (wordIndex === index) return element;
-        }
-        return null;
+        return Array.from(this.wordIndicesMap.entries())
+            .find(([, wordIndex]) => wordIndex === index)?.[0] || null;
     }
 }
