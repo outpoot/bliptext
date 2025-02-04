@@ -164,9 +164,8 @@
 	function handleElementClick(element: HTMLElement) {
 		if (!selectedWord) return;
 		playSound(clickSound);
-		if (navigator?.vibrate) {
-			navigator.vibrate(100);
-		}
+		navigator?.vibrate(100);
+
 		if (selectedElement) selectedElement.classList.remove("selected");
 
 		selectedElement = element;
