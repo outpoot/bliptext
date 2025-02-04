@@ -24,7 +24,7 @@ export async function sendDiscordWebhook(data: WebhookData) {
 
     const color = stringToColor(data.editorName);
     const inspectUrl = `${env.SITE_URL}/admin/inspect?userId=${data.editorId}`;
-    const articleUrl = `${env.SITE_URL}/article/${data.articleSlug}`;
+    const articleUrl = `${env.SITE_URL}/articles/${data.articleSlug}`;
 
     try {
         await fetch(env.DISCORD_WEBHOOK_URL, {
