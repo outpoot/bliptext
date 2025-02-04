@@ -369,7 +369,7 @@
 			wordProcessor.replaceWord(newWord, selectedElement!, () => {});
 			cooldown.startCooldown(30000);
 			playSound(swapSound);
-   navigator?.vibrate([75, 50])
+   navigator?.vibrate([75, 75, 75])
 
 			isReplacing = false;
 			selectedWord = "";
