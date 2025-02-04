@@ -164,7 +164,7 @@
 	function handleElementClick(element: HTMLElement) {
 		if (!selectedWord) return;
 		playSound(clickSound);
-		navigator?.vibrate(100);
+		navigator?.vibrate?.(100);
 
 		if (selectedElement) selectedElement.classList.remove("selected");
 
@@ -369,7 +369,7 @@
 			wordProcessor.replaceWord(newWord, selectedElement!, () => {});
 			cooldown.startCooldown(30000);
 			playSound(swapSound);
-   navigator?.vibrate([75, 75, 75])
+   navigator?.vibrate?.([75, 75, 75])
 
 			isReplacing = false;
 			selectedWord = "";
