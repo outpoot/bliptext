@@ -68,18 +68,21 @@ export function getWordAtIndex(content: string, index: number): string | null {
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-	const words = content.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g);
-	if (!words || index < 0 || index >= words.length) return content;
+	const regex = /\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g;
+	const matches: { start: number, end: number }[] = [];
+	let match;
 
-	let startIndex = 0;
-	for (let i = 0; i < index; i++) {
-		startIndex = content.indexOf(words[i], startIndex) + words[i].length;
+	while ((match = regex.exec(content)) !== null) {
+		matches.push({
+			start: match.index,
+			end: regex.lastIndex
+		});
 	}
 
-	startIndex = content.indexOf(words[index], startIndex);
-	const endIndex = startIndex + words[index].length;
+	if (index < 0 || index >= matches.length) return content;
 
-	return content.slice(0, startIndex) + newWord + content.slice(endIndex);
+	const { start, end } = matches[index];
+	return content.slice(0, start) + newWord + content.slice(end);
 }
 
 export function slugify(text: string): string {
@@ -119,19 +122,19 @@ export function fuzzySearch(text: string, query: string): number {
 }
 
 export function isValidWord(newWord: string): boolean {
-    if (newWord.length > 100) return false; // Increased limit for multi-word content
+	if (newWord.length > 100) return false; // Increased limit for multi-word content
 
-    // Allow any text within bold/italic markers
-    const isBoldOrItalic = (
-        /^\*\*[\s\w\d\p{P}]+\*\*$/u.test(newWord) || 
-        /^\*[\s\w\d\p{P}]+\*$/u.test(newWord)
-    );
-    
-    // Allow more characters in link text and URLs
-    const isLink = /^\[[\w\s\d\p{P}]+\]\([^\s]{1,100}\)$/u.test(newWord);
-    
-    // Plain words remain restricted
-    const isPlainWord = /^[\w\d]+$/.test(newWord);
+	// Allow any text within bold/italic markers
+	const isBoldOrItalic = (
+		/^\*\*[\s\w\d\p{P}]+\*\*$/u.test(newWord) ||
+		/^\*[\s\w\d\p{P}]+\*$/u.test(newWord)
+	);
 
-    return isBoldOrItalic || isLink || isPlainWord;
+	// Allow more characters in link text and URLs
+	const isLink = /^\[[\w\s\d\p{P}]+\]\([^\s]{1,100}\)$/u.test(newWord);
+
+	// Plain words remain restricted
+	const isPlainWord = /^[\w\d]+$/.test(newWord);
+
+	return isBoldOrItalic || isLink || isPlainWord;
 }

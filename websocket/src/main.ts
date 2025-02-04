@@ -115,6 +115,7 @@ async function handleSetArticle(
 	if (!articleUsers.has(articleId)) {
 		articleUsers.set(articleId, new Set([userId]));
 		await redis.subscribe('updates:' + articleId);
+		await broadcastUserCount(articleId);
 	} else {
 		const wasAdded = !articleUsers.get(articleId)!.has(userId);
 		articleUsers.get(articleId)!.add(userId);
