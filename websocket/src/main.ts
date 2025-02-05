@@ -4,8 +4,6 @@ import Redis from 'ioredis';
 const redis = new Redis(process.env.REDIS_URL!);
 const normalRedis = new Redis(process.env.REDIS_URL!);
 
-console.log('Redis URL:', process.env.REDIS_URL); // Log Redis URL (make sure to redact sensitive info in production)
-
 [redis, normalRedis].forEach((r) => {
 	r.on('error', (err) => {
 		console.error('Redis connection error:', err);
@@ -13,15 +11,6 @@ console.log('Redis URL:', process.env.REDIS_URL); // Log Redis URL (make sure to
 
 	r.on('connect', () => {
 		console.log('Redis connected successfully');
-	});
-
-	// Add more detailed connection status
-	r.on('ready', () => {
-		console.log('Redis client is ready');
-	});
-
-	r.on('reconnecting', () => {
-		console.log('Redis client is reconnecting');
 	});
 });
 
@@ -51,21 +40,14 @@ async function validateAuth(request: Request): Promise<{ id: string; isBanned: b
 	const url = new URL(request.url);
 	const token = url.searchParams.get('token');
 
-	console.log('Validating token:', token); // Debug log
-
 	if (!token) return null;
 
 	try {
 		const sessionData = await normalRedis.get(`ws:${token}`);
-		console.log('Session data from Redis:', sessionData); // Debug log
-
 		if (!sessionData) return null;
 
 		const { userId, isBanned } = JSON.parse(sessionData);
-		console.log('Parsed session data:', { userId, isBanned }); // Debug log
-		
-		// Don't delete the token immediately, set a short expiry instead
-        await normalRedis.expire(`ws:${token}`, 30); // 30 seconds grace period
+		await normalRedis.del(`ws:${token}`);
 
 		return userId ? { id: userId, isBanned } : null;
 	} catch (error) {
@@ -179,18 +161,11 @@ const server = Bun.serve<WebSocketData>({
 	port: Number(process.env.PORT) || 8080,
 
 	async fetch(request, server) {
-		// Add no-cache headers
-        const headers = new Headers({
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-        });
-
 		const authResult = await validateAuth(request);
 		const url = new URL(request.url);
-		console.log(authResult)
+
 		if (authResult?.isBanned) {
-			return new Response('User is banned', { status: 403, headers });
+			return new Response('User is banned', { status: 403 });
 		}
 
 		const connectionType = authResult
@@ -212,7 +187,7 @@ const server = Bun.serve<WebSocketData>({
 			}
 		});
 
-		return upgraded ? undefined : new Response('Upgrade failed', { status: 500, headers });
+		return upgraded ? undefined : new Response('Upgrade failed', { status: 500 });
 	},
 
 	websocket: {
