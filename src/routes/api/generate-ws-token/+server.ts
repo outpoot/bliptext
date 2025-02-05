@@ -1,6 +1,12 @@
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { json, type RequestHandler } from '@sveltejs/kit';
+import pino from 'pino';
+
+// Create a logger instance
+const logger = pino({
+    level: process.env.NODE_ENV === 'development' ? 'debug' : 'info'
+});
 
 export const GET: RequestHandler = async ({ request }) => {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -12,7 +18,7 @@ export const GET: RequestHandler = async ({ request }) => {
         isBanned: session?.user?.isBanned || false
     });
 
-    console.error('Setting WS token data:', { token, data });
+    logger.info({ token, data }, 'Setting WS token data');
 
     // Set token with 5 minute expiry
     await redis.set(
@@ -24,7 +30,7 @@ export const GET: RequestHandler = async ({ request }) => {
 
     // Verify it was set
     const verify = await redis.get(`ws:${token}`);
-    console.error('Verification of token storage:', { token, stored: verify });
+    logger.info({ token, stored: verify }, 'Verification of token storage');
 
     // Add cache control headers
     return json(
