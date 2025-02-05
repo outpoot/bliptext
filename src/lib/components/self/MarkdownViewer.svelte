@@ -335,9 +335,11 @@
 	async function handleWordChanged({
 		newWord,
 		wordIndex,
+		context
 	}: {
 		newWord: string;
 		wordIndex: number;
+		context?: string;
 	}) {
 		isPending = true;
 		try {
@@ -346,6 +348,7 @@
 				body: JSON.stringify({
 					wordIndex,
 					newWord,
+					context,
 					captchaToken: $captchaToken,
 				}),
 			});

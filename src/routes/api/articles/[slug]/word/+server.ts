@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { articles, revisions } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -7,42 +8,26 @@ import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
 import { sendDiscordWebhook } from '$lib/discord';
-// import { validateTurnstile } from '$lib/turnstile';
 
-export async function PUT({ params, request }) {
-	const { wordIndex, newWord } = await request.json();
-	const { slug } = params;
-
-	// if (!captchaToken) {
-	// 	return json({ error: 'CAPTCHA verification required' }, { status: 400 });
-	// }
-
-	// const isCaptchaValid = await validateTurnstile(captchaToken);
-	// if (!isCaptchaValid) {
-	// 	return json({ error: 'CAPTCHA verification failed' }, { status: 400 });
-	// }
-
-	if (typeof wordIndex !== 'number' || !newWord) {
-		return json({ error: 'Word index and new word are required' }, { status: 400 });
-	}
-
-	if (!isValidWord(newWord)) {
-		return json({
-			error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))'
-		}, { status: 400 });
-	}
-
-	const session = await auth.api.getSession({
-		headers: request.headers
-	});
-
-	if (!session) {
-		return json({ error: 'You must be logged in to edit a word' }, { status: 401 });
-	}
-
+export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
+		const session = await auth.api.getSession({
+			headers: request.headers
+		});
+
+		if (!session?.user) {
+			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		const { wordIndex, newWord, context } = await request.json();
+		const contextData = context ? JSON.parse(context) : null;
+
+		if (!isValidWord(newWord)) {
+			return json({ error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))' }, { status: 400 });
+		}
+
 		const article = await db.query.articles.findFirst({
-			where: eq(articles.slug, slug)
+			where: eq(articles.slug, params.slug)
 		});
 
 		if (!article) {
@@ -57,18 +42,39 @@ export async function PUT({ params, request }) {
 			}, { status: 429 });
 		}
 
-		const oldWord = getWordAtIndex(article.content, wordIndex);
-		const newContent = replaceWordAtIndex(article.content, wordIndex, newWord);
+		// Verify the context matches with surrounding text
+		const rawTextWithoutTags = article.content
+			.replace(/:::summary[\s\S]*?:::/g, '')
+			.replace(/^#.*$/gm, '');
+		const words = rawTextWithoutTags.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+		console.log('Server extracted words:', words);
 
-		if (oldWord === null) {
-			return json({ error: 'Word index out of bounds' }, { status: 400 });
+		if (contextData) {
+			const { before, word, after, index } = contextData;
+			const actualBefore = words.slice(Math.max(0, index - 2), index).join(' ');
+			const actualWord = words[index];
+			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ');
+
+			if (index !== wordIndex ||
+				before !== actualBefore ||
+				word !== actualWord ||
+				after !== actualAfter) {
+				return json({ error: 'Context mismatch, please refresh the page' }, { status: 409 });
+			}
 		}
+
+		const oldWord = getWordAtIndex(article.content, wordIndex);
+		if (!oldWord) {
+			return json({ error: 'Word not found' }, { status: 404 });
+		}
+
+		const updatedContent = replaceWordAtIndex(article.content, wordIndex, newWord);
 
 		const [revision] = await db
 			.insert(revisions)
 			.values({
 				articleId: article.id,
-				content: newContent,
+				content: updatedContent,
 				wordChanged: oldWord,
 				wordIndex,
 				createdBy: session.user.id
@@ -78,7 +84,7 @@ export async function PUT({ params, request }) {
 		await db
 			.update(articles)
 			.set({
-				content: newContent,
+				content: updatedContent,
 				current_revision: revision.id,
 				updated_at: new Date()
 			})
@@ -110,9 +116,9 @@ export async function PUT({ params, request }) {
 
 		cooldownManager.addCooldown(session.user.id);
 
-		return json({ success: true, newContent });
+		return json({ success: true, newContent: updatedContent });
 	} catch (error) {
 		console.error('Failed to update word:', error);
 		return json({ error: 'Failed to update word' }, { status: 500 });
 	}
-}
+};

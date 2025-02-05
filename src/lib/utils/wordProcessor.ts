@@ -8,6 +8,7 @@ export class WordProcessor {
     public wordIndicesMap = new Map<HTMLElement, number>();
     private eventHandlers: WordEventHandlers;
     private cleanedWordToIndices: Map<string, number[]>;
+    private wordPositions: Map<number, number>;
     private usedIndices: Set<number>;
 
     constructor(
@@ -16,12 +17,18 @@ export class WordProcessor {
     ) {
         this.eventHandlers = eventHandlers;
         this.cleanedWordToIndices = new Map();
+        this.wordPositions = new Map();
         this.usedIndices = new Set();
 
         const contentWords = this.content.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+        let position = 0;
+
         contentWords.forEach((word, index) => {
+            position = this.content.indexOf(word, position);
             const cleaned = this.cleanContentWord(word);
             this.cleanedWordToIndices.set(cleaned, [...(this.cleanedWordToIndices.get(cleaned) || []), index]);
+            this.wordPositions.set(index, position);
+            position += word.length;
         });
     }
 
@@ -81,15 +88,35 @@ export class WordProcessor {
         return baseSpan;
     }
 
+    private getWordsFromText(text: string): string[] {
+        const textWithoutTags = text.replace(/:::summary[\s\S]*?:::/g, '')
+            .replace(/^#.*$/gm, '');;
+        const matched = textWithoutTags.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+        console.log('Client extracted words:', matched);
+        return matched;
+    }
+
     replaceWord(
         newWord: string,
         element: HTMLElement,
-        onWordChange: (data: { newWord: string; wordIndex: number }) => void
+        onWordChange: (data: { newWord: string; wordIndex: number; context?: string }) => void
     ) {
         if (!this.isValidFormattedWord(newWord)) return console.error('Invalid word format');
 
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
+
+        // Get surrounding context with raw text
+        const words = this.getWordsFromText(this.content);
+        const start = Math.max(0, actualIndex - 2);
+        const end = Math.min(words.length, actualIndex + 3);
+
+        const context = {
+            before: words.slice(start, actualIndex).join(' '),
+            word: words[actualIndex],
+            after: words.slice(actualIndex + 1, end).join(' '),
+            index: actualIndex
+        };
 
         element = element.closest('a, strong, em') || element;
         element.classList.add('word-exit');
@@ -98,7 +125,9 @@ export class WordProcessor {
             const baseSpan = this.createBaseSpan(this.cleanContentWord(newWord));
             const replacement = this.determineWordElement(newWord, baseSpan);
 
+            // Ensure we maintain the exact position mapping
             baseSpan.dataset.wordIndex = actualIndex.toString();
+            baseSpan.dataset.position = element.dataset.position;
             this.wordIndicesMap.set(baseSpan, actualIndex);
             this.wordIndicesMap.delete(element);
             this.attachEventListeners(baseSpan);
@@ -108,7 +137,7 @@ export class WordProcessor {
             setTimeout(() => baseSpan.classList.remove('word-enter'), 500);
         }, 300);
 
-        onWordChange?.({ newWord, wordIndex: actualIndex });
+        onWordChange?.({ newWord, wordIndex: actualIndex, context: JSON.stringify(context) });
     }
 
     private createWordSpan(word: string): HTMLElement {
@@ -123,6 +152,10 @@ export class WordProcessor {
             this.usedIndices.add(actualIndex);
             this.wordIndicesMap.set(baseSpan, actualIndex);
             baseSpan.dataset.wordIndex = actualIndex.toString();
+            const position = this.wordPositions.get(actualIndex);
+            if (position !== undefined) {
+                baseSpan.dataset.position = position.toString();
+            }
         }
 
         this.attachEventListeners(baseSpan);
@@ -140,7 +173,7 @@ export class WordProcessor {
         });
 
         while (walker.nextNode()) nodes.push(walker.currentNode as Text);
-        nodes.reverse().forEach(textNode => {
+        nodes.forEach(textNode => {
             const parent = textNode.parentElement;
             const text = textNode.textContent || '';
 
@@ -153,7 +186,7 @@ export class WordProcessor {
             }
 
             const fragment = document.createDocumentFragment();
-            const words = text.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+            const words = this.getWordsFromText(text);
             let lastIndex = 0;
 
             words.forEach(match => {
