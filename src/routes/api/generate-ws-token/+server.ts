@@ -20,13 +20,11 @@ export const GET: RequestHandler = async ({ request }) => {
 
     logger.info({ token, data }, 'Setting WS token data');
 
-    // Set token with 5 minute expiry
-    await redis.set(
-        `ws:${token}`,
-        data,
-        'EX',
-        300
-    );
+    try {
+        await redis.set(`ws:${token}`, data, 'EX', 300);
+    } catch (error) {
+        console.error('Redis set error:', error);
+    }
 
     // Verify it was set
     const verify = await redis.get(`ws:${token}`);
