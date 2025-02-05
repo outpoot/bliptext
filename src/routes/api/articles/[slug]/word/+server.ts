@@ -23,6 +23,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const { wordIndex, newWord, context } = await request.json();
 		const contextData = context ? JSON.parse(context) : null;
 
+		console.log('Received request:', { wordIndex, newWord, context });
+
 		if (!isValidWord(newWord)) {
 			return json({ error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))' }, { status: 400 });
 		}
@@ -45,10 +47,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		// Verify the context matches with surrounding text
 		const rawTextWithoutTags = article.content
-			.replace(/:::summary[\s\S]*?:::/g, '')
-			.replace(/^#.*$/gm, '');
+			.replace(/:::summary[\s\S]*?:::/g, '');
 		const words = rawTextWithoutTags.match(WORD_MATCH_REGEX) || [];
-		console.log('Server extracted words:', words);
 
 		if (contextData) {
 			const { before, word, after, index } = contextData;

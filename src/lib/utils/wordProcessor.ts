@@ -91,11 +91,9 @@ export class WordProcessor {
     }
 
     public getWordsFromText(text: string): string[] {
-        const textWithoutTags = text.replace(/:::summary[\s\S]*?:::/g, '')
-            .replace(/^#.*$/gm, '');
-        const matched = textWithoutTags.match(WORD_MATCH_REGEX) || [];
-        console.log('Client extracted words:', matched);
-        return matched;
+        const textWithoutTags = text
+            .replace(/:::summary[\s\S]*?:::/g, '');
+        return textWithoutTags.match(WORD_MATCH_REGEX) || [];
     }
 
     replaceWord(

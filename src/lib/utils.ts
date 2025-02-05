@@ -102,19 +102,49 @@ export function getWordAtIndex(content: string, index: number): string | null {
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-	const regex = WORD_MATCH_REGEX;
-	const matches: { start: number, end: number }[] = [];
-	let match;
+	const processedContent = content.replace(/:::summary[\s\S]*?:::/g, '');
+	const words = processedContent.match(WORD_MATCH_REGEX);
 
-	while ((match = regex.exec(content)) !== null) {
-		matches.push({
-			start: match.index,
-			end: regex.lastIndex
-		});
+	if (!words || index < 0 || index >= words.length) {
+		return content;
 	}
 
-	if (index < 0 || index >= matches.length) return content;
+	// Convert special regex characters to literals for string search
+	function escapeRegExp(string: string) {
+		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}
 
-	const { start, end } = matches[index];
-	return content.slice(0, start) + newWord + content.slice(end);
+	// Find exact position of a word, considering previous words' positions
+	function findWordPosition(text: string, words: string[], targetIndex: number): number {
+		let pos = 0;
+		for (let i = 0; i <= targetIndex; i++) {
+			const word = words[i];
+			const escapedWord = escapeRegExp(word);
+			const regex = new RegExp(escapedWord, 'g');
+			regex.lastIndex = pos;
+			const match = regex.exec(text);
+			if (!match) return -1;
+			if (i === targetIndex) {
+				return match.index;
+			}
+			pos = match.index + word.length;
+		}
+		return -1;
+	}
+
+	const targetPos = findWordPosition(processedContent, words, index);
+	if (targetPos === -1) return content;
+
+	// Map position back to original content
+	const summaryEndMatch = content.match(/:::summary[\s\S]*?:::/);
+	const offset = summaryEndMatch ? summaryEndMatch.index! + summaryEndMatch[0].length : 0;
+	const targetWord = words[index];
+	const targetPosInOriginal = findWordPosition(content.slice(offset), words, index);
+
+	if (targetPosInOriginal === -1) return content;
+
+	const finalPos = offset + targetPosInOriginal;
+	return content.slice(0, finalPos) +
+		newWord +
+		content.slice(finalPos + targetWord.length);
 }

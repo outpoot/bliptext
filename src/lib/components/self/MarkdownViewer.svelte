@@ -67,8 +67,7 @@
 
 	function preprocessContent(content: string): string {
 		return content
-			.replace(/:::summary[\s\S]*?:::/g, "")
-			.replace(/^#.*$/gm, "");
+			.replace(/:::summary[\s\S]*?:::/g, "");
 	}
 
 	const wordProcessor = new WordProcessor(preprocessContent(content), {
