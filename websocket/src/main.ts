@@ -133,8 +133,9 @@ async function handleGetActiveArticles(ws: ServerWebSocket<WebSocketData>): Prom
 				try {
 					const response = await fetch(
 						`${process.env.SITE_URL}/api/articles/${articleId}?byId=true`
-					);
-					if (!response.ok) return null;
+					).catch(() => null);
+
+					if (!response?.ok) return null;
 
 					const article = await response.json();
 					return {
@@ -209,6 +210,15 @@ const server = Bun.serve<WebSocketData>({
 			} catch (error) {
 				console.error('Message handling error:', error);
 			}
+		},
+		open(ws) {
+			const interval = setInterval(() => {
+				if (ws.readyState === 1) {
+					ws.ping();
+				} else {
+					clearInterval(interval);
+				}
+			}, 30_000);
 		},
 
 		close(ws) {
