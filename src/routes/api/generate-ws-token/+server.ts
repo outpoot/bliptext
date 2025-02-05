@@ -37,7 +37,9 @@ export const GET: RequestHandler = async ({ request }) => {
             headers: {
                 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
                 'Pragma': 'no-cache',
-                'Expires': '0'
+                'Expires': '0',
+                'Access-Control-Allow-Origin': 'https://bliptext.com',
+                'Access-Control-Allow-Credentials': 'true'
             }
         }
     );
