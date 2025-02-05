@@ -1,12 +1,6 @@
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { json, type RequestHandler } from '@sveltejs/kit';
-import pino from 'pino';
-
-// Create a logger instance
-const logger = pino({
-    level: process.env.NODE_ENV === 'development' ? 'debug' : 'info'
-});
 
 export const GET: RequestHandler = async ({ request }) => {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -18,26 +12,16 @@ export const GET: RequestHandler = async ({ request }) => {
         isBanned: session?.user?.isBanned || false
     });
 
-    logger.info({ token, data }, 'Setting WS token data');
+    await redis.set(`ws:${token}`, data, 'EX', 300);
 
-    try {
-        await redis.set(`ws:${token}`, data, 'EX', 300);
-    } catch (error) {
-        console.error('Redis set error:', error);
-    }
-
-    // Verify it was set
-    const verify = await redis.get(`ws:${token}`);
-    logger.info({ token, stored: verify }, 'Verification of token storage');
-
-    // Add cache control headers
     return json(
         { token },
         {
             headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, private',
                 'Pragma': 'no-cache',
                 'Expires': '0',
+                'Surrogate-Control': 'no-store',
                 'Access-Control-Allow-Origin': 'https://bliptext.com',
                 'Access-Control-Allow-Credentials': 'true'
             }
