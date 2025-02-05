@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
+
 	let { word, image, element, x, y } = $props<{
 		word: string;
 		image?: string;
@@ -7,12 +9,20 @@
 		y?: number;
 	}>();
 
-	const colors = ['#fecaca', '#fed7aa', '#fef08a', '#bbf7d0', '#bae6fd', '#ddd6fe', '#fbcfe8'];
+	const colors = [
+		"#fecaca",
+		"#fed7aa",
+		"#fef08a",
+		"#bbf7d0",
+		"#bae6fd",
+		"#ddd6fe",
+		"#fbcfe8",
+	];
 	const backgroundColor = colors[Math.floor(Math.random() * colors.length)];
 
-	const isBold = $derived(word.startsWith('**') && word.endsWith('**'));
-	const isItalic = $derived(word.startsWith('*') && word.endsWith('*'));
-	const isLink = $derived(word.startsWith('[') && word.includes(']('));
+	const isBold = $derived(word.startsWith("**") && word.endsWith("**"));
+	const isItalic = $derived(word.startsWith("*") && word.endsWith("*"));
+	const isLink = $derived(word.startsWith("[") && word.includes("]("));
 	const displayText = $derived(
 		isBold
 			? word.slice(2, -2)
@@ -20,21 +30,32 @@
 				? word.slice(1, -1)
 				: isLink
 					? (word.match(/\[(.*?)\]/)?.[1] ?? word)
-					: word
+					: word,
 	);
 
+	let isMobile = false;
 	let floatingEl: HTMLDivElement;
+
+	onMount(() => {
+		isMobile = window.matchMedia("(max-width: 768px)").matches;
+	});
 
 	function updatePosition() {
 		if (!floatingEl) return;
 
-		if (element) {
+		if (element && isMobile) {
+			const rect = element.getBoundingClientRect();
+			floatingEl.style.position = "fixed";
+			floatingEl.style.left = `${rect.left + rect.width + 5}px`;
+			floatingEl.style.top = `${rect.top + 5}px`;
+		} else if (element) {
+			// On desktop, keep original cursor-following behavior
 			const rect = element.getBoundingClientRect();
 			floatingEl.style.position = 'fixed';
 			floatingEl.style.left = `${rect.left}px`;
 			floatingEl.style.top = `${rect.top - 10}px`;
 		} else if (x !== undefined && y !== undefined) {
-			floatingEl.style.position = 'fixed';
+			floatingEl.style.position = "fixed";
 			floatingEl.style.left = `${x}px`;
 			floatingEl.style.top = `${y}px`;
 		}
@@ -43,13 +64,13 @@
 	$effect(() => {
 		updatePosition();
 		if (element) {
-			window.addEventListener('scroll', updatePosition);
-			window.addEventListener('resize', updatePosition);
+			window.addEventListener("scroll", updatePosition);
+			window.addEventListener("resize", updatePosition);
 		}
-		
+
 		return () => {
-			window.removeEventListener('scroll', updatePosition);
-			window.removeEventListener('resize', updatePosition);
+			window.removeEventListener("scroll", updatePosition);
+			window.removeEventListener("resize", updatePosition);
 		};
 	});
 </script>

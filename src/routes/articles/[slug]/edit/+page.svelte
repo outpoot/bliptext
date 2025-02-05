@@ -30,6 +30,8 @@
 	let showFloatingWord = $state(false);
 	let showTos = $state(!$tosAccepted);
 	let showConfirm = $state(false);
+	let targetElement = $state<HTMLElement | undefined>(undefined);
+	let isMobile = $state(false);
 
 	async function handleSignIn() {
 		await signIn.social({
@@ -93,7 +95,16 @@
 		}
 	}
 
+	function handleSelectElement(element: HTMLElement | null) {
+		targetElement = element || undefined;
+	}
+
 	onMount(() => {
+		mouseX = window.innerWidth / 2;
+		mouseY = window.innerHeight / 2;
+
+		isMobile = window.matchMedia("(max-width: 768px)").matches;
+
 		return () => {
 			$activeUsers = 1;
 		};
@@ -182,10 +193,24 @@
 			onInputKeyDown={handleInputKeyDown}
 			onInput={handleInput}
 			ws={wsManager?.ws}
+			onSelectElement={handleSelectElement}
 		/>
 
 		{#if showFloatingWord && selectedWord}
-			<FloatingWord word={selectedWord} x={mouseX + 10} y={mouseY + 10} />
+			{#if isMobile}
+				<FloatingWord
+					word={selectedWord}
+					x={targetElement ? undefined : mouseX + 10}
+					y={targetElement ? undefined : mouseY + 10}
+					element={targetElement}
+				/>
+			{:else}
+				<FloatingWord
+					word={selectedWord}
+					x={mouseX + 10}
+					y={mouseY + 10}
+				/>
+			{/if}
 		{/if}
 	</div>
 

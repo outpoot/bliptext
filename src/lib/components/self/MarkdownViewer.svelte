@@ -3,6 +3,7 @@
 	import type { Plugin } from "svelte-exmarkdown";
 	import Markdown from "svelte-exmarkdown";
 	import { gfmPlugin } from "svelte-exmarkdown/gfm";
+	import { onMount } from "svelte";
 
 	import { cooldown } from "$lib/stores/cooldown";
 	import { activeUsers } from "$lib/stores/activeUsers";
@@ -19,6 +20,7 @@
 	import WordInput from "./WordInput.svelte";
 
 	import { WordProcessor } from "$lib/utils/wordProcessor";
+	import { soundMuted } from "$lib/stores/soundMuted";
 	import { toast } from "svelte-sonner";
 
 	import FileText from "lucide-svelte/icons/file-text";
@@ -29,15 +31,12 @@
 	import Pen from "lucide-svelte/icons/pen";
 	import Eye from "lucide-svelte/icons/eye";
 	import Badge from "../ui/badge/badge.svelte";
-	// import { tick } from "svelte";
-	import { soundMuted } from "$lib/stores/soundMuted";
 
 	const clickSound = "/sound/click.mp3";
 	const swapSound = "/sound/swap.mp3";
 
 	let showMobileTools = $state(false);
 	let showMobileContents = $state(false);
-	// let captchaManager: CaptchaManager;
 
 	let {
 		content,
@@ -51,6 +50,7 @@
 		ws,
 		onInputKeyDown = undefined,
 		onInput = undefined,
+		onSelectElement = undefined,
 	} = $props<{
 		content: string;
 		title?: string;
@@ -63,11 +63,11 @@
 		ws?: WebSocket | null;
 		onInputKeyDown?: (event: KeyboardEvent) => void;
 		onInput?: (event: InputEvent) => void;
+		onSelectElement?: (element: HTMLElement | null) => void;
 	}>();
 
 	function preprocessContent(content: string): string {
-		return content
-			.replace(/:::summary[\s\S]*?:::/g, "");
+		return content.replace(/:::summary[\s\S]*?:::/g, "");
 	}
 
 	const wordProcessor = new WordProcessor(preprocessContent(content), {
@@ -113,6 +113,12 @@
 
 	let lastSoundPlayed = 0;
 	const SOUND_DEBOUNCE = 50;
+
+	let isMobile = false;
+
+	onMount(() => {
+		isMobile = window.matchMedia("(max-width: 768px)").matches;
+	});
 
 	function playSound(sound: string) {
 		if ($soundMuted) return;
@@ -165,6 +171,28 @@
 		}, 125);
 	}
 
+	function updateSubmitButtonPosition() {
+		if (!selectedElement || !showSubmitButton) return;
+
+		requestAnimationFrame(() => {
+			const rect = selectedElement.getBoundingClientRect();
+			if (rect.width && rect.height) {
+				if (isMobile) {
+					submitButtonPosition = { x: rect.left, y: rect.top - 40 };
+				} else {
+					const viewportCenter = window.innerHeight / 2;
+					submitButtonPosition = {
+						x: rect.left,
+						y: Math.min(
+							Math.max(rect.top - 40, 20),
+							viewportCenter,
+						),
+					};
+				}
+			}
+		});
+	}
+
 	function handleElementClick(element: HTMLElement) {
 		if (!selectedWord) return;
 		playSound(clickSound);
@@ -177,8 +205,13 @@
 		isReplacing = true;
 
 		const rect = element.getBoundingClientRect();
-		submitButtonPosition = { x: rect.left, y: rect.top - 40 };
+		if (rect.width && rect.height) {
+			submitButtonPosition = { x: rect.left, y: rect.top - 40 };
+		}
 		showSubmitButton = true;
+		onSelectElement?.(element);
+
+		requestAnimationFrame(updateSubmitButtonPosition);
 	}
 
 	async function handleHover(element: HTMLElement) {
@@ -336,6 +369,24 @@
 		}
 	});
 
+	$effect(() => {
+		if (showSubmitButton && selectedElement) {
+			window.addEventListener("scroll", updateSubmitButtonPosition);
+			window.addEventListener("resize", updateSubmitButtonPosition);
+
+			return () => {
+				window.removeEventListener(
+					"scroll",
+					updateSubmitButtonPosition,
+				);
+				window.removeEventListener(
+					"resize",
+					updateSubmitButtonPosition,
+				);
+			};
+		}
+	});
+
 	async function handleWordChanged({
 		newWord,
 		wordIndex,
@@ -383,6 +434,7 @@
 			if (selectedElement) {
 				selectedElement.classList.remove("selected");
 				selectedElement = null;
+				onSelectElement?.(null);
 			}
 		} finally {
 			isPending = false;
@@ -593,36 +645,40 @@
 {/if}
 
 {#if showSubmitButton && selectedElement}
-	<Button
+	<div
 		class="fixed z-50"
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
-		disabled={isPending}
-		onclick={async () => {
-			const actualIndex = wordProcessor.wordIndicesMap.get(
-				selectedElement!,
-			);
-			if (actualIndex !== undefined) {
-				const words = wordProcessor.getWordsFromText(content);
-				const start = Math.max(0, actualIndex - 2);
-				const end = Math.min(words.length, actualIndex + 3);
-
-				const context = {
-					before: words.slice(start, actualIndex).join(" "),
-					word: words[actualIndex],
-					after: words.slice(actualIndex + 1, end).join(" "),
-					index: actualIndex,
-				};
-
-				await handleWordChanged({
-					newWord: selectedWord,
-					wordIndex: actualIndex,
-					context: JSON.stringify(context),
-				});
-			}
-		}}
 	>
-		{isPending ? "Loading..." : "Replace"}
-	</Button>
+		<Button
+			class="transform-gpu"
+			disabled={isPending}
+			onclick={async () => {
+				const actualIndex = wordProcessor.wordIndicesMap.get(
+					selectedElement!,
+				);
+				if (actualIndex !== undefined) {
+					const words = wordProcessor.getWordsFromText(content);
+					const start = Math.max(0, actualIndex - 2);
+					const end = Math.min(words.length, actualIndex + 3);
+
+					const context = {
+						before: words.slice(start, actualIndex).join(" "),
+						word: words[actualIndex],
+						after: words.slice(actualIndex + 1, end).join(" "),
+						index: actualIndex,
+					};
+
+					await handleWordChanged({
+						newWord: selectedWord,
+						wordIndex: actualIndex,
+						context: JSON.stringify(context),
+					});
+				}
+			}}
+		>
+			{isPending ? "Loading..." : "Replace"}
+		</Button>
+	</div>
 {/if}
 
 {#each Object.entries(otherUsersHovers) as [_, hover]}
