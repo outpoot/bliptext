@@ -64,7 +64,8 @@ async function validateAuth(request: Request): Promise<{ id: string; isBanned: b
 		const { userId, isBanned } = JSON.parse(sessionData);
 		console.log('Parsed session data:', { userId, isBanned }); // Debug log
 		
-		await normalRedis.del(`ws:${token}`);
+		// Don't delete the token immediately, set a short expiry instead
+        await normalRedis.expire(`ws:${token}`, 30); // 30 seconds grace period
 
 		return userId ? { id: userId, isBanned } : null;
 	} catch (error) {
@@ -178,11 +179,18 @@ const server = Bun.serve<WebSocketData>({
 	port: Number(process.env.PORT) || 8080,
 
 	async fetch(request, server) {
+		// Add no-cache headers
+        const headers = new Headers({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+
 		const authResult = await validateAuth(request);
 		const url = new URL(request.url);
 		console.log(authResult)
 		if (authResult?.isBanned) {
-			return new Response('User is banned', { status: 403 });
+			return new Response('User is banned', { status: 403, headers });
 		}
 
 		const connectionType = authResult
@@ -204,7 +212,7 @@ const server = Bun.serve<WebSocketData>({
 			}
 		});
 
-		return upgraded ? undefined : new Response('Upgrade failed', { status: 500 });
+		return upgraded ? undefined : new Response('Upgrade failed', { status: 500, headers });
 	},
 
 	websocket: {
