@@ -96,8 +96,13 @@ export function fuzzySearch(text: string, query: string): number {
 }
 // parsing
 export function getWordAtIndex(content: string, index: number): string | null {
-	const words = content.match(WORD_MATCH_REGEX);
-	if (!words || index < 0 || index >= words.length) return null;
+	const processedContent = content.replace(/:::summary[\s\S]*?:::/g, '');
+	const words = processedContent.match(WORD_MATCH_REGEX);
+
+	if (!words || index < 0 || index >= words.length) {
+		return null;
+	}
+
 	return words[index];
 }
 
