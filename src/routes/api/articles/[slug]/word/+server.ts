@@ -3,7 +3,8 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { articles, revisions } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { getWordAtIndex, isValidWord, replaceWordAtIndex } from '$lib/utils';
+import { getWordAtIndex, replaceWordAtIndex } from '$lib/utils';
+import { WORD_MATCH_REGEX, isValidWord } from '$lib/shared/wordMatching';
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
@@ -46,7 +47,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const rawTextWithoutTags = article.content
 			.replace(/:::summary[\s\S]*?:::/g, '')
 			.replace(/^#.*$/gm, '');
-		const words = rawTextWithoutTags.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+		const words = rawTextWithoutTags.match(WORD_MATCH_REGEX) || [];
 		console.log('Server extracted words:', words);
 
 		if (contextData) {

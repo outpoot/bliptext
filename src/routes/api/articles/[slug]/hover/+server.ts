@@ -3,10 +3,11 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { getWordAtIndex, isValidWord } from '$lib/utils';
+import { getWordAtIndex } from '$lib/utils';
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
+import { isValidWord } from '$lib/shared/wordMatching';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
     try {

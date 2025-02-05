@@ -2,10 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { cubicOut } from "svelte/easing";
 import type { TransitionConfig } from "svelte/transition";
-
-export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
-}
+import { WORD_MATCH_REGEX } from '$lib/shared/wordMatching';
 
 type FlyAndScaleParams = {
 	y?: number;
@@ -13,6 +10,10 @@ type FlyAndScaleParams = {
 	start?: number;
 	duration?: number;
 };
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
 
 export const flyAndScale = (
 	node: Element,
@@ -61,14 +62,47 @@ export const flyAndScale = (
 	};
 };
 
+export function slugify(text: string): string {
+	return text
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/(^-|-$)/g, '');
+}
+
+export function fuzzySearch(text: string, query: string): number {
+	const textLower = text.toLowerCase();
+	const queryLower = query.toLowerCase();
+	let score = 0;
+	let lastIndex = -1;
+
+	for (const char of queryLower) {
+		const index = textLower.indexOf(char, lastIndex + 1);
+		if (index === -1) return 0;
+
+		score += 1 + (
+			lastIndex === index - 1 ? 2 :
+				textLower[index - 1] === ' ' ? 1.5 :
+					0
+		);
+
+		lastIndex = index;
+	}
+
+	if (textLower.startsWith(queryLower)) {
+		score *= 2;
+	}
+
+	return score;
+}
+// parsing
 export function getWordAtIndex(content: string, index: number): string | null {
-	const words = content.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g);
+	const words = content.match(WORD_MATCH_REGEX);
 	if (!words || index < 0 || index >= words.length) return null;
 	return words[index];
 }
 
 export function replaceWordAtIndex(content: string, index: number, newWord: string): string {
-	const regex = /\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g;
+	const regex = WORD_MATCH_REGEX;
 	const matches: { start: number, end: number }[] = [];
 	let match;
 
@@ -83,58 +117,4 @@ export function replaceWordAtIndex(content: string, index: number, newWord: stri
 
 	const { start, end } = matches[index];
 	return content.slice(0, start) + newWord + content.slice(end);
-}
-
-export function slugify(text: string): string {
-	return text
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/(^-|-$)/g, '');
-}
-
-export function fuzzySearch(text: string, query: string): number {
-	const textLower = text.toLowerCase();
-	const queryLower = query.toLowerCase();
-	let score = 0;
-	let lastIndex = -1;
-
-	// Check each character in query
-	for (const char of queryLower) {
-		const index = textLower.indexOf(char, lastIndex + 1);
-		if (index === -1) return 0;
-
-		// Give higher score for consecutive matches and matches after spaces
-		score += 1 + (
-			lastIndex === index - 1 ? 2 : // Consecutive
-				textLower[index - 1] === ' ' ? 1.5 : // After space
-					0
-		);
-
-		lastIndex = index;
-	}
-
-	// Bonus for matching from the start
-	if (textLower.startsWith(queryLower)) {
-		score *= 2;
-	}
-
-	return score;
-}
-
-export function isValidWord(newWord: string): boolean {
-	if (newWord.length > 100) return false; // Increased limit for multi-word content
-
-	// Allow any text within bold/italic markers
-	const isBoldOrItalic = (
-		/^\*\*[\s\w\d\p{P}]+\*\*$/u.test(newWord) ||
-		/^\*[\s\w\d\p{P}]+\*$/u.test(newWord)
-	);
-
-	// Allow more characters in link text and URLs
-	const isLink = /^\[[\w\s\d\p{P}]+\]\([^\s]{1,100}\)$/u.test(newWord);
-
-	// Plain words remain restricted
-	const isPlainWord = /^[\w\d]+$/.test(newWord);
-
-	return isBoldOrItalic || isLink || isPlainWord;
 }

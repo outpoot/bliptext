@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Input } from "../ui/input";
 	import { cooldown } from "$lib/stores/cooldown";
+	import { isValidWord } from "$lib/shared/wordMatching";
 
 	let { inputProps = {}, class: className = "" } = $props();
 
@@ -10,10 +11,7 @@
 		const input = event.target as HTMLInputElement;
 		const value = input.value;
 
-		if (
-			value &&
-			!/^(\*\*\w+\*\*|\*\w+\*|\[\w+\]\([^\s]{1,50}\)|\w+)$/.test(value)
-		) {
+		if (value && !isValidWord(value)) {
 			err =
 				"Please enter a single word, optionally formatted with *word*, **word**, or [word](url)";
 		} else {

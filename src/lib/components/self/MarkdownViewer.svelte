@@ -66,7 +66,13 @@
 		onInput?: (event: InputEvent) => void;
 	}>();
 
-	const wordProcessor = new WordProcessor(content, {
+	function preprocessContent(content: string): string {
+        return content
+            .replace(/:::summary[\s\S]*?:::/g, '')
+            .replace(/^#.*$/gm, '');
+    }
+
+	const wordProcessor = new WordProcessor(preprocessContent(content), {
 		onHover: (element) => handleElementHover(element),
 		onLeave: (element) => handleElementLeave(element),
 		onClick: (element) => handleElementClick(element),
@@ -348,8 +354,7 @@
 				body: JSON.stringify({
 					wordIndex,
 					newWord,
-					context,
-					captchaToken: $captchaToken,
+					context: context,
 				}),
 			});
 

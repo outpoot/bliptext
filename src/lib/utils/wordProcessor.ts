@@ -1,3 +1,5 @@
+import { WORD_MATCH_REGEX } from '$lib/shared/wordMatching';
+
 type WordEventHandlers = {
     onHover?: (element: HTMLElement) => void;
     onLeave?: (element: HTMLElement) => void;
@@ -20,7 +22,7 @@ export class WordProcessor {
         this.wordPositions = new Map();
         this.usedIndices = new Set();
 
-        const contentWords = this.content.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+        const contentWords = this.content.match(WORD_MATCH_REGEX) || [];
         let position = 0;
 
         contentWords.forEach((word, index) => {
@@ -90,8 +92,8 @@ export class WordProcessor {
 
     private getWordsFromText(text: string): string[] {
         const textWithoutTags = text.replace(/:::summary[\s\S]*?:::/g, '')
-            .replace(/^#.*$/gm, '');;
-        const matched = textWithoutTags.match(/\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g) || [];
+            .replace(/^#.*$/gm, '');
+        const matched = textWithoutTags.match(WORD_MATCH_REGEX) || [];
         console.log('Client extracted words:', matched);
         return matched;
     }
