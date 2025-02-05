@@ -12,7 +12,7 @@ export const GET: RequestHandler = async ({ request }) => {
         isBanned: session?.user?.isBanned || false
     });
 
-    console.log('Setting WS token data:', { token, data });
+    console.error('Setting WS token data:', { token, data });
 
     // Set token with 5 minute expiry
     await redis.set(
@@ -24,7 +24,7 @@ export const GET: RequestHandler = async ({ request }) => {
 
     // Verify it was set
     const verify = await redis.get(`ws:${token}`);
-    console.log('Verification of token storage:', { token, stored: verify });
+    console.error('Verification of token storage:', { token, stored: verify });
 
     // Add cache control headers
     return json(
