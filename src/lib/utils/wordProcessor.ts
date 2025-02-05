@@ -90,7 +90,7 @@ export class WordProcessor {
         return baseSpan;
     }
 
-    private getWordsFromText(text: string): string[] {
+    public getWordsFromText(text: string): string[] {
         const textWithoutTags = text.replace(/:::summary[\s\S]*?:::/g, '')
             .replace(/^#.*$/gm, '');
         const matched = textWithoutTags.match(WORD_MATCH_REGEX) || [];

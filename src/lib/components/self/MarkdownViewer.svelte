@@ -29,7 +29,6 @@
 	import Pen from "lucide-svelte/icons/pen";
 	import Eye from "lucide-svelte/icons/eye";
 	import Badge from "../ui/badge/badge.svelte";
-	import { captchaToken, captchaVerified } from "$lib/stores/captcha";
 	// import { tick } from "svelte";
 	import { soundMuted } from "$lib/stores/soundMuted";
 
@@ -67,10 +66,10 @@
 	}>();
 
 	function preprocessContent(content: string): string {
-        return content
-            .replace(/:::summary[\s\S]*?:::/g, '')
-            .replace(/^#.*$/gm, '');
-    }
+		return content
+			.replace(/:::summary[\s\S]*?:::/g, "")
+			.replace(/^#.*$/gm, "");
+	}
 
 	const wordProcessor = new WordProcessor(preprocessContent(content), {
 		onHover: (element) => handleElementHover(element),
@@ -341,7 +340,7 @@
 	async function handleWordChanged({
 		newWord,
 		wordIndex,
-		context
+		context,
 	}: {
 		newWord: string;
 		wordIndex: number;
@@ -377,7 +376,7 @@
 			wordProcessor.replaceWord(newWord, selectedElement!, () => {});
 			cooldown.startCooldown(30000);
 			playSound(swapSound);
-   navigator?.vibrate?.([75, 75, 75])
+			navigator?.vibrate?.([75, 75, 75]);
 
 			isReplacing = false;
 			selectedWord = "";
@@ -604,9 +603,21 @@
 				selectedElement!,
 			);
 			if (actualIndex !== undefined) {
+				const words = wordProcessor.getWordsFromText(content);
+				const start = Math.max(0, actualIndex - 2);
+				const end = Math.min(words.length, actualIndex + 3);
+
+				const context = {
+					before: words.slice(start, actualIndex).join(" "),
+					word: words[actualIndex],
+					after: words.slice(actualIndex + 1, end).join(" "),
+					index: actualIndex,
+				};
+
 				await handleWordChanged({
 					newWord: selectedWord,
 					wordIndex: actualIndex,
+					context: JSON.stringify(context),
 				});
 			}
 		}}
