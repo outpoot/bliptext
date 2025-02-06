@@ -18,12 +18,9 @@ export const GET: RequestHandler = async ({ request }) => {
         { token },
         {
             headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0, private',
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
                 'Pragma': 'no-cache',
-                'Expires': '0',
-                'Surrogate-Control': 'no-store',
-                'Access-Control-Allow-Origin': 'https://bliptext.com',
-                'Access-Control-Allow-Credentials': 'true'
+                'Expires': '0'
             }
         }
     );

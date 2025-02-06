@@ -61,6 +61,12 @@ export async function GET({ params, url, request }) {
             article,
             hasMore,
             nextCursor
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
         });
     } catch (err) {
         console.error('Error fetching history:', err);

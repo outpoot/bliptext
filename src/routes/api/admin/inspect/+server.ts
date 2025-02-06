@@ -69,6 +69,12 @@ export async function GET({ url, request }) {
         return json({
             ...userInfo,
             revisions: formattedRevisions
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
         });
     } catch (err) {
         console.error('Failed to fetch user:', err);

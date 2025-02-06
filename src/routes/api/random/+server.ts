@@ -22,7 +22,13 @@ export const GET: RequestHandler = async () => {
             throw error(404, 'No articles found');
         }
 
-        return json({ slug: randomArticle[0].slug });
+        return json({ slug: randomArticle[0].slug }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
     } catch (err) {
         console.error('Error fetching random article:', err);
         throw error(500, 'Failed to fetch random article');

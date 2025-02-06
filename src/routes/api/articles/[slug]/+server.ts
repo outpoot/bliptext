@@ -17,7 +17,13 @@ export async function GET({ params, url }) {
             throw error(404, 'Article not found');
         }
 
-        return json(article);
+        return json(article, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
     } catch (err) {
         console.error('Error fetching article:', err);
         throw error(500, 'Failed to fetch article');
