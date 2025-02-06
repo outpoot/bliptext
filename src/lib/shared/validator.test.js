@@ -241,4 +241,21 @@ describe("isValidWord", () => {
       expect(isValidWord("**[Google](https://google.com)**")).toBe(false);
     });
   });
+  describe("Disallowing Surrogate Characters", () => {
+    test('Plain word containing surrogate char "𒐫" returns false', () => {
+      expect(isValidWord("𒐫")).toBe(false);
+    });
+
+    test('Bold word containing surrogate char "**𒐫**" returns false', () => {
+      expect(isValidWord("**𒐫**")).toBe(false);
+    });
+
+    test('Italic word containing surrogate char "*𒐫*" returns false', () => {
+      expect(isValidWord("*𒐫*")).toBe(false);
+    });
+
+    test('Hyperlink with surrogate char in the text "[𒐫](https://example.com)" returns false', () => {
+      expect(isValidWord("[𒐫](https://example.com)")).toBe(false);
+    });
+  });
 });
