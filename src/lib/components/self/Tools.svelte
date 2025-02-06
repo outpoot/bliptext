@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import Separator from '../ui/separator/separator.svelte';
-	import PageInfo from './PageInfo.svelte';
+	import { Button } from "$lib/components/ui/button";
+	import Separator from "../ui/separator/separator.svelte";
+	import PageInfo from "./PageInfo.svelte";
 
-	import Pen from 'lucide-svelte/icons/pen';
-	import History from 'lucide-svelte/icons/history';
-	import Link from 'lucide-svelte/icons/link';
-	import Check from 'lucide-svelte/icons/check';
-	import Download from 'lucide-svelte/icons/download';
-	import Info from 'lucide-svelte/icons/info';
+	import Pen from "lucide-svelte/icons/pen";
+	import History from "lucide-svelte/icons/history";
+	import Link from "lucide-svelte/icons/link";
+	import Check from "lucide-svelte/icons/check";
+	import Download from "lucide-svelte/icons/download";
+	import Info from "lucide-svelte/icons/info";
 
-	import type { Article } from '$lib/server/db/schema';
-	import { styles } from '$lib/utils/styles';
+	import type { Article } from "$lib/server/db/schema";
+	import { styles } from "$lib/utils/styles";
 	let { article, isEditPage = false } = $props<{
 		article: Article;
 		isEditPage?: boolean;
@@ -47,9 +47,9 @@
         Visit us at https://bliptext.com
 -->\n\n# ${title}\n\n`;
 
-		const blob = new Blob([header + content], { type: 'text/markdown' });
+		const blob = new Blob([header + content], { type: "text/markdown" });
 		const url = window.URL.createObjectURL(blob);
-		const a = document.createElement('a');
+		const a = document.createElement("a");
 		a.href = url;
 		a.download = `${slug}.md`;
 		document.body.appendChild(a);
@@ -64,8 +64,12 @@
 <div class="sticky top-4">
 	<div class="mb-2 flex items-center justify-between">
 		<h2 class="text-lg font-bold">Tools</h2>
-		<Button variant="ghost" size="icon" onclick={() => (isCollapsed = !isCollapsed)}>
-			{isCollapsed ? '+' : '-'}
+		<Button
+			variant="ghost"
+			size="icon"
+			onclick={() => (isCollapsed = !isCollapsed)}
+		>
+			{isCollapsed ? "+" : "-"}
 		</Button>
 	</div>
 
@@ -78,9 +82,9 @@
 			href={isEditPage ? `../${slug}` : `${slug}/edit`}
 		>
 			<Pen class={styles.iconClass} />
-			{isEditPage ? 'View original' : 'Edit'}
+			{isEditPage ? "View original" : "Edit"}
 		</Button>
-		<Button variant="ghost" class={buttonClass} href={`${slug}/history`}>
+		<Button variant="ghost" class={buttonClass} href="history">
 			<History class={styles.iconClass} /> History
 		</Button>
 		<Button variant="ghost" class={buttonClass} onclick={handleCopy}>
@@ -93,7 +97,11 @@
 		<Button variant="ghost" class={buttonClass} onclick={handleDownload}>
 			<Download class={styles.iconClass} /> Download
 		</Button>
-		<Button variant="ghost" class={buttonClass} onclick={() => (showPageInfo = true)}>
+		<Button
+			variant="ghost"
+			class={buttonClass}
+			onclick={() => (showPageInfo = true)}
+		>
 			<Info class={styles.iconClass} /> Page information
 		</Button>
 	</div>
