@@ -1,4 +1,4 @@
-<img style="width: 128px; height: 128px" src="static/favicon.svg" /><h1 style="font-size: 48px"><a href="https://bliptext.com">Bliptext.com</a> - the wiki where you edit a word each 5min</h1>
+<img style="width: 128px; height: 128px" src="static/favicon.svg" /><h1 style="font-size: 48px"><a href="https://bliptext.com">Bliptext.com</a> - the wiki where you edit a word each 30 seconds</h1>
 [Privacy Policy](https://bliptext.com/legal/privacy) | [Terms of Service](https://bliptext.com/legal/terms) | [License](LICENSE.md) | [YouTube video](about:blank)
 
 ## About
