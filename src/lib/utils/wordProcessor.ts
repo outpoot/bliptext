@@ -73,12 +73,12 @@ export class WordProcessor {
         span.textContent = text;
         return span;
     }
-
+    
     private determineWordElement(word: string, baseSpan: HTMLElement): HTMLElement {
-        if (word.startsWith('**') && word.endsWith('**')) {
+        if (/^\*{2}.+\*{2}$/.test(word)) {
             return this.createWrapperElement('strong', baseSpan);
         }
-        if (word.startsWith('*') && word.endsWith('*')) {
+        if (/^\*.+\*$/.test(word)) {
             return this.createWrapperElement('em', baseSpan);
         }
         if (word.startsWith('[')) {
@@ -89,6 +89,8 @@ export class WordProcessor {
         }
         return baseSpan;
     }
+
+
 
     public getWordsFromText(text: string): string[] {
         const textWithoutTags = text
