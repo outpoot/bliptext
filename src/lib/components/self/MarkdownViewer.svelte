@@ -135,7 +135,7 @@
 		if (!selectedWord && self) return;
 		element.classList.add("shake");
 
-		if (self) hoverTimeout = setTimeout(() => handleHover(element), 150);
+		if (self) hoverTimeout = setTimeout(() => handleHover(element), 15);
 	}
 
 	async function handleElementLeave(element: HTMLElement) {
@@ -168,7 +168,7 @@
 					console.error("Failed to send hover leave:", error);
 				}
 			}
-		}, 125);
+		}, 10);
 	}
 
 	function updateSubmitButtonPosition() {
