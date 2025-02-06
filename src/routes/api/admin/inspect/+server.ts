@@ -4,11 +4,7 @@ import { user, revisions } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { auth } from '$lib/auth';
 
-export async function GET({ url, request, setHeaders }) {
-    setHeaders({
-        'cache-control': 'private, no-cache, no-store, must-revalidate'
-    });
-
+export async function GET({ url, request }) {
     const session = await auth.api.getSession({
         headers: request.headers
     });
@@ -73,6 +69,12 @@ export async function GET({ url, request, setHeaders }) {
         return json({
             ...userInfo,
             revisions: formattedRevisions
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
         });
     } catch (err) {
         console.error('Failed to fetch user:', err);

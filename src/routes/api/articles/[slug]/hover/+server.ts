@@ -9,11 +9,7 @@ import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
 import { isValidWord } from '$lib/shared/wordMatching';
 
-export const PUT: RequestHandler = async ({ params, request, setHeaders }) => {
-    setHeaders({
-        'cache-control': 'private, no-cache, no-store, must-revalidate'
-    });
-
+export const PUT: RequestHandler = async ({ params, request }) => {
     try {
         const session = await auth.api.getSession({
             headers: request.headers
@@ -63,10 +59,7 @@ export const PUT: RequestHandler = async ({ params, request, setHeaders }) => {
     }
 };
 
-export const DELETE: RequestHandler = async ({ params, request, setHeaders }) => {
-    setHeaders({
-        'cache-control': 'private, no-cache, no-store, must-revalidate'
-    });
+export const DELETE: RequestHandler = async ({ params, request }) => {
     try {
         const session = await auth.api.getSession({
             headers: request.headers

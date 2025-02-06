@@ -2,11 +2,7 @@ import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { json, type RequestHandler } from '@sveltejs/kit';
 
-export const GET: RequestHandler = async ({ request, setHeaders }) => {
-    setHeaders({
-        'cache-control': 'private, no-cache, no-store, must-revalidate'
-    });
-
+export const GET: RequestHandler = async ({ request }) => {
     const session = await auth.api.getSession({ headers: request.headers });
     const token = crypto.randomUUID();
 
@@ -20,5 +16,12 @@ export const GET: RequestHandler = async ({ request, setHeaders }) => {
 
     return json(
         { token },
+        {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        }
     );
 };

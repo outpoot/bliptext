@@ -4,11 +4,7 @@ import { user } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '$lib/auth';
 
-export async function POST({ request, setHeaders }) {
-    setHeaders({
-        'cache-control': 'private, no-cache, no-store, must-revalidate'
-    });
-
+export async function POST({ request }) {
     const session = await auth.api.getSession({
         headers: request.headers
     });
@@ -77,7 +73,13 @@ export async function DELETE({ request }) {
             })
             .where(eq(user.id, userId));
 
-        return json({ success: true });
+        return json({ success: true }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
     } catch (err) {
         console.error('Failed to unban user:', err);
         throw error(500, 'Failed to unban user');

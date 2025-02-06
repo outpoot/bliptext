@@ -4,11 +4,7 @@ import { articles, revisions, user } from '$lib/server/db/schema';
 import { eq, desc, and, lt } from 'drizzle-orm';
 import { auth } from '$lib/auth';
 
-export async function GET({ params, url, request, setHeaders }) {
-    setHeaders({
-        'cache-control': 'private, no-cache, no-store, must-revalidate'
-    });
-
+export async function GET({ params, url, request }) {
     const { slug } = params;
     const cursor = url.searchParams.get('cursor');
     const limit = 50;
@@ -65,6 +61,12 @@ export async function GET({ params, url, request, setHeaders }) {
             article,
             hasMore,
             nextCursor
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
         });
     } catch (err) {
         console.error('Error fetching history:', err);
