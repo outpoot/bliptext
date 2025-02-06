@@ -1,16 +1,23 @@
-export const WORD_MATCH_REGEX = /\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|[^\s]+/g;
+export const WORD_MATCH_REGEX = /\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]\*]+\]\([^\)]+\)|[^\s]+/g;
 
 export function isValidWord(newWord: string): boolean {
     if (newWord.length > 100) return false;
 
-    const isBoldOrItalic = (
-        /^\*\*[^\s*][\s\w\d\p{P}]*[^\s*]\*\*$/u.test(newWord) ||
-        /^\*[^\s*][\s\w\d\p{P}]*[^\s*]\*$/u.test(newWord)
+    const isBold = /^\*\*[\p{L}\p{N}](?:[\p{L}\p{N}_-]*[\p{L}\p{N}])?\*\*$/u.test(
+        newWord
     );
 
-    const isLink = /^\[[\w\s\d\p{P}]+\]\([^\s]{1,100}\)$/u.test(newWord);
+    const isItalic = /^\*[\p{L}\p{N}](?:[\p{L}\p{N}_-]*[\p{L}\p{N}])?\*$/u.test(
+        newWord
+    );
 
-    const isPlainWord = /^(?!.*(.)\1{10})([\p{L}\p{N}\p{P}_]+)$/u.test(newWord);
+    const isBoldOrItalic = isBold || isItalic;
 
-    return isBoldOrItalic || isLink || isPlainWord;
+    const isPlainWord = /^[\p{L}\p{N}](?:[\p{L}\p{N}_-]*[\p{L}\p{N}])?[.,]?$/u.test(
+        newWord
+    );
+
+    const isLink = /^\[[^\]\[\(\)]+\]\([^\s]{1,100}\)$/u.test(newWord);
+
+    return isBoldOrItalic || isPlainWord || isLink;
 }
