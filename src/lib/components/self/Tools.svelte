@@ -84,7 +84,11 @@
 			<Pen class={styles.iconClass} />
 			{isEditPage ? "View original" : "Edit"}
 		</Button>
-		<Button variant="ghost" class={buttonClass} href="history">
+		<Button
+			variant="ghost"
+			class={buttonClass}
+			href={isEditPage ? `./history` : `${slug}/history`}
+		>
 			<History class={styles.iconClass} /> History
 		</Button>
 		<Button variant="ghost" class={buttonClass} onclick={handleCopy}>
