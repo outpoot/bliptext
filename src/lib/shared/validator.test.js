@@ -258,4 +258,22 @@ describe("isValidWord", () => {
       expect(isValidWord("[𒐫](https://example.com)")).toBe(false);
     });
   });
+
+  describe("Disallowing formatting inside hyperlinks", () => {
+    test('Hyperlink with bold text "[**Google**](https://google.com)" returns false', () => {
+      expect(isValidWord("[**Google**](https://google.com)")).toBe(false);
+    });
+
+    test('Hyperlink with italic text "[*Google*](https://google.com)" returns false', () => {
+      expect(isValidWord("[*Google*](https://google.com)")).toBe(false);
+    });
+
+    test('Hyperlink with bold and italic text "[***Google***](https://google.com)" returns false', () => {
+      expect(isValidWord("[***Google***](https://google.com)")).toBe(false);
+    });
+
+    test('Hyperlink with invalid bold/italic styling "[**Google*](https://google.com)" returns false', () => {
+      expect(isValidWord("[**Google*](https://google.com)")).toBe(false);
+    });
+  });
 });
