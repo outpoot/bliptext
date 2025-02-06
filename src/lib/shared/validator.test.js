@@ -13,6 +13,9 @@ describe("isValidWord", () => {
     test('Word with numbers "test123" returns true', () => {
       expect(isValidWord("test123")).toBe(true);
     });
+    test('Word with numbers only "156363" returns true', () => {
+      expect(isValidWord("156363")).toBe(true);
+    });
 
     test('Word with underscore "lorem_ipsum" returns true', () => {
       expect(isValidWord("lorem_ipsum")).toBe(true);
@@ -88,6 +91,10 @@ describe("isValidWord", () => {
       expect(isValidWord("**hello*")).toBe(false);
     });
 
+    test("Bold word with nothing inside it", () => {
+      expect(isValidWord("****")).toBe(false);
+    });
+
     test("A plain word 'hello' returns true (not as a bold word)", () => {
       expect(isValidWord("hello")).toBe(true);
     });
@@ -108,6 +115,10 @@ describe("isValidWord", () => {
 
     test('Italic word that improperly includes punctuation "*hello,*" returns false', () => {
       expect(isValidWord("*hello,*")).toBe(false);
+    });
+
+    test("Italic word with nothing inside it", () => {
+      expect(isValidWord("**")).toBe(false);
     });
 
     test("Italic word missing ending marker '*hello**' returns false", () => {

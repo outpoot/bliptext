@@ -45,13 +45,12 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			}, { status: 429 });
 		}
 
-		// Verify the context matches with surrounding text
-		const rawTextWithoutTags = article.content
-			.replace(/:::summary[\s\S]*?:::/g, '');
-		const words = rawTextWithoutTags.match(WORD_MATCH_REGEX) || [];
-
+		// Verify context if provided
 		if (contextData) {
 			const { before, word, after, index } = contextData;
+			const rawTextWithoutTags = article.content.replace(/:::summary[\s\S]*?:::/g, '');
+			const words = rawTextWithoutTags.match(WORD_MATCH_REGEX) || [];
+
 			const actualBefore = words.slice(Math.max(0, index - 2), index).join(' ');
 			const actualWord = words[index];
 			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ');
