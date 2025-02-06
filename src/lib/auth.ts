@@ -21,6 +21,13 @@ export const auth = betterAuth({
             clientSecret: env.DISCORD_CLIENT_SECRET,
         }
     },
+
+    session: {
+        cookieCache: {
+            enabled: true,
+            maxAge: 60 * 5, // 5 minutes
+        }
+    },
     user: {
         additionalFields: {
             isAdmin: {
