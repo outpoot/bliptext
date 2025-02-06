@@ -5,7 +5,11 @@ import { slugify } from '$lib/utils';
 import type { RequestHandler } from './$types';
 import { auth } from '$lib/auth';
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, setHeaders }) => {
+    setHeaders({
+        'cache-control': 'private, no-cache, no-store, must-revalidate'
+    });
+
     const session = await auth.api.getSession({
         headers: request.headers
     })
@@ -14,8 +18,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
     const { title, content } = await request.json();
 
-    if(!session?.user.isAdmin) {
-        return json({error: "You must be an admin to create a new post"}, {status: 401})
+    if (!session?.user.isAdmin) {
+        return json({ error: "You must be an admin to create a new post" }, { status: 401 })
     }
     if (!title || !content || !userId) {
         return json({ error: 'Title and content are required' }, { status: 400 });
@@ -29,7 +33,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
                 title,
                 content,
                 slug,
-                createdBy: userId
+                created_by: userId,
+                search_content: `${title} ${content}`.toLowerCase()
             })
             .returning();
 

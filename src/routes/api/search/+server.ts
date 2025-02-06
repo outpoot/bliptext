@@ -3,7 +3,11 @@ import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
 import { articles } from '$lib/server/db/schema';
 
-export async function GET({ url }) {
+export async function GET({ url, setHeaders }) {
+    setHeaders({
+        'cache-control': 'private, no-cache, no-store, must-revalidate'
+    });
+
     const query = url.searchParams.get('q')?.trim() || '';
     if (!query || query.length < 2) return json({ results: [] });
 

@@ -10,7 +10,11 @@ import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
 import { sendDiscordWebhook } from '$lib/discord';
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async ({ params, request, setHeaders }) => {
+	setHeaders({
+		'cache-control': 'private, no-cache, no-store, must-revalidate'
+	});
+
 	try {
 		const session = await auth.api.getSession({
 			headers: request.headers

@@ -3,7 +3,11 @@ import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
-export async function GET({ params, url }) {
+export async function GET({ params, url, setHeaders }) {
+    setHeaders({
+        'cache-control': 'private, no-cache, no-store, must-revalidate'
+    });
+
     const { slug } = params;
     const searchById = url.searchParams.get('byId') === 'true';
     const index = searchById ? 'id' : 'slug';
@@ -17,13 +21,7 @@ export async function GET({ params, url }) {
             throw error(404, 'Article not found');
         }
 
-        return json(article, {
-            headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
+        return json(article);
     } catch (err) {
         console.error('Error fetching article:', err);
         throw error(500, 'Failed to fetch article');

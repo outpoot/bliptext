@@ -3,7 +3,11 @@ import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ setHeaders }) => {
+    setHeaders({
+        'cache-control': 'private, no-cache, no-store, must-revalidate'
+    });
+
     try {
         const randomArticle = await db.execute(sql`
             WITH bounds AS (
@@ -22,13 +26,7 @@ export const GET: RequestHandler = async () => {
             throw error(404, 'No articles found');
         }
 
-        return json({ slug: randomArticle[0].slug }, {
-            headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
+        return json({ slug: randomArticle[0].slug });
     } catch (err) {
         console.error('Error fetching random article:', err);
         throw error(500, 'Failed to fetch random article');
