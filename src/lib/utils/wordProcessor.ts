@@ -35,18 +35,32 @@ export class WordProcessor {
     }
 
     private cleanContentWord(word: string): string {
-        if (word.startsWith('**') && word.endsWith('**')) return word.slice(2, -2);
-        if (word.startsWith('*') && word.endsWith('*')) return word.slice(1, -1);
+        if (word.startsWith('**') && word.endsWith('**')) {
+            const inner = word.slice(2, -2);
+            return inner !== '' ? inner : word;
+        }
+        if (word.startsWith('*') && word.endsWith('*')) {
+            const inner = word.slice(1, -1);
+            return inner !== '' ? inner : word;
+        }
         if (word.startsWith('[')) {
             const closingBracket = word.indexOf(']');
-            return closingBracket !== -1 ? word.substring(1, closingBracket).trim() : word;
+            if (closingBracket !== -1) {
+                const inner = word.substring(1, closingBracket).trim();
+                return inner !== '' ? inner : word;
+            }
+            return word;
         }
         return word.replace(/[*_.,]/g, '');
     }
 
     isValidFormattedWord(word: string): boolean {
-        return [/^\*\*[^*]+\*\*$/, /^\*[^*]+\*$/, /^\[[\w\s]+\]\([^\s]{1,50}\)$/, /^\w+$/]
-            .some(pattern => pattern.test(word));
+        return [
+            /^\*\*[^*]*\*\*$/,
+            /^\*[^*]*\*$/,
+            /^\[[\*\w\s]*\]\((https?:\/\/[^\s]{1,50})\)$/,
+            /^\w+$/
+        ].some(pattern => pattern.test(word));
     }
 
     private attachEventListeners(element: HTMLElement) {
@@ -90,8 +104,6 @@ export class WordProcessor {
         return baseSpan;
     }
 
-
-
     public getWordsFromText(text: string): string[] {
         const textWithoutTags = text
             .replace(/:::summary[\s\S]*?:::/g, '');
@@ -108,7 +120,6 @@ export class WordProcessor {
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
 
-        // Get surrounding context with raw text
         const words = this.getWordsFromText(this.content);
         const start = Math.max(0, actualIndex - 2);
         const end = Math.min(words.length, actualIndex + 3);
@@ -127,7 +138,6 @@ export class WordProcessor {
             const baseSpan = this.createBaseSpan(this.cleanContentWord(newWord));
             const replacement = this.determineWordElement(newWord, baseSpan);
 
-            // Ensure we maintain the exact position mapping
             baseSpan.dataset.wordIndex = actualIndex.toString();
             baseSpan.dataset.position = element.dataset.position;
             this.wordIndicesMap.set(baseSpan, actualIndex);
