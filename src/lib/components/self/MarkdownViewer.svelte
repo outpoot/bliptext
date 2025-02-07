@@ -355,7 +355,7 @@
 			const handleViewModeClick = (e: Event) => {
 				const target = e.target as HTMLElement;
 				const link = target.closest("a");
-				if (link) {
+				if (link && !(link.getAttribute("href")?.trim().toLowerCase().startsWith("https://bliptext.com"))) {
 					e.preventDefault();
 					e.stopPropagation();
 					pendingUrl = link.getAttribute("href") || "";
