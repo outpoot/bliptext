@@ -1,0 +1,2 @@
+ALTER TABLE "articles" ADD COLUMN "revision_count" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "articles_revision_count_idx" ON "articles" USING btree ("revision_count");

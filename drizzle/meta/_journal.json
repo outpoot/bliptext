@@ -8,6 +8,13 @@
       "when": 1738003893819,
       "tag": "0000_smooth_betty_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1738962824156,
+      "tag": "0001_melted_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

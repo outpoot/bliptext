@@ -50,6 +50,7 @@ export const articles = pgTable("articles", {
 	updated_at: timestamp("updated_at").defaultNow().notNull(),
 	search_vector: text("search_vector").notNull().default(''),
 	search_content: text("search_content").notNull().default(''),
+	revisionCount: integer("revision_count").default(0).notNull(),
 }, (table) => {
 	return {
 		creator_idx: index("articles_creator_idx").using("btree", table.created_by, table.created_at),
@@ -57,6 +58,7 @@ export const articles = pgTable("articles", {
 		slug_idx: uniqueIndex("articles_slug_idx").using("btree", table.slug),
 		title_idx: index("articles_title_idx").using("btree", table.title),
 		articles_slug_unique: unique("articles_slug_unique").on(table.slug),
+		revisionCountIdx: index("articles_revision_count_idx").on(table.revisionCount),
 	}
 });
 
