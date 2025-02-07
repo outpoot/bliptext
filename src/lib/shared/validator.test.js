@@ -94,10 +94,13 @@ describe("isValidWord", () => {
     test("Bold word with nothing inside it", () => {
       expect(isValidWord("****")).toBe(false);
     });
-
+    test("Bold word with numbers in it returns true", () => {
+      expect(isValidWord("**good35892gang**")).toBe(true);
+    });
     test("A plain word 'hello' returns true (not as a bold word)", () => {
       expect(isValidWord("hello")).toBe(true);
     });
+
   });
 
   describe("Italic words", () => {

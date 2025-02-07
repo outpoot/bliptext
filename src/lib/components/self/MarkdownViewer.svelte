@@ -175,14 +175,14 @@
 		if (!selectedElement || !showSubmitButton) return;
 
 		requestAnimationFrame(() => {
-			const rect = selectedElement.getBoundingClientRect();
-			if (rect.width && rect.height) {
+			const rect = selectedElement?.getBoundingClientRect();
+			if (rect?.width && rect?.height) {
 				if (isMobile) {
-					submitButtonPosition = { x: rect.left, y: rect.top - 40 };
+					submitButtonPosition = { x: rect?.left, y: rect?.top - 40 };
 				} else {
 					const viewportCenter = window.innerHeight / 2;
 					submitButtonPosition = {
-						x: rect.left,
+						x: rect?.left,
 						y: Math.min(
 							Math.max(rect.top - 40, 20),
 							viewportCenter,

@@ -1,4 +1,4 @@
-import { WORD_MATCH_REGEX } from '$lib/shared/wordMatching';
+import { WORD_MATCH_REGEX, isValidWord } from '$lib/shared/wordMatching';
 
 type WordEventHandlers = {
     onHover?: (element: HTMLElement) => void;
@@ -35,18 +35,27 @@ export class WordProcessor {
     }
 
     private cleanContentWord(word: string): string {
-        if (word.startsWith('**') && word.endsWith('**')) return word.slice(2, -2);
-        if (word.startsWith('*') && word.endsWith('*')) return word.slice(1, -1);
-        if (word.startsWith('[')) {
-            const closingBracket = word.indexOf(']');
-            return closingBracket !== -1 ? word.substring(1, closingBracket).trim() : word;
+        let cleaned = word;
+        const punctuation = cleaned.match(/[.,_]$/)?.[0] || '';
+
+        cleaned = cleaned.replace(/[.,_]$/, '');
+
+        if (cleaned.startsWith('**') && cleaned.endsWith('**')) {
+            cleaned = cleaned.slice(2, -2);
+        } else if (cleaned.startsWith('*') && cleaned.endsWith('*')) {
+            cleaned = cleaned.slice(1, -1);
+        } else if (cleaned.startsWith('[')) {
+            const closingBracket = cleaned.indexOf(']');
+            cleaned = closingBracket !== -1 ? cleaned.substring(1, closingBracket).trim() : cleaned;
+        } else {
+            cleaned = cleaned.replace(/^[*_]|[*_]$/g, '');
         }
-        return word.replace(/[*_.,]/g, '');
+
+        return cleaned + punctuation;
     }
 
     isValidFormattedWord(word: string): boolean {
-        return [/^\*\*[^*]+\*\*$/, /^\*[^*]+\*$/, /^\[[\w\s]+\]\([^\s]{1,50}\)$/, /^\w+$/]
-            .some(pattern => pattern.test(word));
+        return isValidWord(word);
     }
 
     private attachEventListeners(element: HTMLElement) {
@@ -73,7 +82,7 @@ export class WordProcessor {
         span.textContent = text;
         return span;
     }
-    
+
     private determineWordElement(word: string, baseSpan: HTMLElement): HTMLElement {
         if (/^\*{2}.+\*{2}$/.test(word)) {
             return this.createWrapperElement('strong', baseSpan);
