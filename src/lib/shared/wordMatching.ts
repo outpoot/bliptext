@@ -12,7 +12,7 @@ export function isValidWord(newWord: string): boolean {
     const isBoldOrItalic = isBold || isItalic;
 
     const isPlainWord = /^[\p{L}\p{N}](?:[\p{L}\p{N}_-]*[\p{L}\p{N}])?[.,]?$/u.test(newWord);
-    const isLink = /^\[[^\]\[\(\)\*]+\]\([^\s]{1,100}\)$/u.test(newWord);
+    const isLink = /^\[[^\]\[\(\)\*_]+\]\([^\s]{1,100}\)$/u.test(newWord);
 
     return isBoldOrItalic || isPlainWord || isLink;
 }

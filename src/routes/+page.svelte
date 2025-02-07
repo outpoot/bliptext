@@ -67,7 +67,7 @@
 			icon: '/icons/bruh.png',
 			title: 'BRUH',
 			desc: 'An unconventional Image Format, that stores pixel data as plain-text hexadecimal values with ".bruh" extension.',
-			href: 'https://github.com/face-hh/lawmaxxing'
+			href: 'https://github.com/face-hh/bruh'
 		},
 		{
 			icon: '/icons/fextify.webp',

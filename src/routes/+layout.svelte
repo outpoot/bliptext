@@ -29,7 +29,6 @@
 	import FilePlus from "lucide-svelte/icons/file-plus";
 	import Ban from "lucide-svelte/icons/ban";
 	import X from "lucide-svelte/icons/x";
-	import Users from "lucide-svelte/icons/users";
 	import { Button } from "$lib/components/ui/button";
 	import { styles } from "$lib/utils/styles";
 	import Search from "lucide-svelte/icons/search";

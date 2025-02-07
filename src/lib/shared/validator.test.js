@@ -240,6 +240,9 @@ describe("isValidWord", () => {
     test('Invalid hyperlink with extra markers "**[Google](https://google.com)**" returns false', () => {
       expect(isValidWord("**[Google](https://google.com)**")).toBe(false);
     });
+    test('Hyperlink with underscore italic text "[_Google_](https://google.com)" returns false', () => {
+      expect(isValidWord("[_Google_](https://google.com)")).toBe(false);
+    });
   });
   describe("Disallowing Surrogate Characters", () => {
     test('Plain word containing surrogate char "𒐫" returns false', () => {
