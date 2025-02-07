@@ -9,6 +9,10 @@
 	import Check from "lucide-svelte/icons/check";
 	import Download from "lucide-svelte/icons/download";
 	import Info from "lucide-svelte/icons/info";
+	import Trash2 from "lucide-svelte/icons/trash-2";
+	import { currentUser } from "$lib/stores/user";
+	import { goto } from "$app/navigation";
+	import { toast } from "svelte-sonner";
 
 	import type { Article } from "$lib/server/db/schema";
 	import { styles } from "$lib/utils/styles";
@@ -56,6 +60,37 @@
 		a.click();
 		window.URL.revokeObjectURL(url);
 		document.body.removeChild(a);
+	}
+
+	async function handleDelete() {
+		if (!$currentUser?.isAdmin) return;
+
+		if (
+			!confirm(
+				"Are you sure you want to delete this article? This action cannot be undone.",
+			)
+		) {
+			return;
+		}
+
+		try {
+			const response = await fetch("/api/admin/article/delete", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ articleId: article.id }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to delete article");
+			}
+
+			toast.success("Article deleted successfully");
+		} catch (error) {
+			console.error("Error deleting article:", error);
+			toast.error("Failed to delete article");
+		}
 	}
 
 	const buttonClass = "w-full justify-start group";
@@ -108,6 +143,15 @@
 		>
 			<Info class={styles.iconClass} /> Page information
 		</Button>
+		{#if $currentUser?.isAdmin}
+			<Button
+				variant="ghost"
+				class="{buttonClass} text-destructive hover:text-destructive"
+				onclick={handleDelete}
+			>
+				<Trash2 class={styles.iconClass} /> Delete article
+			</Button>
+		{/if}
 	</div>
 </div>
 

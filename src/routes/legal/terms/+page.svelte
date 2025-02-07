@@ -78,7 +78,7 @@
 				<ul class="ml-6 list-disc space-y-2 marker:text-primary">
 					<li>
 						Data practices outlined in our <a
-							href="https://bliptext.com/privacy"
+							href="/legal/privacy"
 							class="text-primary hover:underline">Privacy Policy</a
 						>
 					</li>

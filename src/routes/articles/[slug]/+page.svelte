@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>{'History: ' + data.article.title}</title>
+	<title>{data.article.title}</title>
 	<meta name="description" content={summary} />
 	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
 	<meta property="og:title" content={data.article.title} />
