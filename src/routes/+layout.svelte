@@ -127,8 +127,9 @@
 				<a href="/home" class="flex cursor-pointer items-center gap-2">
 					<img
 						src="/images/logo.svg"
-						alt="Bliptext"
+						alt=""
 						class="h-8 w-8"
+						aria-hidden="true"
 					/>
 					<Label
 						class="cursor-pointer text-2xl font-bold"

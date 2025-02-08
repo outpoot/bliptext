@@ -84,6 +84,7 @@
 						variant="ghost"
 						class="flex items-center justify-between p-4 hover:bg-muted"
 						onclick={() => goto(`/articles/${article.slug}/edit`)}
+						aria-label={`Edit article: ${article.title}`}
 					>
 						<span class="font-medium">{article.title}</span>
 						<div class="flex items-center gap-2">
