@@ -20,6 +20,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
+		if(session.user.isBanned) {
+			return json({ error: 'User is banned' }, { status: 403 });
+		}
+
 		const { wordIndex, newWord, context } = await request.json();
 		const contextData = context ? JSON.parse(context) : null;
 

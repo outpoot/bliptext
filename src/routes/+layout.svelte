@@ -314,6 +314,11 @@
 						class="text-sm text-muted-foreground hover:text-foreground"
 						>Terms</a
 					>
+					<a
+						href="https://status.bliptext.com"
+						class="text-sm text-muted-foreground hover:text-foreground"
+						>Status</a
+					>
 				</nav>
 			</div>
 		</footer>

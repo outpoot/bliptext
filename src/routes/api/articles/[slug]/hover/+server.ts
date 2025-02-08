@@ -19,6 +19,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
             return new Response('Unauthorized', { status: 401 });
         }
 
+        if (session.user.isBanned) {
+            return json({ error: 'User is banned' }, { status: 403 });
+        }
+
         if (cooldownManager.isOnCooldown(session.user.id)) {
             const remainingTime = cooldownManager.getRemainingTime(session.user.id);
             return json({ error: 'Please wait before making more edits', remainingTime }, { status: 429 });
