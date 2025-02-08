@@ -45,7 +45,7 @@
 	},
 	"dependencies": {
 		"@types/node": "^22.10.5",
-		"better-auth": "^1.1.10",
+		"better-auth": "^1.1.16",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.33.0",
 		"ioredis": "^5.4.2",
