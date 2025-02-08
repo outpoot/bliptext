@@ -34,15 +34,10 @@
 	let searchDialogOpen = $state(false);
 
 	async function handleSignIn() {
-		const authUrl = await signIn.social({
+		await signIn.social({
 			provider: "discord",
 			callbackURL: page.url.pathname,
-			disableRedirect: true,
 		});
-
-		if (authUrl?.data?.url) {
-			window.location.href = authUrl.data.url;
-		}
 	}
 
 	async function handleSignOut() {
