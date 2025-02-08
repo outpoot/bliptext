@@ -31,7 +31,8 @@
 					<div class="flex items-center justify-between p-2">
 						<div class="flex items-center gap-2">
 							<img
-								src={editor.image + "?size=64"}
+								src={editor.image.replace(".png", ".webp") +
+									"?size=64"}
 								alt={editor.name}
 								class="h-8 w-8 rounded-full"
 								width="32"
