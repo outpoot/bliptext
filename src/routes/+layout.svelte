@@ -38,6 +38,8 @@
 			provider: "discord",
 			callbackURL: page.url.pathname,
 		});
+
+		window.location.reload();
 	}
 
 	async function handleSignOut() {
