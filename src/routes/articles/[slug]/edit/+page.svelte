@@ -4,7 +4,6 @@
 	import FloatingWord from "$lib/components/self/FloatingWord.svelte";
 	import { onMount } from "svelte";
 	import { currentUser } from "$lib/stores/user";
-	import type { Session } from "better-auth";
 	import { toast } from "svelte-sonner";
 	import { activeUsers } from "$lib/stores/activeUsers";
 	import TosOverlay from "$lib/components/self/TosOverlay.svelte";
@@ -17,7 +16,7 @@
 	import { page } from "$app/state";
 
 	let { data } = $props<{
-		data: { article: Article | null; session: Session };
+		data: { article: Article | null };
 	}>();
 	let wsManager = $state<WebSocketManagerHandle | undefined>();
 

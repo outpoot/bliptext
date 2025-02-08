@@ -113,14 +113,7 @@
 			currentUser.set(null);
 		}
 	});
-
-	let coverImageUrl = "https://bliptext.com/images/cover.png";
 </script>
-
-<svelte:head>
-	<meta property="og:image" content={coverImageUrl} />
-	<meta name="twitter:image" content={coverImageUrl} />
-</svelte:head>
 
 <Toaster />
 {#if isHomePage}
@@ -134,8 +127,9 @@
 				<a href="/home" class="flex cursor-pointer items-center gap-2">
 					<img
 						src="/images/logo.svg"
-						alt="Bliptext"
+						alt=""
 						class="h-8 w-8"
+						aria-hidden="true"
 					/>
 					<Label
 						class="cursor-pointer text-2xl font-bold"
@@ -313,6 +307,11 @@
 						href="/legal/terms"
 						class="text-sm text-muted-foreground hover:text-foreground"
 						>Terms</a
+					>
+					<a
+						href="https://status.bliptext.com"
+						class="text-sm text-muted-foreground hover:text-foreground"
+						>Status</a
 					>
 				</nav>
 			</div>

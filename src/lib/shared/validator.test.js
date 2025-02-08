@@ -223,28 +223,46 @@ describe("isValidWord", () => {
     test('Valid hyperlink "[Google](https://google.com)" returns true', () => {
       expect(isValidWord("[Google](https://google.com)")).toBe(true);
     });
-
-    test('Valid hyperlink with minimal URL "[Test](x)" returns true', () => {
-      expect(isValidWord("[Test](x)")).toBe(true);
+    test('Valid hyperlink with minimal URL "[Test](http://x)" returns true', () => {
+      expect(isValidWord("[Test](http://x)")).toBe(true);
     });
-
     test('Invalid hyperlink missing closing parenthesis "[Google](https://google.com" returns false', () => {
       expect(isValidWord("[Google](https://google.com")).toBe(false);
     });
-
     test('Invalid hyperlink with space in URL "[Google](https:// google.com)" returns false', () => {
       expect(isValidWord("[Google](https:// google.com)")).toBe(false);
     });
-
     test('Invalid hyperlink with nested brackets "[G[oogle]](https://google.com)" returns false', () => {
       expect(isValidWord("[G[oogle]](https://google.com)")).toBe(false);
     });
-
     test('Invalid hyperlink with extra markers "**[Google](https://google.com)**" returns false', () => {
       expect(isValidWord("**[Google](https://google.com)**")).toBe(false);
     });
     test('Hyperlink with underscore italic text "[_Google_](https://google.com)" returns false', () => {
       expect(isValidWord("[_Google_](https://google.com)")).toBe(false);
+    });
+
+    // New tests for the link text and URL protocol requirements:
+    test('Hyperlink with valid text containing underscore "[hello_world](https://example.com)" returns true', () => {
+      expect(isValidWord("[hello_world](https://example.com)")).toBe(true);
+    });
+    test('Hyperlink with trailing hyphen in text "[hello-](https://example.com)" returns false', () => {
+      expect(isValidWord("[hello-](https://example.com)")).toBe(false);
+    });
+    test('Hyperlink with leading hyphen in text "[-hello](https://example.com)" returns false', () => {
+      expect(isValidWord("[-hello](https://example.com)")).toBe(false);
+    });
+    test('Hyperlink with trailing underscore "[hello_](https://example.com)" returns false', () => {
+      expect(isValidWord("[hello_](https://example.com)")).toBe(false);
+    });
+    test('Hyperlink with text containing tilde "[hello~world](https://example.com)" returns false', () => {
+      expect(isValidWord("[hello~world](https://example.com)")).toBe(false);
+    });
+    test('Hyperlink with text containing period in middle "[hello.world](https://example.com)" returns false', () => {
+      expect(isValidWord("[hello.world](https://example.com)")).toBe(false);
+    });
+    test('Hyperlink with URL not starting with http(s) "[Google](ftp://google.com)" returns false', () => {
+      expect(isValidWord("[Google](ftp://google.com)")).toBe(false);
     });
   });
   describe("Disallowing Surrogate Characters", () => {

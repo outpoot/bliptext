@@ -4,14 +4,6 @@ import { client } from '$lib/auth-client';
 
 export const load = (async ({ fetch, params }) => {
     try {
-        const session = await client.getSession();
-        if (!session) {
-            return {
-                article: null,
-                session: null
-            };
-        }
-
         const response = await fetch(`/api/articles/${params.slug}`);
 
         if (!response.ok) {
@@ -19,7 +11,7 @@ export const load = (async ({ fetch, params }) => {
         }
 
         const article = await response.json();
-        return { article, session };
+        return { article };
     } catch (err) {
         console.error('Failed to load article:', err);
         throw error(500, 'Failed to load article');

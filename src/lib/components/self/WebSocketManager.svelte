@@ -7,7 +7,6 @@
 	import { onMount } from 'svelte';
 	import { env } from '$env/dynamic/public';
 	import { currentUser } from '$lib/stores/user';
-	import CaptchaManager from './CaptchaManager.svelte';
 	import { toast } from 'svelte-sonner';
 
 	type WebSocketType = 'viewer' | 'editor';

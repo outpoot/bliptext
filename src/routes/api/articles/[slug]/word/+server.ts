@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { articles, revisions } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { articles, revisions, user } from '$lib/server/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { getWordAtIndex, replaceWordAtIndex } from '$lib/utils';
 import { WORD_MATCH_REGEX, isValidWord } from '$lib/shared/wordMatching';
 import { auth } from '$lib/auth';
@@ -18,6 +18,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		if (!session?.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
+
+		if(session.user.isBanned) {
+			return json({ error: 'User is banned' }, { status: 403 });
 		}
 
 		const { wordIndex, newWord, context } = await request.json();
@@ -70,8 +74,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		const updatedContent = replaceWordAtIndex(article.content, wordIndex, newWord);
 
-		const [revision] = await db
-			.insert(revisions)
+		const [revision] = await db.insert(revisions)
 			.values({
 				articleId: article.id,
 				content: updatedContent,
@@ -81,38 +84,49 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			})
 			.returning();
 
-		await db
-			.update(articles)
-			.set({
-				content: updatedContent,
-				current_revision: revision.id,
-				updated_at: new Date()
-			})
-			.where(eq(articles.id, article.id));
+		await Promise.all([
+			Promise.all([
+				db.update(user)
+					.set({
+						revisionCount: sql`COALESCE(${user.revisionCount}, 0) + 1`
+					})
+					.where(eq(user.id, session.user.id)),
 
-		await redis.publish(
-			`updates:${article.id}`,
-			JSON.stringify({
-				type: 'word_hover',
-				data: {
+				db.update(articles)
+					.set({
+						content: updatedContent,
+						current_revision: revision.id,
+						updated_at: new Date(),
+						revisionCount: sql`COALESCE(${articles.revisionCount}, 0) + 1`
+					})
+					.where(eq(articles.id, article.id))
+			]),
+
+			Promise.all([
+				redis.publish(
+					`updates:${article.id}`,
+					JSON.stringify({
+						type: 'word_hover',
+						data: {
+							newWord,
+							wordIndex,
+							editorId: session.user.id,
+							editorName: session.user.name,
+							editorImage: session.user.image,
+							replace: true
+						}
+					})
+				),
+				sendDiscordWebhook({
+					oldWord,
 					newWord,
-					wordIndex,
-					editorId: session.user.id,
+					articleTitle: article.title,
+					articleSlug: article.slug,
 					editorName: session.user.name,
-					editorImage: session.user.image,
-					replace: true
-				}
-			})
-		);
-
-		await sendDiscordWebhook({
-			oldWord,
-			newWord,
-			articleTitle: article.title,
-			articleSlug: article.slug,
-			editorName: session.user.name,
-			editorId: session.user.id
-		});
+					editorId: session.user.id
+				})
+			])
+		]);
 
 		cooldownManager.addCooldown(session.user.id);
 

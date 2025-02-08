@@ -46,7 +46,7 @@
 			class="h-10 w-full rounded-r-none bg-primary-foreground"
 			bind:value={searchQuery}
 		/>
-		<Button type="submit" variant="outline" class="h-10 rounded-l-none border-l-0">
+		<Button type="submit" variant="outline" class="h-10 rounded-l-none border-l-0" aria-label="Search">
 			<Search class="h-4 w-4" />
 		</Button>
 	</div>

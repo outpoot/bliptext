@@ -40,6 +40,12 @@
                         {wordCount} words
                     </div>
                 </div>
+                <div>
+                    <div class="text-sm font-medium">Edits</div>
+                    <div class="text-sm text-muted-foreground">
+                        {article.revisionCount}
+                    </div>
+                </div>
             </div>
         </div>
 
