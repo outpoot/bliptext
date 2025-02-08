@@ -6,7 +6,6 @@
 	import { signIn, signOut } from "$lib/auth-client";
 	import { onMount } from "svelte";
 	import { currentUser } from "$lib/stores/user";
-	import { getSession } from "$lib/auth-client";
 	import { Toaster, toast } from "svelte-sonner";
 	import SignInConfirmDialog from "$lib/components/self/SignInConfirmDialog.svelte";
 	import { soundMuted } from "$lib/stores/soundMuted";
@@ -32,18 +31,14 @@
 	import { Button } from "$lib/components/ui/button";
 	import { styles } from "$lib/utils/styles";
 	import Search from "lucide-svelte/icons/search";
+	import { invalidateAll } from "$app/navigation";
 	let searchDialogOpen = $state(false);
 
 	async function handleSignIn() {
-		const authUrl = await signIn.social({
+		await signIn.social({
 			provider: "discord",
-			callbackURL: page.url.pathname,
-			disableRedirect: true,
+			callbackURL: `${page.url.pathname}?signIn=1`,
 		});
-
-		if (authUrl?.data?.url) {
-			window.location.href = authUrl.data.url;
-		}
 	}
 
 	async function handleSignOut() {
@@ -85,12 +80,24 @@
 		}
 	}
 
-	let { children } = $props();
+	let { data, children } = $props<{
+		data: { userSession?: any };
+		children: any;
+	}>();
+
 	let isHomePage = $derived(page.url.pathname === "/");
 
 	let showConfirm = $state(false);
 
-	onMount(async () => {
+	$effect(() => {
+		if (data?.userSession) {
+			currentUser.set(data.userSession);
+		} else {
+			currentUser.set(null);
+		}
+	});
+
+	onMount(() => {
 		console.log(
 			"%c                                             ___   \n    _____                                   /\\  \\  \n   /::\\  \\                     ___         /::\\  \\ \n  /:/\\:\\  \\                   /\\__\\       /:/\\:\\__\\\n /:/ /::\\__\\   ___     ___   /:/__/      /:/ /:/  /\n/:/_/:/\\:|__| /\\  \\   /\\__\\ /::\\  \\     /:/_/:/  / \n\\:\\/:/ /:/  / \\:\\  \\ /:/  / \\/\\:\\  \\__  \\:\\/:/  /  \n \\::/_/:/  /   \\:\\  /:/  /   ~~\\:\\/\\__\\  \\::/__/   \n  \\:\\/:/  /     \\:\\/:/  /       \\::/  /   \\:\\  \\   \n   \\::/  /       \\::/  /        /:/  /     \\:\\__\\  \n    \\/__/         \\/__/         \\/__/       \\/__/",
 			"color: #4962ee; font-family: monospace; font-size: 12px; font-weight: bold; text-shadow: 2px 2px rgba(0,0,0,0.2);",
@@ -104,13 +111,9 @@
 			"color: #4962ee; font-family: monospace; font-size: 12px; font-weight: bold; text-shadow: 2px 2px rgba(0,0,0,0.2);",
 		);
 
-		const { data } = await getSession();
-
-		if (data?.user) {
-			// @ts-ignore im pretty sure its some betterauth thing
-			currentUser.set(data.user);
-		} else {
-			currentUser.set(null);
+		const url = new URL(window.location.href);
+		if (url.searchParams.has("signedIn")) {
+			invalidateAll();
 		}
 	});
 </script>
