@@ -24,16 +24,26 @@
 	<div>
 		<Separator class="mb-4" />
 		<h2 class="mb-4 text-xl font-bold">Top editors</h2>
-		
+
 		{#if data.activeEditors?.length}
 			<div class="grid gap-4">
 				{#each data.activeEditors as editor}
 					<div class="flex items-center justify-between p-2">
 						<div class="flex items-center gap-2">
-							<img src={editor.image} alt={editor.name} class="h-8 w-8 rounded-full" />
+							<img
+								src={editor.image + "?size=64"}
+								alt={editor.name}
+								class="h-8 w-8 rounded-full"
+								width="32"
+								height="32"
+								loading="lazy"
+							/>
+
 							<span class="font-medium">{editor.name}</span>
 						</div>
-						<Badge variant="secondary">{editor.revisionCount} edits</Badge>
+						<Badge variant="secondary"
+							>{editor.revisionCount} edits</Badge
+						>
 					</div>
 					<Separator />
 				{/each}
@@ -46,7 +56,7 @@
 	<div>
 		<Separator class="mb-4" />
 		<h2 class="mb-4 text-xl font-bold">Most edited articles</h2>
-		
+
 		{#if data.topArticles?.length}
 			<div class="grid gap-4">
 				{#each data.topArticles as article}
@@ -56,7 +66,9 @@
 						onclick={() => goto(`/articles/${article.slug}`)}
 					>
 						<span class="font-medium">{article.title}</span>
-						<Badge variant="secondary">{article.revisionCount} edits</Badge>
+						<Badge variant="secondary"
+							>{article.revisionCount} edits</Badge
+						>
 					</Button>
 					<Separator />
 				{/each}
