@@ -34,7 +34,11 @@ export async function GET() {
             topArticles
         };
 
-        return json(result);
+        return json(result, {
+            headers: {
+                'Cache-Control': 'public, max-age=30'
+            }
+        });
     } catch (error) {
         console.error('Leaderboard error:', error);
         return json({ error: 'Failed to fetch leaderboard' }, { status: 500 });
