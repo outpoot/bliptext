@@ -52,7 +52,7 @@
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
 		"@types/node": "^22.10.5",
-		"better-auth": "^1.1.10",
+		"better-auth": "^1.1.16",
 		"crypto": "^1.0.1",
 		"deasync": "^0.1.30",
 		"dotenv": "^16.4.7",
