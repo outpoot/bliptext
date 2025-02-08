@@ -31,15 +31,14 @@
 	import { Button } from "$lib/components/ui/button";
 	import { styles } from "$lib/utils/styles";
 	import Search from "lucide-svelte/icons/search";
+	import { invalidateAll } from "$app/navigation";
 	let searchDialogOpen = $state(false);
 
 	async function handleSignIn() {
 		await signIn.social({
 			provider: "discord",
-			callbackURL: page.url.pathname,
+			callbackURL: `${page.url.pathname}?signIn=1`,
 		});
-
-		window.location.reload();
 	}
 
 	async function handleSignOut() {
@@ -111,6 +110,11 @@
 			"%c A product by Outpoot.com",
 			"color: #4962ee; font-family: monospace; font-size: 12px; font-weight: bold; text-shadow: 2px 2px rgba(0,0,0,0.2);",
 		);
+
+		const url = new URL(window.location.href);
+		if (url.searchParams.has("signedIn")) {
+			invalidateAll();
+		}
 	});
 </script>
 
