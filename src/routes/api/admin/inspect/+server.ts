@@ -14,17 +14,13 @@ export async function GET({ url, request }) {
     }
 
     const userId = url.searchParams.get('userId');
-    const username = url.searchParams.get('username');
-
-    if (!userId && !username) {
-        throw error(400, 'User ID or username is required');
+    if (!userId) {
+        throw error(400, 'User ID is required');
     }
 
     try {
         const userInfo = await db.query.user.findFirst({
-            where: userId ? 
-                eq(user.id, userId) : 
-                eq(user.name, username as string),
+            where: eq(user.id, userId),
             columns: {
                 id: true,
                 name: true,
