@@ -91,42 +91,44 @@
     </div>
 
     {#if userInfo}
-        <Card
-            class="mt-6 p-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-        >
-            <div class="flex items-center gap-4">
-                <Avatar class="h-16 w-16">
-                    <AvatarImage src={userInfo.image} alt={userInfo.name} />
-                    <AvatarFallback
-                        >{userInfo.name && userInfo.name[0]}</AvatarFallback
-                    >
-                </Avatar>
-                <div>
-                    <h2 class="text-xl font-semibold">{userInfo.name}</h2>
-                    <p class="text-sm text-muted-foreground">
-                        ID: {userInfo.id}
-                    </p>
-                    <p class="text-sm text-muted-foreground">
-                        Joined: {formatDate(userInfo.createdAt)}
-                    </p>
-                    {#if userInfo.isBanned}
-                        <p class="mt-1 text-sm text-destructive">
-                            User is banned
+        <Card class="mt-6 p-6">
+            <div
+                class="flex flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-8"
+            >
+                <div class="flex items-center gap-4">
+                    <Avatar class="h-16 w-16">
+                        <AvatarImage src={userInfo.image} alt={userInfo.name} />
+                        <AvatarFallback
+                            >{userInfo.name && userInfo.name[0]}</AvatarFallback
+                        >
+                    </Avatar>
+                    <div>
+                        <h2 class="text-xl font-semibold">{userInfo.name}</h2>
+                        <p class="text-sm text-muted-foreground">
+                            ID: {userInfo.id}
                         </p>
-                    {/if}
+                        <p class="text-sm text-muted-foreground">
+                            Joined: {formatDate(userInfo.createdAt)}
+                        </p>
+                        {#if userInfo.isBanned}
+                            <p class="mt-1 text-sm text-destructive">
+                                User is banned
+                            </p>
+                        {/if}
+                    </div>
                 </div>
-            </div>
 
-            {#if !userInfo.isBanned}
-                <Button
-                    variant="destructive"
-                    class="flex items-center gap-2"
-                    onclick={banUser}
-                >
-                    <Gavel class="h-4 w-4" />
-                    Ban
-                </Button>
-            {/if}
+                {#if !userInfo.isBanned}
+                    <Button
+                        variant="destructive"
+                        class="flex items-center gap-2"
+                        onclick={banUser}
+                    >
+                        <Gavel class="h-4 w-4" />
+                        Ban
+                    </Button>
+                {/if}
+            </div>
 
             <div class="mt-8">
                 <h3 class="mb-4 text-lg font-semibold">Recent Activity</h3>
