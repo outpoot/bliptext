@@ -11,6 +11,11 @@ export const POST: RequestHandler = async ({ request }) => {
         if (!session?.user) {
             return new Response('Unauthorized', { status: 401 });
         }
+        if (session.user.isBanned) {
+            return json({
+                error: 'Account deletion is not allowed for banned users to prevent ban evasion.'
+            }, { status: 403 });
+        }
 
         await db.delete(user).where(eq(user.id, session.user.id));
 
