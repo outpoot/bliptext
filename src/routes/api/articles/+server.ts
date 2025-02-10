@@ -29,7 +29,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
                 title,
                 content,
                 slug,
-                createdBy: userId
+                created_by: userId
             })
             .returning();
 
