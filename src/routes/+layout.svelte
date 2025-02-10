@@ -5,6 +5,7 @@
 	import SearchBar from "$lib/components/self/SearchBar.svelte";
 	import { signIn, signOut } from "$lib/auth-client";
 	import { onMount } from "svelte";
+	import { browser } from "$app/environment"
 	import { currentUser } from "$lib/stores/user";
 	import { Toaster, toast } from "svelte-sonner";
 	import SignInConfirmDialog from "$lib/components/self/SignInConfirmDialog.svelte";
@@ -28,6 +29,7 @@
 	import FilePlus from "lucide-svelte/icons/file-plus";
 	import Ban from "lucide-svelte/icons/ban";
 	import X from "lucide-svelte/icons/x";
+	import { SunMoon } from 'lucide-svelte';
 	import { Button } from "$lib/components/ui/button";
 	import { styles } from "$lib/utils/styles";
 	import Search from "lucide-svelte/icons/search";
@@ -87,6 +89,19 @@
 
 	let isHomePage = $derived(page.url.pathname === "/");
 
+	let isdarkMode = $state(false);
+	function checkUserPrefersDarkMode() {
+		return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+	}
+	if (browser) {
+		const usesDarkMode = localStorage.getItem("isdarkMode");
+		if (usesDarkMode === null) {
+			isdarkMode = checkUserPrefersDarkMode()
+		} else {
+			isdarkMode = usesDarkMode === "true"
+		}
+	}
+	
 	let showConfirm = $state(false);
 
 	$effect(() => {
@@ -122,7 +137,7 @@
 {#if isHomePage}
 	{@render children()}
 {:else}
-	<div class="flex min-h-screen flex-col">
+	<div class={`flex min-h-screen flex-col${isdarkMode ? " darkMode" : ""}`}>
 		<header class="border-b">
 			<div
 				class="container-2xl mx-auto flex h-16 items-center justify-between px-4"
@@ -144,18 +159,29 @@
 				</a>
 
 				<!-- Large screen search bar & categories -->
-				<div class="hidden flex-1 px-16 md:block">
+				<div class="hidden flex-1 px-12 md:block">
 					<SearchBar class="mx-auto w-full md:max-w-2xl" />
 				</div>
 
+				
 				<!-- Small screen icons for search & categories -->
-				<div class="flex items-center gap-4 md:hidden">
+				<div class="flex items-center px-4 gap-4 md:hidden">
 					<Button
 						variant="outline"
 						onclick={() => (searchDialogOpen = true)}
 					>
 						<SearchIcon class="h-6 w-6" />
 					</Button>
+				</div>
+
+				<div class="flex items-center justify-center">
+					<!-- Dark Mode Button -->
+					<button aria-label="dark-mode-button" id="darkModebutton" onclick={() => {
+						isdarkMode = !isdarkMode
+						localStorage.setItem("isdarkMode", `${isdarkMode}`)
+					}} class="p-2 rounded-full aspect-square cursor-pointer">
+						<SunMoon />
+					</button>
 				</div>
 
 				<nav class="flex items-center gap-2">
