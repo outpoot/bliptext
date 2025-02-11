@@ -8,6 +8,7 @@ import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
 import { isValidWord } from '$lib/shared/wordMatching';
+import { checkHardcore } from '$lib/shared/moderation';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
     try {
@@ -30,7 +31,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
         const { wordIndex, newWord } = await request.json();
 
-        if (typeof wordIndex !== 'number' || !newWord?.trim() || !isValidWord(newWord)) {
+        if (typeof wordIndex !== 'number' || !newWord?.trim() || !isValidWord(newWord) || checkHardcore(newWord)) {
             return json({ error: 'Invalid word format or length' }, { status: 400 });
         }
 
