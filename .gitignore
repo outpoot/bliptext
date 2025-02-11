@@ -27,3 +27,5 @@ serverside_utils/output.md
 serverside_utils/wikipedia_raw.jsonl
 serverside_utils/structure.json
 serverside_utils/doc.json
+
+src/lib/shared/moderation.ts
