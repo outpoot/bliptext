@@ -9,6 +9,7 @@ import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
 import { sendDiscordWebhook } from '$lib/discord';
+import { checkHardcore } from '$lib/shared/moderation';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
@@ -29,7 +30,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		console.log('Received request:', { wordIndex, newWord, context });
 
-		if (!isValidWord(newWord)) {
+		if (!isValidWord(newWord) || checkHardcore(newWord)) {
 			return json({ error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))' }, { status: 400 });
 		}
 

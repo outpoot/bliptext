@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Input } from "../ui/input";
 	import { cooldown } from "$lib/stores/cooldown";
-	import { isValidWord } from "$lib/shared/wordMatching";
 	import * as Card from "$lib/components/ui/card";
 	import { Separator } from "../ui/separator";
 
@@ -9,7 +8,22 @@
 
 	let err = $state("");
 
-	function validateInput(event: Event) {
+	async function fetchValidateWord(word: string) {
+		try {
+			const response = await fetch("/api/validate-word", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ word }),
+			});
+			return response.status === 200;
+		} catch (error) {
+			return false;
+		}
+	}
+
+	async function validateInput(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const value = input.value;
 
@@ -18,7 +32,8 @@
 			return;
 		}
 
-		if (!isValidWord(value)) {
+		const isValid = await fetchValidateWord(value);
+		if (!isValid) {
 			err =
 				"Word can be:\n• Plain text (optional . or , at end)\n• *italic*\n• **bold**\n• [text](url)";
 		} else {
