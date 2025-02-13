@@ -74,6 +74,38 @@
 
     --ring: 240 4.9% 83.9%;
   }
+
+  .lyntr {
+    --background: 45 20% 93%;
+    --foreground: 25 20% 10%;
+
+    --muted: 45 12% 88%;
+    --muted-foreground: 25 15% 40%;
+
+    --popover: 45 18% 89%;
+    --popover-foreground: 25 20% 10%;
+
+    --card: 45 18% 89%;
+    --card-foreground: 25 20% 10%;
+
+    --border: 45 15% 85%;
+    --input: 45 15% 85%;
+
+    --primary: 22 90% 15%;
+    --primary-foreground: 45 20% 95%;
+
+    --secondary: 22 85% 30%;
+    --secondary-foreground: 45 20% 95%;
+
+    --accent: 45 25% 85%;
+    --accent-foreground: 25 20% 10%;
+
+    --destructive: 5 85% 45%;
+    --destructive-foreground: 45 20% 95%;
+
+    --ring: 22 90% 20%;
+    --radius: 0.5rem;
+}
 }
 
 @layer base {
