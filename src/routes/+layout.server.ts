@@ -6,8 +6,11 @@ export const load: LayoutServerLoad = async (event) => {
         headers: event.request.headers
     });
 
+    const theme = event.cookies.get('theme') || 'light';
+
     return {
         userSession: sessionResponse?.user || null,
-        url: event.url.pathname
+        url: event.url.pathname,
+        theme
     };
 };

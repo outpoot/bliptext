@@ -9,6 +9,10 @@
 	import { Toaster, toast } from "svelte-sonner";
 	import SignInConfirmDialog from "$lib/components/self/SignInConfirmDialog.svelte";
 	import { soundMuted } from "$lib/stores/soundMuted";
+	import { theme } from "$lib/stores/theme";
+	import { browser } from "$app/environment";
+	import ThemeToggle from "$lib/components/self/ThemeToggle.svelte";
+	import Logo from "$lib/components/self/Logo.svelte";
 
 	import {
 		DropdownMenu,
@@ -81,7 +85,7 @@
 	}
 
 	let { data, children } = $props<{
-		data: { userSession?: any };
+		data: { userSession?: any; theme: string };
 		children: any;
 	}>();
 
@@ -94,6 +98,12 @@
 			currentUser.set(data.userSession);
 		} else {
 			currentUser.set(null);
+		}
+	});
+
+	onMount(() => {
+		if (browser && data.theme) {
+			theme.set(data.theme as "light" | "dark" | "lyntr");
 		}
 	});
 
@@ -124,41 +134,42 @@
 {:else}
 	<div class="flex min-h-screen flex-col">
 		<header class="border-b">
-			<div
-				class="container-2xl mx-auto flex h-16 items-center justify-between px-4"
-			>
-				<a href="/home" class="flex cursor-pointer items-center gap-2">
-					<img
-						src="/images/logo.svg"
-						alt=""
-						class="h-8 w-8"
-						aria-hidden="true"
-					/>
-					<Label
-						class="cursor-pointer text-2xl font-bold"
-						style="font-family: 'LinLibertine'">Bliptext</Label
+			<div class="container-2xl mx-auto flex h-16 items-center px-4">
+				<div class="w-[200px]">
+					<a
+						href="/home"
+						class="flex cursor-pointer items-center gap-2"
 					>
-					{#if $currentUser?.isAdmin}
-						<span class="text-[0.5rem] md:text-xs">| Admin</span>
-					{/if}
-				</a>
+						<Logo className="h-8 w-8 text-primary" />
+						<Label
+							class="cursor-pointer text-2xl font-bold"
+							style="font-family: 'LinLibertine'">Bliptext</Label
+						>
+						{#if $currentUser?.isAdmin}
+							<span class="text-[0.5rem] md:text-xs">| Admin</span
+							>
+						{/if}
+					</a>
+				</div>
 
 				<!-- Large screen search bar & categories -->
-				<div class="hidden flex-1 px-16 md:block">
-					<SearchBar class="mx-auto w-full md:max-w-2xl" />
+				<div class="hidden flex-1 md:flex md:justify-center">
+					<SearchBar class="w-full max-w-2xl" />
 				</div>
 
 				<!-- Small screen icons for search & categories -->
-				<div class="flex items-center gap-4 md:hidden">
+				<div class="w-[200px] flex justify-end items-center gap-4">
+					<!-- Mobile search icon -->
 					<Button
 						variant="outline"
 						onclick={() => (searchDialogOpen = true)}
+						class="md:hidden"
 					>
 						<SearchIcon class="h-6 w-6" />
 					</Button>
-				</div>
 
-				<nav class="flex items-center gap-2">
+					<ThemeToggle />
+
 					{#if $currentUser}
 						<DropdownMenu>
 							<DropdownMenuTrigger>
@@ -280,7 +291,7 @@
 							onConfirm={handleSignIn}
 						/>
 					{/if}
-				</nav>
+				</div>
 			</div>
 		</header>
 
@@ -329,7 +340,7 @@
 		<div class="relative w-full max-w-lg">
 			<div class="mb-2 flex items-center justify-end">
 				<button
-					class="group rounded-md bg-secondary px-2.5 py-2 text-sm font-medium hover:bg-secondary/80"
+					class="group rounded-md bg-transparent px-2.5 py-2 text-sm font-medium"
 					onclick={() => (searchDialogOpen = false)}
 				>
 					<X class={styles.iconClass} />
