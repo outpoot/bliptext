@@ -657,7 +657,9 @@
 					selectedElement!,
 				);
 				if (actualIndex !== undefined) {
-					const words = wordProcessor.getWordsFromText(content);
+					const words = wordProcessor.getWordsFromText(
+						wordProcessor.content,
+					);
 					const start = Math.max(0, actualIndex - 2);
 					const end = Math.min(words.length, actualIndex + 3);
 

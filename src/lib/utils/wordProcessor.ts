@@ -14,7 +14,7 @@ export class WordProcessor {
     private usedIndices: Set<number>;
 
     constructor(
-        private content: string,
+        public content: string,
         eventHandlers: WordEventHandlers = {}
     ) {
         this.eventHandlers = eventHandlers;
@@ -117,11 +117,9 @@ export class WordProcessor {
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
 
-        // Get surrounding context with raw text
         const words = this.getWordsFromText(this.content);
         const start = Math.max(0, actualIndex - 2);
         const end = Math.min(words.length, actualIndex + 3);
-
         const context = {
             before: words.slice(start, actualIndex).join(' '),
             word: words[actualIndex],
@@ -133,22 +131,46 @@ export class WordProcessor {
         element.classList.add('word-exit');
 
         setTimeout(() => {
+            const posStr = element.dataset.position;
+            if (posStr) {
+                const startPos = parseInt(posStr);
+                const oldLength = element.textContent!.length;
+                const diff = newWord.length - oldLength;
+                const endPos = startPos + oldLength;
+                this.content = this.content.slice(0, startPos) + newWord + this.content.slice(endPos);
+                this.wordPositions.forEach((pos, idx) => {
+                    if (idx > actualIndex) {
+                        this.wordPositions.set(idx, pos + diff);
+                    }
+                });
+
+                this.recalcWordPositions();
+            }
+
             const baseSpan = this.createBaseSpan(this.cleanContentWord(newWord));
             const replacement = this.determineWordElement(newWord, baseSpan);
-
-            // Ensure we maintain the exact position mapping
             baseSpan.dataset.wordIndex = actualIndex.toString();
             baseSpan.dataset.position = element.dataset.position;
             this.wordIndicesMap.set(baseSpan, actualIndex);
             this.wordIndicesMap.delete(element);
             this.attachEventListeners(baseSpan);
-
             element.replaceWith(replacement);
             baseSpan.classList.add('word-enter');
             setTimeout(() => baseSpan.classList.remove('word-enter'), 500);
         }, 300);
 
         onWordChange?.({ newWord, wordIndex: actualIndex, context: JSON.stringify(context) });
+    }
+
+    private recalcWordPositions() {
+        this.wordPositions.clear();
+        const contentWords = this.content.match(WORD_MATCH_REGEX) || [];
+        let position = 0;
+        contentWords.forEach((word, index) => {
+            position = this.content.indexOf(word, position);
+            this.wordPositions.set(index, position);
+            position += word.length;
+        });
     }
 
     private createWordSpan(word: string): HTMLElement {
