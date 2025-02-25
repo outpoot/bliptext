@@ -54,6 +54,10 @@
         return new Date(date).toLocaleString();
     }
 
+    function formatSeconds(seconds: number) {
+        return `${seconds.toFixed(2)}s`;
+    }
+
     function handleInput(e: Event) {
         userId = (e.target as HTMLInputElement).value;
     }
@@ -104,7 +108,7 @@
                     </Avatar>
                     <div>
                         <h2 class="text-xl font-semibold">{userInfo.name}</h2>
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-xs sm:text-sm text-muted-foreground">
                             ID: {userInfo.id}
                         </p>
                         <p class="text-sm text-muted-foreground">
@@ -121,7 +125,7 @@
                 {#if !userInfo.isBanned}
                     <Button
                         variant="destructive"
-                        class="flex items-center gap-2"
+                        class="flex items-center gap-2 mt-2"
                         onclick={banUser}
                     >
                         <Gavel class="h-4 w-4" />
@@ -129,6 +133,32 @@
                     </Button>
                 {/if}
             </div>
+
+            {#if userInfo?.botMetrics}
+                <Card class="mt-4 p-6">
+                    <h3 class="mb-4 text-lg font-semibold">Metrics</h3>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <p class="text-sm text-muted-foreground">
+                                Avg. interval between changes
+                            </p>
+                            <p class="text-lg font-medium">
+                                {formatSeconds(
+                                    userInfo.botMetrics.averageInterval,
+                                )}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-muted-foreground">
+                                Max consecutive word repetition
+                            </p>
+                            <p class="text-lg font-medium">
+                                {userInfo.botMetrics.maxConsecutiveRepetition}x
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+            {/if}
 
             <div class="mt-8">
                 <h3 class="mb-4 text-lg font-semibold">Recent Activity</h3>

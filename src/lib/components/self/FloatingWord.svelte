@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 
 	let { word, image, element, x, y } = $props<{
 		word: string;
@@ -51,7 +51,7 @@
 		} else if (element) {
 			// On desktop, keep original cursor-following behavior
 			const rect = element.getBoundingClientRect();
-			floatingEl.style.position = 'fixed';
+			floatingEl.style.position = "fixed";
 			floatingEl.style.left = `${rect.left}px`;
 			floatingEl.style.top = `${rect.top - 10}px`;
 		} else if (x !== undefined && y !== undefined) {
@@ -88,6 +88,11 @@
 				src={image}
 				alt="The editor's profile."
 				class="h-6 w-6 rounded-full border-2 border-white"
+				loading="lazy"
+				fetchpriority="low"
+				decoding="async"
+				crossorigin="anonymous"
+				referrerpolicy="no-referrer"
 			/>
 		{/if}
 

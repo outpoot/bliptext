@@ -113,6 +113,7 @@
 
 	let lastSoundPlayed = 0;
 	const SOUND_DEBOUNCE = 50;
+	const HOVER_DEBOUNCE = 150;
 
 	let isMobile = false;
 
@@ -132,10 +133,15 @@
 	}
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
-		if (!selectedWord && self) return;
+		if (self && !selectedWord?.trim()) return;
+
 		element.classList.add("shake");
 
-		if (self) hoverTimeout = setTimeout(() => handleHover(element), 15);
+		if (self)
+			hoverTimeout = setTimeout(
+				() => handleHover(element),
+				HOVER_DEBOUNCE,
+			);
 	}
 
 	async function handleElementLeave(element: HTMLElement) {
@@ -151,7 +157,7 @@
 		}
 
 		// no leave request if we're in replace mode
-		if (isReplacing) return;
+		if (isReplacing || !selectedWord.trim()) return;
 
 		leaveTimeout = setTimeout(async () => {
 			const actualIndex = wordProcessor.wordIndicesMap.get(element);
@@ -168,7 +174,7 @@
 					console.error("Failed to send hover leave:", error);
 				}
 			}
-		}, 10);
+		}, HOVER_DEBOUNCE);
 	}
 
 	function updateSubmitButtonPosition() {
@@ -197,6 +203,12 @@
 		if (!selectedWord) return;
 		playSound(clickSound);
 		navigator?.vibrate?.(100);
+
+		if (hoverTimeout) {
+			clearTimeout(hoverTimeout);
+			hoverTimeout = null;
+			handleHover(element);
+		}
 
 		if (selectedElement) selectedElement.classList.remove("selected");
 
@@ -263,6 +275,8 @@
 					editorName,
 					editorImage,
 				} = data.data;
+
+				if (editorId === selfId) return;
 
 				if (replace) {
 					const element =
