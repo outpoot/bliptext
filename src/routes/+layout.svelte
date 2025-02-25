@@ -237,15 +237,6 @@
 											<span>Inspect</span>
 										</a>
 									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<a
-											href="/admin/terminator"
-											class="text-primary {styles.buttonClass}"
-										>
-											<Shield class={styles.iconClass} />
-											<span>Terminator</span>
-										</a>
-									</DropdownMenuItem>
 									<DropdownMenuSeparator />
 								{/if}
 
