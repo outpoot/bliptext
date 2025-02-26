@@ -105,7 +105,7 @@
 
     --ring: 22 90% 20%;
     --radius: 0.5rem;
-}
+  }
 }
 
 @layer base {
@@ -153,6 +153,10 @@
   .markdown-content h5,
   .markdown-content h6 {
     @apply font-medium tracking-tight;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   .markdown-content h1 {
@@ -182,6 +186,7 @@
   /* Wikipedia-style image boxes */
   .markdown-content .wiki-image-box {
     @apply float-right clear-right ml-4 mb-6 bg-card border rounded-lg overflow-hidden max-w-[250px];
+    shape-outside: margin-box;
   }
 
   .markdown-content .wiki-image-box img {
@@ -195,16 +200,16 @@
   /* Text content */
   .markdown-content p {
     @apply leading-7 [&:not(:first-child)]:mt-3 max-w-[120ch];
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   /* Clear float after content */
   .markdown-content::after {
     content: '';
     @apply block clear-both;
-  }
-
-  .markdown-content p {
-    @apply leading-7 [&:not(:first-child)]:mt-3;
   }
 
   .markdown-content blockquote {
@@ -214,10 +219,23 @@
   /* Lists */
   .markdown-content ul {
     @apply my-3 ml-6 list-disc [&>li]:mt-1;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   .markdown-content ol {
     @apply my-3 ml-6 list-decimal [&>li]:mt-1;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* List items should also wrap */
+  .markdown-content li {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   /* Code blocks - buggy, we can't apply the targetted tag to it, so it's global */
@@ -253,6 +271,9 @@
 
   .markdown-content td {
     @apply p-2;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   /* Definition lists */

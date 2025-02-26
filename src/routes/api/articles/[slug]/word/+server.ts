@@ -42,7 +42,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Article not found' }, { status: 404 });
 		}
 
-		if (cooldownManager.isOnCooldown(session.user.id)) {
+		if (await cooldownManager.isOnCooldown(session.user.id)) {
 			const remainingTime = cooldownManager.getRemainingTime(session.user.id);
 			return json({
 				error: "Please wait before making more edits",

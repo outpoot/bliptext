@@ -4,7 +4,7 @@
 	import { Input } from '$lib/components/ui/input';
 
 	import Search from 'lucide-svelte/icons/search';
-	import Sparkles from 'lucide-svelte/icons/sparkles';
+	import Dices from 'lucide-svelte/icons/dices';
 
 	import TooltipButton from './TooltipButton.svelte';
 
@@ -54,7 +54,7 @@
 	{#if includeRandom}
 		<div class="h-10">
 			<TooltipButton
-				icon={Sparkles}
+				icon={Dices}
 				tooltipText="View random article"
 				buttonClass="h-10 w-12"
 				onClick={handleRandom}

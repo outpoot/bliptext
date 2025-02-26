@@ -4,6 +4,33 @@ import { user, revisions } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { auth } from '$lib/auth';
 
+function calculateBotMetrics(revisions: any[]) {
+    if (revisions.length < 2) return null;
+
+    let totalIntervalTime = 0;
+    let maxConsecutiveRepetition = 1;
+    let currentRepetition = 1;
+
+    for (let i = 1; i < revisions.length; i++) {
+        const currentTime = new Date(revisions[i].createdAt).getTime();
+        const previousTime = new Date(revisions[i - 1].createdAt).getTime();
+        totalIntervalTime += (previousTime - currentTime);
+
+        if (revisions[i].content === revisions[i - 1].content) {
+            currentRepetition++;
+            maxConsecutiveRepetition = Math.max(maxConsecutiveRepetition, currentRepetition);
+        } else {
+            currentRepetition = 1;
+        }
+    }
+
+    return {
+        averageInterval: totalIntervalTime / (revisions.length - 1) / 1000,
+        maxConsecutiveRepetition
+    };
+}
+
+
 export async function GET({ url, request }) {
     const session = await auth.api.getSession({
         headers: request.headers
@@ -66,9 +93,12 @@ export async function GET({ url, request }) {
             }
         }));
 
+        const botMetrics = calculateBotMetrics(recentRevisions);
+
         return json({
             ...userInfo,
-            revisions: formattedRevisions
+            revisions: formattedRevisions,
+            botMetrics
         }, {
             headers: {
                 'Cache-Control': 'no-store, no-cache, must-revalidate, private',

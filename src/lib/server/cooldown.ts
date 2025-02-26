@@ -1,36 +1,39 @@
-type CooldownEntry = {
-    until: number;
-};
+import { redis } from './redis';
 
-class CooldownManager {
-    private cooldowns: Map<string, CooldownEntry> = new Map();
+class RedisCooldownManager {
+    private readonly keyPrefix = 'cooldown:';
+    private readonly DEFAULT_COOLDOWN = 30000;
 
-    addCooldown(userId: string, durationMs: number = 30000) {
-        const until = Date.now() + durationMs;
-        this.cooldowns.set(userId, { until });
+    async isOnCooldown(userId: string, type: 'hover' | 'edit' = 'edit'): Promise<boolean> {
+        const key = `${this.keyPrefix}${type}:${userId}`;
+        const cooldownUntil = await redis.get(key);
+        if (!cooldownUntil) return false;
+
+        const expiryTime = parseInt(cooldownUntil);
+        return Date.now() < expiryTime;
     }
 
-    isOnCooldown(userId: string): boolean {
-        const entry = this.cooldowns.get(userId);
+    async getRemainingTime(userId: string, type: 'hover' | 'edit' = 'edit'): Promise<number> {
+        const key = `${this.keyPrefix}${type}:${userId}`;
+        const cooldownUntil = await redis.get(key);
+        if (!cooldownUntil) return 0;
 
-        if (!entry) return false;
-
-        if (Date.now() > entry.until) {
-            this.cooldowns.delete(userId);
-            return false;
-        }
-
-        return true;
-    }
-
-    getRemainingTime(userId: string): number {
-        const entry = this.cooldowns.get(userId);
-
-        if (!entry) return 0;
-
-        const remaining = entry.until - Date.now();
+        const expiryTime = parseInt(cooldownUntil);
+        const remaining = expiryTime - Date.now();
         return remaining > 0 ? remaining : 0;
+    }
+
+    async addCooldown(userId: string, duration: number = this.DEFAULT_COOLDOWN, type: 'hover' | 'edit' = 'edit'): Promise<void> {
+        const key = `${this.keyPrefix}${type}:${userId}`;
+        const expiry = Date.now() + duration;
+
+        await redis.set(key, expiry.toString(), 'PX', duration + 1000);
+    }
+
+    async clearCooldown(userId: string, type: 'hover' | 'edit' = 'edit'): Promise<void> {
+        const key = `${this.keyPrefix}${type}:${userId}`;
+        await redis.del(key);
     }
 }
 
-export const cooldownManager = new CooldownManager();
+export const cooldownManager = new RedisCooldownManager();

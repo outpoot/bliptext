@@ -9,10 +9,12 @@ export const GET: RequestHandler = async ({ request }) => {
     const data = JSON.stringify({
         userId: session?.user?.id || null,
         ip: request.headers.get('cf-connecting-ip'),
-        isBanned: session?.user?.isBanned || false
+        isBanned: session?.user?.isBanned || false,
+        name: session?.user?.name || null,
+        image: session?.user?.image || null
     });
 
-    await redis.set(`ws:${token}`, data, 'EX', 300);
+    await redis.set(`ws:${token}`, data, 'EX', 60);
 
     return json(
         { token },

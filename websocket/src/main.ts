@@ -1,10 +1,15 @@
 import type { ServerWebSocket } from 'bun';
 import Redis from 'ioredis';
+import { isValidWord } from '../../src/lib/shared/wordMatching';
+import { checkHardcore } from '../../src/lib/shared/moderation';
 
-const redis = new Redis(process.env.REDIS_URL!);
-const normalRedis = new Redis(process.env.REDIS_URL!);
+const redisSubscriber = new Redis(process.env.REDIS_URL!);
+const redisPublisher = new Redis(process.env.REDIS_URL!);
 
-[redis, normalRedis].forEach((r) => {
+const cooldownCache = new Map<string, number>();
+const COOLDOWN_KEY_PREFIX = 'cooldown:edit:';
+
+[redisSubscriber, redisPublisher].forEach((r) => {
 	r.on('error', (err) => {
 		console.error('Redis connection error:', err);
 	});
@@ -14,7 +19,7 @@ const normalRedis = new Redis(process.env.REDIS_URL!);
 	});
 });
 
-redis.on('message', (channel, msg) => {
+redisSubscriber.on('message', (channel, msg) => {
 	if (!channel.startsWith('updates:')) return;
 	const articleId = channel.substring(8);
 
@@ -28,6 +33,8 @@ type WebSocketData = {
 	user?: {
 		id: string;
 		isBanned: boolean;
+		name?: string;
+		image?: string;
 	};
 	connectionType?: 'editor' | 'viewer';
 };
@@ -36,20 +43,20 @@ const articleUsers = new Map<string, Set<string>>();
 const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
 const editorSockets = new Map<string, ServerWebSocket<WebSocketData>>();
 
-async function validateAuth(request: Request): Promise<{ id: string; isBanned: boolean } | null> {
+async function validateAuth(request: Request): Promise<{ id: string; isBanned: boolean; name?: string; image?: string } | null> {
 	const url = new URL(request.url);
 	const token = url.searchParams.get('token');
 
 	if (!token) return null;
 
 	try {
-		const sessionData = await normalRedis.get(`ws:${token}`);
+		const sessionData = await redisPublisher.get(`ws:${token}`);
 		if (!sessionData) return null;
 
-		const { userId, isBanned } = JSON.parse(sessionData);
-		await normalRedis.del(`ws:${token}`);
+		const { userId, isBanned, name, image } = JSON.parse(sessionData);
+		await redisPublisher.del(`ws:${token}`);
 
-		return userId ? { id: userId, isBanned } : null;
+		return userId ? { id: userId, isBanned, name, image } : null;
 	} catch (error) {
 		console.error('Auth validation error:', error);
 		return null;
@@ -86,7 +93,6 @@ async function handleSetArticle(
 		editorSockets.set(userId, ws);
 	}
 
-	// cleanup previous article if exists
 	if (ws.data.articleId) {
 		const prevArticle = articleUsers.get(ws.data.articleId);
 		if (prevArticle) {
@@ -114,7 +120,7 @@ async function handleSetArticle(
 
 	if (!articleUsers.has(articleId)) {
 		articleUsers.set(articleId, new Set([userId]));
-		await redis.subscribe('updates:' + articleId);
+		await redisSubscriber.subscribe('updates:' + articleId);
 		await broadcastUserCount(articleId);
 	} else {
 		const wasAdded = !articleUsers.get(articleId)!.has(userId);
@@ -129,6 +135,7 @@ async function handleGetActiveArticles(ws: ServerWebSocket<WebSocketData>): Prom
 	const activeArticles = await Promise.all(
 		Array.from(articleUsers.entries())
 			.filter(([, users]) => users.size > 0)
+			.slice(0, 10)
 			.map(async ([articleId]) => {
 				try {
 					const response = await fetch(
@@ -154,6 +161,146 @@ async function handleGetActiveArticles(ws: ServerWebSocket<WebSocketData>): Prom
 		JSON.stringify({
 			type: 'active_articles',
 			data: activeArticles.filter(Boolean)
+		})
+	);
+}
+
+async function isUserOnCooldown(userId: string): Promise<boolean> {
+	const cachedExpiry = cooldownCache.get(userId);
+	if (cachedExpiry) {
+		if (Date.now() < cachedExpiry) {
+			return true;
+		} else {
+			cooldownCache.delete(userId);
+		}
+	}
+
+	try {
+		const cooldownKey = `${COOLDOWN_KEY_PREFIX}${userId}`;
+		const cooldownUntil = await redisPublisher.get(cooldownKey);
+
+		if (!cooldownUntil) return false;
+
+		const expiryTime = parseInt(cooldownUntil);
+		const isActive = Date.now() < expiryTime;
+
+		if (isActive) {
+			cooldownCache.set(userId, expiryTime);
+		}
+
+		return isActive;
+	} catch (error) {
+		console.error('Error checking edit cooldown:', error);
+		return false;
+	}
+}
+
+async function getRemainingCooldownTime(userId: string): Promise<number> {
+	const cachedExpiry = cooldownCache.get(userId);
+	if (cachedExpiry) {
+		const remaining = cachedExpiry - Date.now();
+		return remaining > 0 ? remaining : 0;
+	}
+
+	try {
+		const cooldownKey = `${COOLDOWN_KEY_PREFIX}${userId}`;
+		const cooldownUntil = await redisPublisher.get(cooldownKey);
+
+		if (!cooldownUntil) return 0;
+
+		const expiryTime = parseInt(cooldownUntil);
+		const remaining = expiryTime - Date.now();
+
+		if (remaining > 0) {
+			cooldownCache.set(userId, expiryTime);
+		}
+
+		return remaining > 0 ? remaining : 0;
+	} catch (error) {
+		console.error('Error getting cooldown remaining time:', error);
+		return 0;
+	}
+}
+
+setInterval(() => {
+	const now = Date.now();
+	for (const [userId, expiry] of cooldownCache.entries()) {
+		if (now > expiry) {
+			cooldownCache.delete(userId);
+		}
+	}
+}, 500);
+
+async function handleWordHover(
+	ws: ServerWebSocket<WebSocketData>,
+	data: { wordIndex: number; newWord: string }
+): Promise<void> {
+	const { wordIndex, newWord } = data;
+	const userId = ws.data.user?.id;
+	const articleId = ws.data.articleId;
+
+	if (!userId || !articleId) {
+		return;
+	}
+
+	if (typeof wordIndex !== 'number' || !newWord?.trim() || !isValidWord(newWord) || checkHardcore(newWord)) {
+		ws.send(JSON.stringify({
+			type: 'error',
+			data: {
+				code: 'INVALID_WORD',
+				message: 'Invalid word format or content'
+			}
+		}));
+		return;
+	}
+
+	if (await isUserOnCooldown(userId)) {
+		ws.send(JSON.stringify({
+			type: 'error',
+			data: {
+				code: 'COOLDOWN',
+				message: 'Please wait before making more edits',
+				remainingTime: await getRemainingCooldownTime(userId)
+			}
+		}));
+		return;
+	}
+
+	await redisPublisher.publish(
+		`updates:${articleId}`,
+		JSON.stringify({
+			type: 'word_hover',
+			data: {
+				newWord,
+				wordIndex,
+				editorId: userId,
+				editorName: ws.data.user!.name,
+				editorImage: ws.data.user!.image,
+			}
+		})
+	);
+}
+
+async function handleWordLeave(
+	ws: ServerWebSocket<WebSocketData>,
+	data: { wordIndex: number }
+): Promise<void> {
+	const { wordIndex } = data;
+	const userId = ws.data.user?.id;
+	const articleId = ws.data.articleId;
+
+	if (!userId || !articleId) {
+		return;
+	}
+
+	await redisPublisher.publish(
+		`updates:${articleId}`,
+		JSON.stringify({
+			type: 'word_leave',
+			data: {
+				wordIndex,
+				editorId: userId
+			}
 		})
 	);
 }
@@ -196,7 +343,7 @@ const server = Bun.serve<WebSocketData>({
 			if (typeof msg !== 'string') return;
 
 			try {
-				const data = JSON.parse(msg) as { type: string; article?: any };
+				const data = JSON.parse(msg) as { type: string; article?: any; wordIndex?: number; newWord?: string };
 				switch (data.type) {
 					case 'set_article':
 						if (data.article) {
@@ -205,6 +352,17 @@ const server = Bun.serve<WebSocketData>({
 						break;
 					case 'get_active_articles':
 						await handleGetActiveArticles(ws);
+						break;
+					case 'word_hover':
+						await handleWordHover(ws, {
+							wordIndex: data.wordIndex!,
+							newWord: data.newWord!
+						});
+						break;
+					case 'word_leave':
+						await handleWordLeave(ws, {
+							wordIndex: data.wordIndex!
+						});
 						break;
 				}
 			} catch (error) {
