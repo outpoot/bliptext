@@ -3,8 +3,11 @@ import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
 import { articles } from '$lib/server/db/schema';
 
+const MAX_QUERY_LENGTH = 200;
+
 export async function GET({ url }) {
-    const query = url.searchParams.get('q')?.trim() || '';
+    const queryParam = url.searchParams.get('q')?.trim() || '';
+    const query = queryParam.slice(0, MAX_QUERY_LENGTH);
     if (!query || query.length < 2) return json({ results: [] });
 
     try {
