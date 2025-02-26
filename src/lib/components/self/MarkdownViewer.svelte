@@ -113,7 +113,7 @@
 
 	let lastSoundPlayed = 0;
 	const SOUND_DEBOUNCE = 50;
-	const HOVER_DEBOUNCE = 150;
+	const HOVER_DEBOUNCE = 100;
 
 	let isMobile = false;
 
@@ -137,14 +137,22 @@
 
 		element.classList.add("shake");
 
-		if (self)
+		if (self && !$cooldown.isActive && !isReplacing) {
 			hoverTimeout = setTimeout(
 				() => handleHover(element),
 				HOVER_DEBOUNCE,
 			);
+		} else if (self && $cooldown.isActive) {
+			toast.error(
+				`Please wait ${Math.ceil($cooldown.remainingTime / 1000)}s before editing more words.`,
+				{
+					duration: 2000,
+				},
+			);
+		}
 	}
 
-	async function handleElementLeave(element: HTMLElement) {
+	function handleElementLeave(element: HTMLElement) {
 		element.classList.remove("shake");
 
 		if (hoverTimeout) {
@@ -159,20 +167,15 @@
 		// no leave request if we're in replace mode
 		if (isReplacing || !selectedWord.trim()) return;
 
-		leaveTimeout = setTimeout(async () => {
+		leaveTimeout = setTimeout(() => {
 			const actualIndex = wordProcessor.wordIndicesMap.get(element);
 			if (actualIndex !== undefined && !$cooldown.isActive) {
-				try {
-					await fetch(`/api/articles/${article.slug}/hover`, {
-						method: "DELETE",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							wordIndex: actualIndex,
-						}),
-					});
-				} catch (error) {
-					console.error("Failed to send hover leave:", error);
-				}
+				ws.send(
+					JSON.stringify({
+						type: "word_leave",
+						wordIndex: actualIndex,
+					}),
+				);
 			}
 		}, HOVER_DEBOUNCE);
 	}
@@ -207,7 +210,23 @@
 		if (hoverTimeout) {
 			clearTimeout(hoverTimeout);
 			hoverTimeout = null;
-			handleHover(element);
+		}
+
+		if (leaveTimeout) {
+			clearTimeout(leaveTimeout);
+			leaveTimeout = null;
+		}
+
+		if (!isReplacing && !$cooldown.isActive) {
+			const actualIndex = wordProcessor.wordIndicesMap.get(element);
+			if (actualIndex !== undefined) {
+				ws.send(
+					JSON.stringify({
+						type: "word_leave",
+						wordIndex: actualIndex,
+					}),
+				);
+			}
 		}
 
 		if (selectedElement) selectedElement.classList.remove("selected");
@@ -226,36 +245,25 @@
 		requestAnimationFrame(updateSubmitButtonPosition);
 	}
 
-	async function handleHover(element: HTMLElement) {
-		if (!selectedWord || !article?.slug) return;
+	function handleHover(element: HTMLElement) {
+		if (
+			!selectedWord ||
+			!article?.slug ||
+			$cooldown.isActive ||
+			isReplacing
+		)
+			return;
 
 		const actualIndex = wordProcessor.wordIndicesMap.get(element);
 		if (actualIndex === undefined) return;
 
-		try {
-			const response = await fetch(
-				`/api/articles/${article.slug}/hover`,
-				{
-					method: "PUT",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						wordIndex: actualIndex,
-						newWord: selectedWord,
-					}),
-				},
-			);
-
-			const data = await response.json();
-
-			if (response.status === 429) {
-				cooldown.startCooldown(data.remainingTime);
-				return;
-			}
-
-			if (!response.ok) throw new Error("Hover update failed");
-		} catch (error) {
-			console.error("Failed to send hover update:", error);
-		}
+		ws.send(
+			JSON.stringify({
+				type: "word_hover",
+				wordIndex: actualIndex,
+				newWord: selectedWord,
+			}),
+		);
 	}
 
 	$effect(() => {
@@ -266,7 +274,13 @@
 		ws.addEventListener("message", (event: { data: string }) => {
 			const data = JSON.parse(event.data);
 
-			if (data.type === "word_hover") {
+			if (data.type === "error") {
+				if (data.data.code === "COOLDOWN") {
+					cooldown.startCooldown(data.data.remainingTime);
+				} else if (data.data.code === "INVALID_WORD") {
+					toast.error("Invalid word format");
+				}
+			} else if (data.type === "word_hover") {
 				const {
 					wordIndex,
 					newWord,
