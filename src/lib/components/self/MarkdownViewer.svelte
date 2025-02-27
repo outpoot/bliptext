@@ -217,23 +217,34 @@
 			leaveTimeout = null;
 		}
 
-		if (!isReplacing && !$cooldown.isActive) {
-			const actualIndex = wordProcessor.wordIndicesMap.get(element);
-			if (actualIndex !== undefined) {
+		if (isReplacing && selectedElement && selectedElement !== element) {
+			const previousIndex =
+				wordProcessor.wordIndicesMap.get(selectedElement);
+			if (previousIndex !== undefined) {
 				ws.send(
 					JSON.stringify({
 						type: "word_leave",
-						wordIndex: actualIndex,
+						wordIndex: previousIndex,
 					}),
 				);
 			}
+			selectedElement.classList.remove("selected");
 		}
-
-		if (selectedElement) selectedElement.classList.remove("selected");
 
 		selectedElement = element;
 		element.classList.add("selected");
 		isReplacing = true;
+
+		const actualIndex = wordProcessor.wordIndicesMap.get(element);
+		if (actualIndex !== undefined && !$cooldown.isActive) {
+			ws.send(
+				JSON.stringify({
+					type: "word_hover",
+					wordIndex: actualIndex,
+					newWord: selectedWord,
+				}),
+			);
+		}
 
 		const rect = element.getBoundingClientRect();
 		if (rect.width && rect.height) {
@@ -246,13 +257,7 @@
 	}
 
 	function handleHover(element: HTMLElement) {
-		if (
-			!selectedWord ||
-			!article?.slug ||
-			$cooldown.isActive ||
-			isReplacing
-		)
-			return;
+		if (!selectedWord || !article?.slug || $cooldown.isActive) return;
 
 		const actualIndex = wordProcessor.wordIndicesMap.get(element);
 		if (actualIndex === undefined) return;
