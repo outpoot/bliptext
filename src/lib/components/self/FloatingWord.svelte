@@ -2,7 +2,14 @@
 	import { onMount } from "svelte";
 	import { getUserColor } from "$lib/utils/userColors";
 
-	let { word, image, element, x, y, editorName = '' } = $props<{
+	let {
+		word,
+		image,
+		element,
+		x,
+		y,
+		editorName = "",
+	} = $props<{
 		word: string;
 		image?: string;
 		element?: HTMLElement;
@@ -12,16 +19,6 @@
 	}>();
 
 	const backgroundColor = $derived(getUserColor(editorName));
-
-	const colors = [
-		"#fecaca",
-		"#fed7aa",
-		"#fef08a",
-		"#bbf7d0",
-		"#bae6fd",
-		"#ddd6fe",
-		"#fbcfe8",
-	];
 
 	const isBold = $derived(word.startsWith("**") && word.endsWith("**"));
 	const isItalic = $derived(word.startsWith("*") && word.endsWith("*"));
@@ -80,17 +77,16 @@
 
 <div
 	bind:this={floatingEl}
-	class="pointer-events-none z-50 rotate-3 select-none p-1 font-mono text-sm shadow-lg {image
-		? 'opacity-90'
-		: ''}"
+	class="floating-container pointer-events-none z-50 select-none rounded-md shadow-lg"
 	style:background-color={backgroundColor}
+	style:opacity="0.9"
 >
-	<div class="relative flex items-center gap-2">
+	<div class="flex items-center gap-2 px-2 py-1">
 		{#if image}
 			<img
 				src={image}
 				alt="The editor's profile."
-				class="h-6 w-6 rounded-full border-2 border-white"
+				class="h-5 w-5 rounded-full border border-white"
 				loading="lazy"
 				fetchpriority="low"
 				decoding="async"
@@ -99,35 +95,29 @@
 			/>
 		{/if}
 
-		<span class:bold={isBold} class:italic={isItalic} class:link={isLink}>
+		<span
+			class="text-xs font-mono {isBold ? 'font-bold' : ''} {isItalic
+				? 'italic'
+				: ''} {isLink ? 'underline text-primary' : ''}"
+		>
 			{displayText}
 		</span>
-
-		<div class="absolute inset-0 bg-white/10"></div>
 	</div>
 </div>
 
 <style>
-	div {
-		transform-origin: 0 0;
-		animation: float 1s ease-out infinite alternate;
+	.floating-container {
+		transform: rotate(2deg);
+		transform-origin: center center;
+		animation: float 1.5s ease-in-out infinite alternate;
 	}
-	.bold {
-		font-weight: bold;
-	}
-	.italic {
-		font-style: italic;
-	}
-	.link {
-		text-decoration: underline;
-		color: hsl(var(--primary));
-	}
+
 	@keyframes float {
 		from {
-			transform: rotate(3deg) translateY(0);
+			transform: rotate(2deg) translateY(0);
 		}
 		to {
-			transform: rotate(3deg) translateY(-3px);
+			transform: rotate(2deg) translateY(-3px);
 		}
 	}
 </style>
