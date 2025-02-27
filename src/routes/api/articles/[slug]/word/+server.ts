@@ -21,7 +21,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		if(session.user.isBanned) {
+		if (session.user.isBanned) {
 			return json({ error: 'User is banned' }, { status: 403 });
 		}
 
@@ -75,58 +75,60 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		const updatedContent = replaceWordAtIndex(article.content, wordIndex, newWord);
 
-		const [revision] = await db.insert(revisions)
-			.values({
-				articleId: article.id,
-				content: updatedContent,
-				wordChanged: oldWord,
-				wordIndex,
-				createdBy: session.user.id
-			})
-			.returning();
+		await db.transaction(async (tx) => {
+			const [newRevision] = await tx.insert(revisions)
+				.values({
+					articleId: article.id,
+					content: updatedContent,
+					wordChanged: oldWord,
+					wordIndex,
+					createdBy: session.user.id
+				})
+				.returning();
 
-		await Promise.all([
-			Promise.all([
-				db.update(user)
+			await Promise.all([
+				tx.update(user)
 					.set({
 						revisionCount: sql`COALESCE(${user.revisionCount}, 0) + 1`
 					})
 					.where(eq(user.id, session.user.id)),
 
-				db.update(articles)
+				tx.update(articles)
 					.set({
 						content: updatedContent,
-						current_revision: revision.id,
+						current_revision: newRevision.id,
 						updated_at: new Date(),
 						revisionCount: sql`COALESCE(${articles.revisionCount}, 0) + 1`
 					})
 					.where(eq(articles.id, article.id))
-			]),
+			]);
 
-			Promise.all([
-				redis.publish(
-					`updates:${article.id}`,
-					JSON.stringify({
-						type: 'word_hover',
-						data: {
-							newWord,
-							wordIndex,
-							editorId: session.user.id,
-							editorName: session.user.name,
-							editorImage: session.user.image,
-							replace: true
-						}
-					})
-				),
-				sendDiscordWebhook({
-					oldWord,
-					newWord,
-					articleTitle: article.title,
-					articleSlug: article.slug,
-					editorName: session.user.name,
-					editorId: session.user.id
+			return [newRevision];
+		});
+
+		await Promise.all([
+			redis.publish(
+				`updates:${article.id}`,
+				JSON.stringify({
+					type: 'word_hover',
+					data: {
+						newWord,
+						wordIndex,
+						editorId: session.user.id,
+						editorName: session.user.name,
+						editorImage: session.user.image,
+						replace: true
+					}
 				})
-			])
+			),
+			sendDiscordWebhook({
+				oldWord,
+				newWord,
+				articleTitle: article.title,
+				articleSlug: article.slug,
+				editorName: session.user.name,
+				editorId: session.user.id
+			})
 		]);
 
 		cooldownManager.addCooldown(session.user.id);
