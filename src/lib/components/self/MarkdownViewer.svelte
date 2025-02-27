@@ -747,14 +747,14 @@
 
 <style>
 	:global(.hv) {
-		display: inline-block;
+		display: inline;
 		padding: 0 2px;
 		border-radius: 2px;
 		cursor: pointer;
 	}
 
 	:global(.shake) {
-		animation: shake 0.5s linear infinite;
+		animation: backgroundTint 1.5s ease-in-out infinite;
 		background: hsl(var(--primary) / 20%);
 	}
 
@@ -771,16 +771,12 @@
 		animation: wordEnter 0.5s ease-out;
 	}
 
-	@keyframes shake {
-		0%,
-		100% {
-			transform: translateX(0);
+	@keyframes backgroundTint {
+		0%, 100% {
+			background: hsl(var(--primary) / 20%);
 		}
-		25% {
-			transform: translateX(-1px) rotate(-1deg);
-		}
-		75% {
-			transform: translateX(1px) rotate(1deg);
+		50% {
+			background: hsl(var(--primary) / 10%);
 		}
 	}
 
