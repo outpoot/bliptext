@@ -4,10 +4,27 @@ import { articles } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { timeQuery } from '$lib/server/db/timing';
 
+const articleCache = new Map();
+
 export async function GET({ params, url }) {
     const { slug } = params;
     const searchById = url.searchParams.get('byId') === 'true';
     const index = searchById ? 'id' : 'slug';
+    const cacheKey = `${index}:${slug}`;
+    const now = Date.now();
+
+    if (articleCache.has(cacheKey)) {
+        const cached = articleCache.get(cacheKey);
+        if (cached.expiry > now) {
+            return json(cached.data, {
+                headers: {
+                    'Cache-Control': 'public, s-maxage=60'
+                }
+            });
+        }
+    
+        articleCache.delete(cacheKey);
+    }
 
     try {
         const article = await timeQuery('ARTICLE_GET_fetch_article', () =>
@@ -20,11 +37,14 @@ export async function GET({ params, url }) {
             throw error(404, 'Article not found');
         }
 
+        articleCache.set(cacheKey, {
+            data: article,
+            expiry: now + 60000
+        });
+
         return json(article, {
             headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-                'Pragma': 'no-cache',
-                'Expires': '0'
+                'Cache-Control': 'public, s-maxage=60'
             }
         });
     } catch (err) {
