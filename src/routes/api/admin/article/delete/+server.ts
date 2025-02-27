@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { articles, revisions } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '$lib/auth';
+import { timeQuery } from '$lib/server/db/timing';
 
 export const POST: RequestHandler = async ({ request }) => {
     const session = await auth.api.getSession({
@@ -20,13 +21,15 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     try {
-        await db.transaction(async (tx) => {
-            await tx.delete(revisions)
-                .where(eq(revisions.articleId, articleId));
+        await timeQuery('ARTICLE_DELETE_delete_article_transaction', () =>
+            db.transaction(async (tx) => {
+                await tx.delete(revisions)
+                    .where(eq(revisions.articleId, articleId));
 
-            await tx.delete(articles)
-                .where(eq(articles.id, articleId));
-        });
+                await tx.delete(articles)
+                    .where(eq(articles.id, articleId));
+            })
+        );
 
         return json({ success: true });
     } catch (err) {

@@ -10,6 +10,7 @@ import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
 import { sendDiscordWebhook } from '$lib/discord';
 import { checkHardcore } from '$lib/shared/moderation';
+import { timeQuery } from '$lib/server/db/timing';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
@@ -34,9 +35,11 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))' }, { status: 400 });
 		}
 
-		const article = await db.query.articles.findFirst({
-			where: eq(articles.slug, params.slug)
-		});
+		const article = await timeQuery('find_article', () =>
+			db.query.articles.findFirst({
+				where: eq(articles.slug, params.slug)
+			})
+		);
 
 		if (!article) {
 			return json({ error: 'Article not found' }, { status: 404 });
@@ -75,61 +78,65 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		const updatedContent = replaceWordAtIndex(article.content, wordIndex, newWord);
 
-		await db.transaction(async (tx) => {
-			const [newRevision] = await tx.insert(revisions)
-				.values({
-					articleId: article.id,
-					content: updatedContent,
-					wordChanged: oldWord,
-					wordIndex,
-					createdBy: session.user.id
-				})
-				.returning();
-
-			await Promise.all([
-				tx.update(user)
-					.set({
-						revisionCount: sql`COALESCE(${user.revisionCount}, 0) + 1`
-					})
-					.where(eq(user.id, session.user.id)),
-
-				tx.update(articles)
-					.set({
+		await timeQuery('PUT_WORD_update_word_transaction', () =>
+			db.transaction(async (tx) => {
+				const [newRevision] = await tx.insert(revisions)
+					.values({
+						articleId: article.id,
 						content: updatedContent,
-						current_revision: newRevision.id,
-						updated_at: new Date(),
-						revisionCount: sql`COALESCE(${articles.revisionCount}, 0) + 1`
-					})
-					.where(eq(articles.id, article.id))
-			]);
-
-			return [newRevision];
-		});
-
-		await Promise.all([
-			redis.publish(
-				`updates:${article.id}`,
-				JSON.stringify({
-					type: 'word_hover',
-					data: {
-						newWord,
+						wordChanged: oldWord,
 						wordIndex,
-						editorId: session.user.id,
-						editorName: session.user.name,
-						editorImage: session.user.image,
-						replace: true
-					}
-				})
-			),
-			sendDiscordWebhook({
-				oldWord,
-				newWord,
-				articleTitle: article.title,
-				articleSlug: article.slug,
-				editorName: session.user.name,
-				editorId: session.user.id
+						createdBy: session.user.id
+					})
+					.returning();
+
+				await Promise.all([
+					tx.update(user)
+						.set({
+							revisionCount: sql`COALESCE(${user.revisionCount}, 0) + 1`
+						})
+						.where(eq(user.id, session.user.id)),
+
+					tx.update(articles)
+						.set({
+							content: updatedContent,
+							current_revision: newRevision.id,
+							updated_at: new Date(),
+							revisionCount: sql`COALESCE(${articles.revisionCount}, 0) + 1`
+						})
+						.where(eq(articles.id, article.id))
+				]);
+
+				return [newRevision];
 			})
-		]);
+		);
+
+		await timeQuery('PUT_WORD_external_operations', () =>
+			Promise.all([
+				redis.publish(
+					`updates:${article.id}`,
+					JSON.stringify({
+						type: 'word_hover',
+						data: {
+							newWord,
+							wordIndex,
+							editorId: session.user.id,
+							editorName: session.user.name,
+							editorImage: session.user.image,
+							replace: true
+						}
+					})
+				),
+				sendDiscordWebhook({
+					oldWord,
+					newWord,
+					articleTitle: article.title,
+					articleSlug: article.slug,
+					editorName: session.user.name,
+					editorId: session.user.id
+				})
+			])
+		);
 
 		cooldownManager.addCooldown(session.user.id);
 

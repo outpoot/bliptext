@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { articles } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { timeQuery } from '$lib/server/db/timing';
 
 export async function GET({ params, url }) {
     const { slug } = params;
@@ -9,9 +10,11 @@ export async function GET({ params, url }) {
     const index = searchById ? 'id' : 'slug';
 
     try {
-        const article = await db.query.articles.findFirst({
-            where: eq(articles[index], slug)
-        });
+        const article = await timeQuery('ARTICLE_GET_fetch_article', () =>
+            db.query.articles.findFirst({
+                where: eq(articles[index], slug)
+            })
+        );
 
         if (!article) {
             throw error(404, 'Article not found');

@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { articles, revisions, user } from '$lib/server/db/schema';
 import { eq, desc, and, lt } from 'drizzle-orm';
 import { auth } from '$lib/auth';
+import { timeQuery } from '$lib/server/db/timing';
 
 export async function GET({ params, url, request }) {
     const { slug } = params;
@@ -15,9 +16,11 @@ export async function GET({ params, url, request }) {
     const isAdmin = session?.user?.isAdmin;
 
     try {
-        const article = await db.query.articles.findFirst({
-            where: eq(articles.slug, slug)
-        });
+        const article = await timeQuery('HISTORY_find_article', () =>
+            db.query.articles.findFirst({
+                where: eq(articles.slug, slug)
+            })
+        );
 
         if (!article) {
             throw error(404, 'Article not found');
@@ -37,8 +40,8 @@ export async function GET({ params, url, request }) {
             ...(isAdmin ? { isBanned: user.isBanned } : {})
         };
 
-        const history = await db
-            .select({
+        const history = await timeQuery('HISTORY_fetch_history', () =>
+            db.select({
                 id: revisions.id,
                 wordChanged: revisions.wordChanged,
                 newWord: revisions.content,
@@ -46,11 +49,12 @@ export async function GET({ params, url, request }) {
                 createdAt: revisions.createdAt,
                 user: userSelection
             })
-            .from(revisions)
-            .leftJoin(user, eq(revisions.createdBy, user.id))
-            .where(whereClause)
-            .orderBy(desc(revisions.createdAt))
-            .limit(limit + 1);
+                .from(revisions)
+                .leftJoin(user, eq(revisions.createdBy, user.id))
+                .where(whereClause)
+                .orderBy(desc(revisions.createdAt))
+                .limit(limit + 1)
+        );
 
         const hasMore = history.length > limit;
         const items = history.slice(0, limit);

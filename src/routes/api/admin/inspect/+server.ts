@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { user, revisions } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { auth } from '$lib/auth';
+import { timeQuery } from '$lib/server/db/timing';
 
 function calculateBotMetrics(revisions: any[]) {
     if (revisions.length < 2) return null;
@@ -46,34 +47,38 @@ export async function GET({ url, request }) {
     }
 
     try {
-        const userInfo = await db.query.user.findFirst({
-            where: eq(user.id, userId),
-            columns: {
-                id: true,
-                name: true,
-                image: true,
-                isBanned: true,
-                createdAt: true
-            }
-        });
+        const userInfo = await timeQuery('INSPECT_fetch_user', () =>
+            db.query.user.findFirst({
+                where: eq(user.id, userId),
+                columns: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    isBanned: true,
+                    createdAt: true
+                }
+            })
+        );
 
         if (!userInfo) {
             throw error(404, 'User not found');
         }
 
-        const recentRevisions = await db.query.revisions.findMany({
-            where: eq(revisions.createdBy, userId),
-            limit: 50,
-            orderBy: [desc(revisions.createdAt)],
-            with: {
-                article: {
-                    columns: {
-                        title: true,
-                        slug: true
+        const recentRevisions = await timeQuery('INSPECT_fetch_user_revisions', () =>
+            db.query.revisions.findMany({
+                where: eq(revisions.createdBy, userId),
+                limit: 50,
+                orderBy: [desc(revisions.createdAt)],
+                with: {
+                    article: {
+                        columns: {
+                            title: true,
+                            slug: true
+                        }
                     }
                 }
-            }
-        });
+            })
+        );
 
         const formattedRevisions = recentRevisions.map(rev => ({
             id: rev.id,
