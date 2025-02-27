@@ -712,15 +712,14 @@
 {/if}
 
 {#each Object.entries(otherUsersHovers) as [_, hover]}
-	{#if true}
-		{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
-		{#if element}
-			<FloatingWord
-				word={hover.word}
-				{element}
-				image={hover.editorImage}
-			/>
-		{/if}
+	{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
+	{#if element}
+		<FloatingWord
+			word={hover.word}
+			{element}
+			image={hover.editorImage}
+			editorName={hover.editorName}
+		/>
 	{/if}
 {/each}
 
@@ -772,7 +771,8 @@
 	}
 
 	@keyframes backgroundTint {
-		0%, 100% {
+		0%,
+		100% {
 			background: hsl(var(--primary) / 20%);
 		}
 		50% {

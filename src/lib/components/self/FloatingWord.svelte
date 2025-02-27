@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { getUserColor } from "$lib/utils/userColors";
 
-	let { word, image, element, x, y } = $props<{
+	let { word, image, element, x, y, editorName = '' } = $props<{
 		word: string;
 		image?: string;
 		element?: HTMLElement;
 		x?: number;
 		y?: number;
+		editorName: string;
 	}>();
+
+	const backgroundColor = $derived(getUserColor(editorName));
 
 	const colors = [
 		"#fecaca",
@@ -18,7 +22,6 @@
 		"#ddd6fe",
 		"#fbcfe8",
 	];
-	const backgroundColor = colors[Math.floor(Math.random() * colors.length)];
 
 	const isBold = $derived(word.startsWith("**") && word.endsWith("**"));
 	const isItalic = $derived(word.startsWith("*") && word.endsWith("*"));
