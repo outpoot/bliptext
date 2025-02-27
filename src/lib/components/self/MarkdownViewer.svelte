@@ -31,6 +31,7 @@
 	import Pen from "lucide-svelte/icons/pen";
 	import Eye from "lucide-svelte/icons/eye";
 	import Badge from "../ui/badge/badge.svelte";
+    import { shouldWarnForLink } from "$lib/utils/validateLink";
 
 	const clickSound = "/sound/click.mp3";
 	const swapSound = "/sound/swap.mp3";
@@ -383,7 +384,7 @@
 			const handleViewModeClick = (e: Event) => {
 				const target = e.target as HTMLElement;
 				const link = target.closest("a");
-				if (link && !(link.getAttribute("href")?.trim().toLowerCase().startsWith("https://bliptext.com"))) {
+				if (link && shouldWarnForLink(link)) {
 					e.preventDefault();
 					e.stopPropagation();
 					pendingUrl = link.getAttribute("href") || "";
