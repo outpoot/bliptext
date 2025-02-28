@@ -300,4 +300,30 @@ describe("isValidWord", () => {
       expect(isValidWord("[**Google*](https://google.com)")).toBe(false);
     });
   });
+
+  describe("Disallowing Invisible Characters", () => {
+    test('Word containing Hangul Filler (U+3164) returns false', () => {
+      expect(isValidWord("hello\u3164world")).toBe(false);
+    });
+
+    test('Word containing Zero Width Space (U+200B) returns false', () => {
+      expect(isValidWord("hello\u200Bworld")).toBe(false);
+    });
+
+    test('Word containing multiple invisible characters returns false', () => {
+      expect(isValidWord("test\u3164test\u200Btest")).toBe(false);
+    });
+
+    test('Bold word containing invisible character returns false', () => {
+      expect(isValidWord("**hello\u3164world**")).toBe(false);
+    });
+
+    test('Italic word containing invisible character returns false', () => {
+      expect(isValidWord("*hello\u200Bworld*")).toBe(false);
+    });
+
+    test('Link text containing invisible character returns false', () => {
+      expect(isValidWord("[hello\u3164world](https://example.com)")).toBe(false);
+    });
+  });
 });
