@@ -496,7 +496,7 @@
 <!-- Template -->
 {#if showSidebars}
 	<div class="flex gap-6">
-		<div class="hidden w-64 pt-16 md:block">
+		<div class="hidden ml-6 w-64 pt-16 md:block">
 			<TableOfContents
 				{content}
 				{title}
