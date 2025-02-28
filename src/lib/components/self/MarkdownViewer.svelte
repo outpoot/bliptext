@@ -133,7 +133,7 @@
 	}
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
-		if (self && !selectedWord?.trim()) return;
+		if (self && (!selectedWord?.trim() || $cooldown.isActive)) return;
 
 		element.classList.add("shake");
 
@@ -144,10 +144,8 @@
 			);
 		} else if (self && $cooldown.isActive) {
 			toast.error(
-				`Please wait ${Math.ceil($cooldown.remainingTime / 1000)}s before editing more words.`,
-				{
-					duration: 2000,
-				},
+				`Please wait ${$cooldown.remainingTime}s before editing more words.`,
+				{ duration: 2000 },
 			);
 		}
 	}
@@ -203,7 +201,7 @@
 	}
 
 	function handleElementClick(element: HTMLElement) {
-		if (!selectedWord) return;
+		if (!selectedWord || $cooldown.isActive) return;
 		playSound(clickSound);
 		navigator?.vibrate?.(100);
 
@@ -281,6 +279,15 @@
 
 			if (data.type === "error") {
 				if (data.data.code === "COOLDOWN") {
+					// Clear any floating words when cooldown starts
+					if (selectedElement) {
+						selectedElement.classList.remove("selected");
+						selectedElement = null;
+						onSelectElement?.(null);
+					}
+					showSubmitButton = false;
+					isReplacing = false;
+					selectedWord = "";
 					cooldown.startCooldown(data.data.remainingTime);
 				} else if (data.data.code === "INVALID_WORD") {
 					toast.error("Invalid word format");
@@ -451,6 +458,10 @@
 			if (!res.ok) {
 				toast.error(data.error);
 				return;
+			}
+
+			if (data.remainingTime) {
+				cooldown.startCooldown(data.remainingTime);
 			}
 
 			// $captchaVerified = false;

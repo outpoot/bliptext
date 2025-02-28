@@ -27,7 +27,7 @@ class RedisCooldownManager {
         const key = `${this.keyPrefix}${type}:${userId}`;
         const expiry = Date.now() + duration;
 
-        await redis.set(key, expiry.toString(), 'PX', duration + 1000);
+        await redis.set(key, expiry.toString(), 'PX', duration);
     }
 
     async clearCooldown(userId: string, type: 'hover' | 'edit' = 'edit'): Promise<void> {
