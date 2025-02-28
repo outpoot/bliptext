@@ -207,6 +207,16 @@
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 
+								<DropdownMenuItem>
+									<a
+										href="/blipper"
+										class="text-primary {styles.buttonClass}"
+									>
+										<Search class={styles.iconClass} />
+										<span>Blipper</span>
+									</a>
+								</DropdownMenuItem>
+
 								{#if $currentUser.isAdmin}
 									<DropdownMenuItem>
 										<a
@@ -230,15 +240,6 @@
 									</DropdownMenuItem>
 									<DropdownMenuItem>
 										<a
-											href="/admin/inspect"
-											class="text-primary {styles.buttonClass}"
-										>
-											<Search class={styles.iconClass} />
-											<span>Inspect</span>
-										</a>
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<a
 											href="/admin/terminator"
 											class="text-primary {styles.buttonClass}"
 										>
@@ -246,9 +247,8 @@
 											<span>Terminator</span>
 										</a>
 									</DropdownMenuItem>
-									<DropdownMenuSeparator />
 								{/if}
-
+								<DropdownMenuSeparator />
 								<DropdownMenuItem>
 									<button
 										type="button"

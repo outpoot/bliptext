@@ -31,8 +31,8 @@
         return new Date(date).toLocaleString();
     }
 
-    function inspectUser(userId: string) {
-        goto(`/admin/inspect?userId=${userId}`);
+    function inspectUser(userName: string) {
+        goto(`/blipper/${userName}`);
     }
 
     onMount(async () => {
@@ -94,7 +94,7 @@
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div
                                 class="flex w-full cursor-pointer items-center justify-between rounded-lg p-2 hover:bg-accent"
-                                onclick={() => inspectUser(user.id)}
+                                onclick={() => inspectUser(user.name)}
                             >
                                 <div class="flex items-center gap-3">
                                     <Avatar class="h-8 w-8 shrink-0">

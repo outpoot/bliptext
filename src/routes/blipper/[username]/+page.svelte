@@ -1,34 +1,60 @@
 <script lang="ts">
-    import { page } from "$app/state";
     import { goto } from "$app/navigation";
-    import { onMount } from "svelte";
+    import { page } from "$app/state";
     import { toast } from "svelte-sonner";
-    import { Input } from "$lib/components/ui/input";
-    import { Button } from "$lib/components/ui/button";
     import { Card } from "$lib/components/ui/card";
+    import { Button } from "$lib/components/ui/button";
     import {
         Avatar,
         AvatarImage,
         AvatarFallback,
     } from "$lib/components/ui/avatar";
-    import HistoryList from "$lib/components/self/HistoryList.svelte";
     import Gavel from "lucide-svelte/icons/gavel.svelte";
+    import HistoryList from "$lib/components/self/HistoryList.svelte";
+    import { currentUser } from "$lib/stores/user";
+    import type { RevisionWithUser } from "$lib/utils/revision";
+    import { Input } from "$lib/components/ui/input/index.js";
 
-    let userId = $state("");
     let userInfo: any = $state(null);
+    let username: string = $state("");
+
     let loading = $state(false);
     let error: string | null = $state(null);
 
-    async function fetchUser() {
-        if (!userId) return;
+    let isAdmin = $currentUser?.isAdmin;
+
+    function getTimeDifferences(
+        revisions: RevisionWithUser[],
+    ): RevisionWithUser[] {
+        return revisions.map((rev, idx, arr) => {
+            rev.timeDifference =
+                idx < arr.length - 1
+                    ? (new Date(rev.createdAt).getTime() -
+                          new Date(arr[idx + 1].createdAt).getTime()) /
+                      1000
+                    : null;
+            return rev;
+        });
+    }
+
+    async function fetchUser(name: string) {
+        if (!name) return;
         loading = true;
+        error = null;
         try {
-            const res = await fetch(`/api/admin/inspect?userId=${userId}`);
-            if (!res.ok) throw new Error("User not found");
+            const res = await fetch(
+                `/api/blipper?username=${encodeURIComponent(name)}`,
+            );
+            if (!res.ok && res.status === 404)
+                throw new Error("User not found");
             userInfo = await res.json();
+            if (isAdmin) {
+                userInfo.revisions = getTimeDifferences(userInfo.revisions);
+            }
         } catch (err) {
-            toast.error("Failed to fetch user");
-            error = err instanceof Error ? err.message : "An error occurred";
+            toast.error(
+                err instanceof Error ? err.message : "Failed to fetch user",
+            );
             userInfo = null;
         } finally {
             loading = false;
@@ -54,44 +80,51 @@
         return new Date(date).toLocaleString();
     }
 
-    function formatSeconds(seconds: number) {
-        return `${seconds.toFixed(2)}s`;
-    }
-
-    function handleInput(e: Event) {
-        userId = (e.target as HTMLInputElement).value;
-    }
-
-    function handleInspect() {
-        if (userId) {
-            goto(`?userId=${userId}`, { keepFocus: true });
-            fetchUser();
-        } else {
-            goto(".", { keepFocus: true });
+    async function navigateToUser() {
+        if (username) {
+            const cleanUsername = username.replace(/^@/, "");
+            if (window.location.pathname === `/blipper/@${cleanUsername}`) {
+                return;
+            }
+            loading = true;
+            goto(`/blipper/@${cleanUsername}`);
         }
     }
 
-    onMount(() => {
-        const urlUserId = page.url.searchParams.get("userId");
-        if (urlUserId) {
-            userId = urlUserId;
-            fetchUser();
+    $effect(() => {
+        const { username: pathUsername } = page.params;
+        if (pathUsername) {
+            const cleanUsername = pathUsername.replace(/^@/, "");
+            username = cleanUsername;
+            fetchUser(cleanUsername);
         }
     });
 </script>
 
-<div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">User Inspector</h1>
+<svelte:head>
+    <title
+        >{userInfo ? `${userInfo.name}'s Profile` : "User Profile"} | BlipText</title
+    >
+</svelte:head>
 
+<div class="container mx-auto p-4">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold sm:text-3xl">Blipper</h1>
+        <p class="text-sm text-muted-foreground sm:text-base">
+            Search Bliptext users (blippers) by username.
+        </p>
+    </div>
     <div class="flex gap-2">
         <Input
             type="text"
-            placeholder="Enter user ID"
-            value={userId}
-            oninput={handleInput}
+            placeholder="@username"
+            bind:value={username}
             class="max-w-xs"
+            onkeydown={(e) => e.key === "Enter" && navigateToUser()}
         />
-        <Button variant="secondary" onclick={handleInspect}>Inspect</Button>
+        <Button variant="secondary" disabled={loading} onclick={navigateToUser}>
+            {loading ? "Loading..." : "View"}
+        </Button>
     </div>
 
     {#if userInfo}
@@ -114,6 +147,9 @@
                         <p class="text-sm text-muted-foreground">
                             Joined: {formatDate(userInfo.createdAt)}
                         </p>
+                        <p class="text-sm text-muted-foreground">
+                            Total revisions: {userInfo.totalRevisions}
+                        </p>
                         {#if userInfo.isBanned}
                             <p class="mt-1 text-sm text-destructive">
                                 User is banned
@@ -121,8 +157,7 @@
                         {/if}
                     </div>
                 </div>
-
-                {#if !userInfo.isBanned}
+                {#if isAdmin && !userInfo.isBanned}
                     <Button
                         variant="destructive"
                         class="flex items-center gap-2 mt-2"
@@ -134,46 +169,25 @@
                 {/if}
             </div>
 
-            {#if userInfo?.botMetrics}
-                <Card class="mt-4 p-6">
-                    <h3 class="mb-4 text-lg font-semibold">Metrics</h3>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <p class="text-sm text-muted-foreground">
-                                Avg. interval between changes
-                            </p>
-                            <p class="text-lg font-medium">
-                                {formatSeconds(
-                                    userInfo.botMetrics.averageInterval,
-                                )}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-muted-foreground">
-                                Max consecutive word repetition
-                            </p>
-                            <p class="text-lg font-medium">
-                                {userInfo.botMetrics.maxConsecutiveRepetition}x
-                            </p>
-                        </div>
-                    </div>
-                </Card>
-            {/if}
-
             <div class="mt-8">
                 <h3 class="mb-4 text-lg font-semibold">Recent Activity</h3>
                 <HistoryList
                     revisions={userInfo.revisions}
-                    {loading}
+                    loading={false}
                     hasMore={false}
                     onLoadMore={() => {}}
                     onBanUser={banUser}
                     showBanButton={false}
+                    showTimeDifference={isAdmin === true}
                 />
+                {#if userInfo.totalRevisions > userInfo.revisions.length}
+                    <p class="mt-4 text-sm text-muted-foreground">
+                        Showing {userInfo.revisions.length} of {userInfo.totalRevisions}
+                        total revisions
+                    </p>
+                {/if}
             </div>
         </Card>
-    {:else if loading}
-        <div class="mt-4">Loading...</div>
     {:else if error}
         <div class="mt-4 text-red-500">{error}</div>
     {/if}

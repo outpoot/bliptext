@@ -23,7 +23,7 @@ export async function sendDiscordWebhook(data: WebhookData) {
     if (!env.DISCORD_WEBHOOK_URL) return;
 
     const color = stringToColor(data.editorName);
-    const inspectUrl = `${env.SITE_URL}/admin/inspect?userId=${data.editorId}`;
+    const inspectUrl = `${env.SITE_URL}/blipper/${encodeURIComponent(data.editorName)}`;
     const articleUrl = `${env.SITE_URL}/articles/${data.articleSlug}`;
 
     try {

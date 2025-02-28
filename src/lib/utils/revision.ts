@@ -1,4 +1,5 @@
 export interface RevisionWithUser {
+    timeDifference: number | null;
     id: string;
     createdAt: string;
     wordChanged: string;

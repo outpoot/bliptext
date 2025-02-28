@@ -20,6 +20,7 @@
 	export let onLoadMore: () => void;
 	export let onBanUser: (userId: string) => void;
 	export let showBanButton = true;
+	export let showTimeDifference = false;
 
 	let container: HTMLElement;
 
@@ -37,6 +38,16 @@
 		if (bottom < 100) {
 			onLoadMore();
 		}
+	}
+
+	function formatTimeDifference(seconds: number | null): string {
+		if (seconds === null) return "Last edit";
+		if (seconds < 60) return `${seconds.toFixed(1)}s`;
+		const minutes = Math.floor(seconds / 60);
+		if (minutes < 60) return `${minutes}m`;
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return `${hours}h`;
+		return `${Math.floor(hours / 24)}d`;
 	}
 </script>
 
@@ -61,11 +72,18 @@
 							class="mb-1 flex flex-col gap-1 sm:mb-2 sm:flex-row sm:items-baseline sm:justify-between"
 						>
 							<span class="truncate font-medium"
-								>{revision.user.name}</span
-							>
+								>{revision.user.name}</span>
 							<span
 								class="text-xs text-muted-foreground sm:text-sm"
 							>
+								{#if showTimeDifference && revision.timeDifference !== undefined}
+									<span class="text-orange-600 font-mono">
+										[{formatTimeDifference(
+											revision.timeDifference,
+										)}]
+									</span>
+									&nbsp;
+								{/if}
 								{formatDate(revision.createdAt)}
 							</span>
 						</div>
