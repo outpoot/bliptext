@@ -3,6 +3,7 @@
 	import { cooldown } from "$lib/stores/cooldown";
 	import * as Card from "$lib/components/ui/card";
 	import { Separator } from "../ui/separator";
+	import { MAX_WORD_LENGTH } from "$lib/shared/wordMatching";
 
 	let { inputProps = {}, class: className = "" } = $props();
 
@@ -29,6 +30,11 @@
 
 		if (!value) {
 			err = "";
+			return;
+		}
+
+		if (value.length > MAX_WORD_LENGTH) {
+			err = `Word must be ${MAX_WORD_LENGTH} characters or less. We will truncate it for you.`;
 			return;
 		}
 
