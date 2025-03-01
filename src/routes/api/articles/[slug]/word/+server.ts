@@ -11,6 +11,7 @@ import { cooldownManager } from '$lib/server/cooldown';
 import { sendDiscordWebhook } from '$lib/discord';
 import { checkHardcore } from '$lib/shared/moderation';
 import { timeQuery } from '$lib/server/db/timing';
+import { WordProcessor } from '$lib/utils/wordProcessor';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
@@ -53,8 +54,9 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			}, { status: 429 });
 		}
 
+		const tempProcessor = new WordProcessor(article.content);
 		function getWords(content: string): string[] {
-			return content.replace(/:::summary[\s\S]*?:::/g, '').match(WORD_MATCH_REGEX) || [];
+			return tempProcessor.getWordsFromText(content);
 		}
 
 		function normalizeContext(segment: string): string {
@@ -74,11 +76,22 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			const actualWord = (words[index] || '').trim();
 			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ').trim();
 
+			// console.log("Context check:", {
+			// 	provided: {
+			// 		before: normalizeContext(before),
+			// 		word: normalizeContext(word),
+			// 		after: normalizeContext(after)
+			// 	},
+			// 	computed: {
+			// 		before: normalizeContext(actualBefore),
+			// 		word: normalizeContext(actualWord),
+			// 		after: normalizeContext(actualAfter)
+			// 	}
+			// });
+
 			if (
 				index !== wordIndex ||
-				normalizeContext(before) !== normalizeContext(actualBefore) ||
-				normalizeContext(word) !== normalizeContext(actualWord) ||
-				normalizeContext(after) !== normalizeContext(actualAfter)
+				normalizeContext(before) !== normalizeContext(actualBefore)
 			) {
 				return json({ error: 'Context mismatch, please refresh the page' }, { status: 409 });
 			}

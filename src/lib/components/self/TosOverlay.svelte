@@ -37,7 +37,7 @@
 		</div>
 
         <p class="text-sm text-muted-foreground">
-            <a href="/terms" class="underline hover:text-primary">Read more in our Terms of Service</a>
+            <a href="/legal/terms" class="underline hover:text-primary">Read more in our Terms of Service</a>
         </p>
 
 		<div class="flex justify-end gap-3">
