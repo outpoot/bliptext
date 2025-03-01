@@ -1,64 +1,48 @@
 <script lang="ts">
-	import {
-		Dialog,
-		DialogContent,
-		DialogHeader,
-		DialogTitle,
-		DialogDescription,
-	} from "$lib/components/ui/dialog";
-	import { Button } from "$lib/components/ui/button";
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { Button } from '$lib/components/ui/button';
 
-	let { open = $bindable(false), onConfirm } = $props<{
-		open?: boolean;
-		onConfirm: (provider: "discord" | "google") => void;
-	}>();
+	export let open = false;
+	export let onConfirm: () => void;
+
+	async function handleConfirm(e: MouseEvent) {
+		e.preventDefault();
+		onConfirm();
+	}
 </script>
 
-<Dialog bind:open>
-	<DialogContent class="sm:max-w-md">
-		<DialogHeader>
-			<DialogTitle>Sign in to Bliptext</DialogTitle>
-			<DialogDescription>
-				Choose a service to sign in with. Your account will be created
-				automatically if you don't have one.
-			</DialogDescription>
-		</DialogHeader>
-		<div class="flex flex-col gap-4 py-4">
-			<Button
-				class="flex w-full items-center justify-center gap-2"
-				variant="outline"
-				onclick={() => onConfirm("discord")}
-			>
-				<img
-					class="h-5 w-5"
-					src="https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/66e3d80db9971f10a9757c99_Symbol.svg"
-					alt="Discord"
-				/>
-				<span>Continue with Discord</span>
-			</Button>
-			<Button
-				class="flex w-full items-center justify-center gap-2"
-				variant="outline"
-				onclick={() => onConfirm("google")}
-			>
-				<img
-					class="h-5 w-5"
-					src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA"
-					alt="Google"
-				/>
-				<span>Continue with Google</span>
-			</Button>
+<Dialog.Root bind:open>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Terms of Service Agreement</Dialog.Title>
+			<Dialog.Description>
+				By continuing to sign in, you agree to our Terms of Service and Privacy Policy.
+			</Dialog.Description>
+		</Dialog.Header>
 
-			<p class="text-center text-xs text-muted-foreground">
-				By continuing, you agree to our
-				<a href="/legal/terms" class="text-primary hover:underline"
+		<div class="mt-4 space-y-4">
+			<p class="text-sm text-muted-foreground">
+				Our platform involves collaborative content editing. Please review our
+				<a href="/legal/terms" class="font-medium text-primary hover:underline" target="_blank"
 					>Terms of Service</a
 				>
 				and
-				<a href="/legal/privacy" class="text-primary hover:underline"
+				<a href="/legal/privacy" class="font-medium text-primary hover:underline" target="_blank"
 					>Privacy Policy</a
 				>
+				before continuing.
 			</p>
 		</div>
-	</DialogContent>
-</Dialog>
+
+		<div class="mt-6 flex justify-end gap-3">
+			<Dialog.Close>Cancel</Dialog.Close>
+			<Button
+				type="button"
+				variant="default"
+				onclick={handleConfirm}
+			>
+				I Agree
+			</Button>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>

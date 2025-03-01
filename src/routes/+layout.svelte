@@ -38,9 +38,9 @@
 	import { invalidateAll } from "$app/navigation";
 	let searchDialogOpen = $state(false);
 
-	async function handleSignIn(provider: 'discord' | 'google') {
+	async function handleSignIn() {
 		await signIn.social({
-			provider,
+			provider: "discord",
 			callbackURL: `${page.url.pathname}?signIn=1`,
 		});
 	}
