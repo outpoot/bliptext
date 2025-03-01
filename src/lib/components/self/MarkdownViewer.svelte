@@ -518,7 +518,7 @@
 						{article.title || "Untitled"}
 					</h1>
 
-					<div class="ml-auto">
+					<div class="ml-auto mr-3">
 						<Badge variant="outline">
 							<Users class="mr-1.5 h-3 w-3" />
 							<span>{$activeUsers}</span>
