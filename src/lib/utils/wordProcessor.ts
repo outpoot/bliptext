@@ -12,6 +12,7 @@ export class WordProcessor {
     private cleanedWordToIndices: Map<string, number[]>;
     private wordPositions: Map<number, number>;
     private usedIndices: Set<number>;
+    private contentWords: string[];
 
     constructor(
         public content: string,
@@ -23,6 +24,7 @@ export class WordProcessor {
         this.usedIndices = new Set();
 
         const contentWords = this.content.match(WORD_MATCH_REGEX) || [];
+        this.contentWords = contentWords;
         let position = 0;
 
         contentWords.forEach((word, index) => {
@@ -99,8 +101,6 @@ export class WordProcessor {
         return baseSpan;
     }
 
-
-
     public getWordsFromText(text: string): string[] {
         const textWithoutTags = text
             .replace(/:::summary[\s\S]*?:::/g, '');
@@ -117,7 +117,7 @@ export class WordProcessor {
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
 
-        const words = this.getWordsFromText(this.content);
+        const words = this.contentWords;
         const start = Math.max(0, actualIndex - 2);
         const end = Math.min(words.length, actualIndex + 3);
         const context = {
@@ -164,12 +164,21 @@ export class WordProcessor {
 
     private recalcWordPositions() {
         this.wordPositions.clear();
-        const contentWords = this.content.match(WORD_MATCH_REGEX) || [];
-        let position = 0;
-        contentWords.forEach((word, index) => {
-            position = this.content.indexOf(word, position);
-            this.wordPositions.set(index, position);
-            position += word.length;
+        this.contentWords = [];
+        const regex = new RegExp(WORD_MATCH_REGEX.source, WORD_MATCH_REGEX.flags.replace('g', '') + "g"); // ensure global flag
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(this.content)) !== null) {
+            const word = match[0];
+            this.contentWords.push(word);
+            this.wordPositions.set(this.contentWords.length - 1, match.index);
+        }
+
+        // update each element's dataset.position using the new positions
+        this.wordIndicesMap.forEach((index, element) => {
+            const pos = this.wordPositions.get(index);
+            if (pos !== undefined) {
+                element.dataset.position = pos.toString();
+            }
         });
     }
 
