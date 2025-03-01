@@ -1,6 +1,6 @@
 export const WORD_MATCH_REGEX = /\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]\*]+\]\([^\)]+\)|[^\s]+[.,_]?/g;
-const INVISIBLE_CHARS_REGEX = /[\u3164\u200B\u200C\u200D\uFEFF\u2060]/;
-export const MAX_WORD_LENGTH = 50;
+const INVISIBLE_CHARS_REGEX = /[\u00A0\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180E\u2000-\u200F\u202F\u205F\u2060\u2061-\u2064\u206A-\u206F\u2800\u3164\uFEFF\uFFA0]/;
+export const MAX_WORD_LENGTH = 100;
 
 // warning - this function is not secure and should not be used for moderation
 export function isValidWord(newWord: string): boolean {
