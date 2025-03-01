@@ -53,20 +53,33 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			}, { status: 429 });
 		}
 
-		// Verify context if provided
+		function getWords(content: string): string[] {
+			return content.replace(/:::summary[\s\S]*?:::/g, '').match(WORD_MATCH_REGEX) || [];
+		}
+
+		function normalizeContext(segment: string): string {
+			return segment
+				.replace(/_/g, ' ')
+				.replace(/\s+/g, ' ')
+				.replace(/[^\w\s]/gi, '')
+				.trim()
+				.toLowerCase();
+		}
+
 		if (contextData) {
 			const { before, word, after, index } = contextData;
-			const rawTextWithoutTags = article.content.replace(/:::summary[\s\S]*?:::/g, '');
-			const words = rawTextWithoutTags.match(WORD_MATCH_REGEX) || [];
+			const words = getWords(article.content);
 
-			const actualBefore = words.slice(Math.max(0, index - 2), index).join(' ');
-			const actualWord = words[index];
-			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ');
+			const actualBefore = words.slice(Math.max(0, index - 2), index).join(' ').trim();
+			const actualWord = (words[index] || '').trim();
+			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ').trim();
 
-			if (index !== wordIndex ||
-				before !== actualBefore ||
-				word !== actualWord ||
-				after !== actualAfter) {
+			if (
+				index !== wordIndex ||
+				normalizeContext(before) !== normalizeContext(actualBefore) ||
+				normalizeContext(word) !== normalizeContext(actualWord) ||
+				normalizeContext(after) !== normalizeContext(actualAfter)
+			) {
 				return json({ error: 'Context mismatch, please refresh the page' }, { status: 409 });
 			}
 		}
