@@ -7,10 +7,11 @@ export async function handle({ event, resolve }) {
         'Cache-Control': 'private, no-cache, no-store, must-revalidate'
     });
 
-    // Stinky linux users don't deserve to be on the site ;)
     const userAgent = event.request.headers.get('user-agent') || '';
-    console.log(userAgent);
-    if (userAgent.toLowerCase().includes('linux') && !event.url.pathname.includes('/api/')) {
+    const isLinux = userAgent.toLowerCase().includes('linux');
+    const isAndroid = userAgent.toLowerCase().includes('android');
+    
+    if (isLinux && !isAndroid && !event.url.pathname.includes('/api/')) {
         throw redirect(301, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
     }
 
