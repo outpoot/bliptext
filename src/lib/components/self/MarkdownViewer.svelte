@@ -462,9 +462,7 @@
 
 			if (data.remainingTime) {
 				cooldown.startCooldown(data.remainingTime);
-			}
-
-			// $captchaVerified = false;
+				}
 
 			// update UI after successful edit
 			wordProcessor.replaceWord(newWord, selectedElement!, () => {});
@@ -694,7 +692,7 @@
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 	>
 		<Button
-			class="transform-gpu"
+			class="transform-gpu plausible-event-name=Word+Edit"
 			disabled={isPending}
 			onclick={async () => {
 				const actualIndex = wordProcessor.wordIndicesMap.get(

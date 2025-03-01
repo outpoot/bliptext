@@ -269,7 +269,7 @@
 									<button
 										type="button"
 										onclick={handleSignOut}
-										class={styles.buttonClass}
+										class="{styles.buttonClass} plausible-event-name=Sign+Out"
 									>
 										<LogOut class={styles.iconClass} />
 										<span>Sign out</span>
@@ -279,7 +279,7 @@
 									<button
 										type="button"
 										onclick={handleDeleteAccount}
-										class="text-destructive {styles.buttonClass}"
+										class="text-destructive {styles.buttonClass} plausible-event-name=Delete+Account"
 									>
 										<UserX class={styles.iconClass} />
 										<span>Delete account</span>
@@ -290,7 +290,7 @@
 					{:else if $currentUser == undefined}
 						<button
 							onclick={() => (showConfirm = true)}
-							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground plausible-event-name=Sign+In"
 						>
 							Sign in
 						</button>
