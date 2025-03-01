@@ -692,7 +692,7 @@
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 	>
 		<Button
-			class="transform-gpu plausible-event-name=Word+Edit"
+			class="transform-gpu plausible-event-name--Word-Edit"
 			disabled={isPending}
 			onclick={async () => {
 				const actualIndex = wordProcessor.wordIndicesMap.get(
