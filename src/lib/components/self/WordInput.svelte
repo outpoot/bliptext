@@ -4,9 +4,9 @@
 	import * as Card from "$lib/components/ui/card";
 	import { Separator } from "../ui/separator";
 	import { MAX_WORD_LENGTH } from "$lib/shared/wordMatching";
+	import { debounce } from "$lib/utils/debounce";
 
 	let { inputProps = {}, class: className = "" } = $props();
-
 	let err = $state("");
 
 	async function fetchValidateWord(word: string) {
@@ -24,7 +24,22 @@
 		}
 	}
 
-	async function validateInput(event: Event) {
+	const debouncedValidate = debounce(async (value: string) => {
+		if (!value) {
+			err = "";
+			return;
+		}
+
+		const isValid = await fetchValidateWord(value);
+		if (!isValid) {
+			err =
+				"Word can be:\n• Plain text (optional . or , at end)\n• *italic*\n• **bold**\n• [text](url)";
+		} else {
+			err = "";
+		}
+	}, 300);
+
+	function validateInput(event: Event) {
 		const input = event.target as HTMLInputElement;
 		let value = input.value;
 
@@ -40,13 +55,7 @@
 			return;
 		}
 
-		const isValid = await fetchValidateWord(value);
-		if (!isValid) {
-			err =
-				"Word can be:\n• Plain text (optional . or , at end)\n• *italic*\n• **bold**\n• [text](url)";
-		} else {
-			err = "";
-		}
+		debouncedValidate(value);
 	}
 </script>
 
