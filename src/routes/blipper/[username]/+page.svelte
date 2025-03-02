@@ -21,8 +21,6 @@
     let loading = $state(false);
     let error: string | null = $state(null);
 
-    let isAdmin = $currentUser?.isAdmin;
-
     function getTimeDifferences(
         revisions: RevisionWithUser[],
     ): RevisionWithUser[] {
@@ -48,7 +46,7 @@
             if (!res.ok && res.status === 404)
                 throw new Error("User not found");
             userInfo = await res.json();
-            if (isAdmin) {
+            if ($currentUser?.isAdmin) {
                 userInfo.revisions = getTimeDifferences(userInfo.revisions);
             }
         } catch (err) {
@@ -157,7 +155,7 @@
                         {/if}
                     </div>
                 </div>
-                {#if isAdmin && !userInfo.isBanned}
+                {#if $currentUser?.isAdmin && !userInfo.isBanned}
                     <Button
                         variant="destructive"
                         class="flex items-center gap-2 mt-2"
@@ -178,7 +176,7 @@
                     onLoadMore={() => {}}
                     onBanUser={banUser}
                     showBanButton={false}
-                    showTimeDifference={isAdmin === true}
+                    showTimeDifference={$currentUser?.isAdmin === true}
                 />
                 {#if userInfo.totalRevisions > userInfo.revisions.length}
                     <p class="mt-4 text-sm text-muted-foreground">
