@@ -14,17 +14,26 @@ export async function GET({ url }) {
     try {
         const startTime = Date.now();
 
+        const rankingExpr = sql<number>`(
+            ts_rank_cd(${articles.search_vector}, websearch_to_tsquery('english', ${query}), 32) * 2 +
+            CASE WHEN ${articles.title} ILIKE ${query} THEN 2 
+                 WHEN ${articles.title} ILIKE ${query + '%'} THEN 1
+                 ELSE 0 
+            END -
+            (length(${articles.title}) * 0.001)
+        )`;
+
         const results = await timeQuery('SEARCH_search_articles', () =>
             db.select({
                 id: articles.id,
                 title: articles.title,
                 slug: articles.slug,
-                rank: sql<number>`ts_rank_cd(${articles.search_vector}, websearch_to_tsquery('english', ${query}))`,
+                rank: rankingExpr,
             })
                 .from(articles)
                 .where(sql`${articles.search_vector} @@ websearch_to_tsquery('english', ${query})`)
-                .orderBy(sql`ts_rank_cd(${articles.search_vector}, websearch_to_tsquery('english', ${query})) DESC`)
-                .limit(10)
+                .orderBy(sql`${rankingExpr} DESC`)
+                .limit(50)
                 .execute()
         );
 
