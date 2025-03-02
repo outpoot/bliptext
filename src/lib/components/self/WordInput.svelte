@@ -26,7 +26,7 @@
 
 	async function validateInput(event: Event) {
 		const input = event.target as HTMLInputElement;
-		const value = input.value;
+		let value = input.value;
 
 		if (!value) {
 			err = "";
@@ -34,7 +34,9 @@
 		}
 
 		if (value.length > MAX_WORD_LENGTH) {
-			err = `Word must be ${MAX_WORD_LENGTH} characters or less. We will truncate it for you.`;
+			value = value.slice(0, MAX_WORD_LENGTH);
+			input.value = value;
+			err = `Word truncated to ${MAX_WORD_LENGTH} characters`;
 			return;
 		}
 
