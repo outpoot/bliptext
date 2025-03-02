@@ -49,9 +49,8 @@
 		}
 
 		if (value.length > MAX_WORD_LENGTH) {
-			value = value.slice(0, MAX_WORD_LENGTH);
-			input.value = value;
-			err = `Word truncated to ${MAX_WORD_LENGTH} characters`;
+			input.value = value.slice(0, MAX_WORD_LENGTH);
+			err = `Maximum length is ${MAX_WORD_LENGTH} characters`;
 			return;
 		}
 

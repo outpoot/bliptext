@@ -9,11 +9,12 @@ const articleCache = new Map();
 export async function GET({ params, url }) {
     const { slug } = params;
     const searchById = url.searchParams.get('byId') === 'true';
+    const noCache = url.searchParams.get('noCache') === 'true';
     const index = searchById ? 'id' : 'slug';
     const cacheKey = `${index}:${slug}`;
     const now = Date.now();
 
-    if (articleCache.has(cacheKey)) {
+    if (!noCache && articleCache.has(cacheKey)) {
         const cached = articleCache.get(cacheKey);
         if (cached.expiry > now) {
             return json(cached.data, {
@@ -22,7 +23,7 @@ export async function GET({ params, url }) {
                 }
             });
         }
-    
+
         articleCache.delete(cacheKey);
     }
 
@@ -37,16 +38,20 @@ export async function GET({ params, url }) {
             throw error(404, 'Article not found');
         }
 
-        articleCache.set(cacheKey, {
-            data: article,
-            expiry: now + 60000
-        });
+        if (!noCache) {
+            articleCache.set(cacheKey, {
+                data: article,
+                expiry: now + 60000
+            });
 
-        return json(article, {
-            headers: {
-                'Cache-Control': 'public, s-maxage=60'
-            }
-        });
+            return json(article, {
+                headers: {
+                    'Cache-Control': 'public, s-maxage=60'
+                }
+            });
+        }
+
+        return json(article);
     } catch (err) {
         console.error('Error fetching article:', err);
         throw error(500, 'Failed to fetch article');

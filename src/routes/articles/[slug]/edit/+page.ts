@@ -4,7 +4,7 @@ import { client } from '$lib/auth-client';
 
 export const load = (async ({ fetch, params }) => {
     try {
-        const response = await fetch(`/api/articles/${params.slug}`);
+        const response = await fetch(`/api/articles/${params.slug}?noCache=true`);
 
         if (!response.ok) {
             throw error(404, 'Article not found');
