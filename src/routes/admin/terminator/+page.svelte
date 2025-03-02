@@ -102,9 +102,9 @@
                                             src={user.image}
                                             alt={user.name}
                                         />
-                                        <AvatarFallback
-                                            >{user.name[0]}</AvatarFallback
-                                        >
+                                        <AvatarFallback>
+                                            <img src="/images/unknown.png" alt="Unknown user" />
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div class="min-w-0">
                                         <div class="truncate font-medium">

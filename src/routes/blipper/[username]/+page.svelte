@@ -133,9 +133,9 @@
                 <div class="flex items-center gap-4">
                     <Avatar class="h-16 w-16">
                         <AvatarImage src={userInfo.image} alt={userInfo.name} />
-                        <AvatarFallback
-                            >{userInfo.name && userInfo.name[0]}</AvatarFallback
-                        >
+                        <AvatarFallback>
+                            <img src="/images/unknown.png" alt="Unknown user" />
+                        </AvatarFallback>
                     </Avatar>
                     <div>
                         <h2 class="text-xl font-semibold">{userInfo.name}</h2>

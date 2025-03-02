@@ -13,6 +13,11 @@
 	import { browser } from "$app/environment";
 	import ThemeToggle from "$lib/components/self/ThemeToggle.svelte";
 	import Logo from "$lib/components/self/Logo.svelte";
+	import {
+		Avatar,
+		AvatarImage,
+		AvatarFallback,
+	} from "$lib/components/ui/avatar";
 
 	import {
 		DropdownMenu,
@@ -38,7 +43,7 @@
 	import { invalidateAll } from "$app/navigation";
 	let searchDialogOpen = $state(false);
 
-	async function handleSignIn(provider: 'discord' | 'google') {
+	async function handleSignIn(provider: "discord" | "google") {
 		await signIn.social({
 			provider,
 			callbackURL: `${page.url.pathname}?signIn=1`,
@@ -173,11 +178,18 @@
 					{#if $currentUser}
 						<DropdownMenu>
 							<DropdownMenuTrigger>
-								<img
-									src={$currentUser.image}
-									class="h-8 w-8 cursor-pointer rounded-full"
-									alt={`@${$currentUser.name}'s Profile Picture`}
-								/>
+								<Avatar class="h-8 w-8 cursor-pointer">
+									<AvatarImage
+										src={$currentUser.image}
+										alt={`@${$currentUser.name}'s Profile Picture`}
+									/>
+									<AvatarFallback>
+										<img
+											src="/images/unknown.png"
+											alt="Unknown user"
+										/>
+									</AvatarFallback>
+								</Avatar>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem>

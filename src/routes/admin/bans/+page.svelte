@@ -72,7 +72,9 @@
 					<div class="flex items-start gap-3 sm:gap-4">
 						<Avatar class="h-8 w-8 sm:h-10 sm:w-10">
 							<AvatarImage src={user.image} alt={user.name} />
-							<AvatarFallback>{user.name[0]}</AvatarFallback>
+							<AvatarFallback>
+								<img src="/images/unknown.png" alt="Unknown user" />
+							</AvatarFallback>
 						</Avatar>
 						<div class="min-w-0 flex-1">
 							<div

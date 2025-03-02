@@ -65,7 +65,9 @@
 							src={revision.user.image}
 							alt={revision.user.name}
 						/>
-						<AvatarFallback>{revision.user.name[0]}</AvatarFallback>
+						<AvatarFallback>
+							<img src="/images/unknown.png" alt="Unknown user" />
+						</AvatarFallback>
 					</Avatar>
 					<div class="min-w-0 flex-1">
 						<div
