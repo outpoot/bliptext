@@ -52,11 +52,18 @@ cp .env.example .env
 Configure your environment variables in `.env`:
 ```plaintext
 DATABASE_URL="postgres://root:mysecretpassword@localhost:5432/local"
+
 BETTER_AUTH_SECRET=<generate-a-random-string>
 PUBLIC_BETTER_AUTH_URL=http://localhost:3000
+
 PUBLIC_WEBSOCKET_URL=ws://localhost:8080
+
 DISCORD_CLIENT_ID=<your-discord-client-id>
 DISCORD_CLIENT_SECRET=<your-discord-client-secret>
+
+GOOGLE_CLIENT_ID=<your-google-auth-id>
+GOOGLE_CLIENT_SECRET=<your-google-auth-secret>
+
 JWT_SECRET=<generate-a-random-string>
 REDIS_URL=<your-redis-url>
 SITE_URL=http://localhost:3000
