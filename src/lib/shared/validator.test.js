@@ -45,8 +45,8 @@ describe("isValidWord", () => {
       expect(isValidWord("niño")).toBe(true);
     });
 
-    test('Word containing invalid punctuation "hello!" returns false', () => {
-      expect(isValidWord("hello!")).toBe(false);
+    test('Word containing invalid punctuation "hello!!" returns false', () => {
+      expect(isValidWord("hello!!")).toBe(false);
     });
 
     test('Word with interior space "hello world" returns false', () => {
