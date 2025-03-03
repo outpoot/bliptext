@@ -4,20 +4,24 @@
 	import { Separator } from "$lib/components/ui/separator";
 	import { goto } from "$app/navigation";
 
-	export let data: {
-		activeEditors?: Array<{
-			id: string;
-			name: string;
-			image: string;
-			revisionCount: number;
-		}>;
-		topArticles?: Array<{
-			id: string;
-			title: string;
-			slug: string;
-			revisionCount: number;
-		}>;
-	};
+	interface Props {
+		data: {
+			activeEditors?: Array<{
+				id: string;
+				name: string;
+				image: string;
+				revisionCount: number;
+			}>;
+			topArticles?: Array<{
+				id: string;
+				title: string;
+				slug: string;
+				revisionCount: number;
+			}>;
+		};
+	}
+
+	let { data }: Props = $props();
 </script>
 
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">

@@ -1,9 +1,13 @@
 <script lang="ts">
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Button } from '$lib/components/ui/button';
-	import { tosAccepted } from '$lib/stores/tosAccepted';
+	import * as Dialog from "$lib/components/ui/dialog";
+	import { Button } from "$lib/components/ui/button";
+	import { tosAccepted } from "$lib/stores/tosAccepted";
 
-	export let open = true;
+	interface Props {
+		open?: boolean;
+	}
+
+	let { open = $bindable(true) }: Props = $props();
 </script>
 
 <Dialog.Root bind:open>
@@ -36,9 +40,11 @@
 			</ul>
 		</div>
 
-        <p class="text-sm text-muted-foreground">
-            <a href="/legal/terms" class="underline hover:text-primary">Read more in our Terms of Service</a>
-        </p>
+		<p class="text-sm text-muted-foreground">
+			<a href="/legal/terms" class="underline hover:text-primary"
+				>Read more in our Terms of Service</a
+			>
+		</p>
 
 		<div class="flex justify-end gap-3">
 			<Button

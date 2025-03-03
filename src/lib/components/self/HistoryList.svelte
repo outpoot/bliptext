@@ -14,15 +14,27 @@
 	import type { RevisionWithUser } from "$lib/utils/revision";
 	import { Badge } from "../ui/badge";
 
-	export let revisions: RevisionWithUser[];
-	export let loading = false;
-	export let hasMore = false;
-	export let onLoadMore: () => void;
-	export let onBanUser: (userId: string) => void;
-	export let showBanButton = true;
-	export let showTimeDifference = false;
+	interface Props {
+		revisions: RevisionWithUser[];
+		loading?: boolean;
+		hasMore?: boolean;
+		onLoadMore: () => void;
+		onBanUser: (userId: string) => void;
+		showBanButton?: boolean;
+		showTimeDifference?: boolean;
+	}
 
-	let container: HTMLElement;
+	let {
+		revisions,
+		loading = false,
+		hasMore = false,
+		onLoadMore,
+		onBanUser,
+		showBanButton = true,
+		showTimeDifference = false,
+	}: Props = $props();
+
+	let container: HTMLElement | undefined = $state();
 
 	function formatDate(date: string) {
 		return new Date(date).toLocaleString();
@@ -54,7 +66,7 @@
 <div
 	class="max-h-[calc(100vh-8rem)] space-y-3 overflow-y-auto pr-2 sm:space-y-4 sm:pr-4"
 	bind:this={container}
-	on:scroll={handleScroll}
+	onscroll={handleScroll}
 >
 	{#each revisions as revision (revision.id)}
 		<div transition:fade>
@@ -74,7 +86,8 @@
 							class="mb-1 flex flex-col gap-1 sm:mb-2 sm:flex-row sm:items-baseline sm:justify-between"
 						>
 							<span class="truncate font-medium"
-								>{revision.user.name}</span>
+								>{revision.user.name}</span
+							>
 							<span
 								class="text-xs text-muted-foreground sm:text-sm"
 							>
