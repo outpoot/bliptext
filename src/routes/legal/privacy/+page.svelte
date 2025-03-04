@@ -6,7 +6,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 
-	const LAST_UPDATED = "January 20, 2024";
+	const LAST_UPDATED = "March 4, 2025";
 </script>
 
 <svelte:head>
