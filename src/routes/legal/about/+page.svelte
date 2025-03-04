@@ -4,21 +4,26 @@
 		CardHeader,
 		CardTitle,
 		CardDescription,
-		CardContent
-	} from '$lib/components/ui/card';
-	import LogoBlink from '$lib/components/self/LogoBlink.svelte';
-	import { Badge } from '$lib/components/ui/badge';
-	import Paintbrush from 'lucide-svelte/icons/paintbrush';
-	import { page } from '$app/state';
-
+		CardContent,
+	} from "$lib/components/ui/card";
+	import LogoBlink from "$lib/components/self/LogoBlink.svelte";
+	import { Badge } from "$lib/components/ui/badge";
+	import Paintbrush from "lucide-svelte/icons/paintbrush";
+	import { page } from "$app/state";
 </script>
 
 <svelte:head>
 	<title>About: Bliptext</title>
-	<meta name="description" content="Learn more about Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta
+		name="description"
+		content="Learn more about Bliptext, the wiki where you edit 1 word each 30 seconds."
+	/>
 	<meta name="keywords" content="article, edit, markdown, wikipedia, wiki" />
 	<meta property="og:title" content="About: Bliptext" />
-	<meta property="og:description" content="Learn more about Bliptext, the wiki where you edit 1 word each 30 seconds." />
+	<meta
+		property="og:description"
+		content="Learn more about Bliptext, the wiki where you edit 1 word each 30 seconds."
+	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={page.url.href} />
 </svelte:head>
@@ -34,9 +39,15 @@
 				Bliptext
 			</h1>
 		</div>
-		<p class="mx-auto mt-4 max-w-3xl text-2xl" style="font-family: 'LinLibertine', serif;">
+		<p
+			class="mx-auto mt-4 max-w-3xl text-2xl"
+			style="font-family: 'LinLibertine', serif;"
+		>
 			Wikipedia meets
-			<Badge variant="outline" class="inline-flex items-center gap-1 align-middle text-xl">
+			<Badge
+				variant="outline"
+				class="inline-flex items-center gap-1 align-middle text-xl"
+			>
 				<Paintbrush class="h-5 w-5" />
 				r/place
 			</Badge>
@@ -46,7 +57,9 @@
 	</div>
 </section>
 
-<section class="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-[2fr_1fr] md:py-16">
+<section
+	class="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-[2fr_1fr] md:py-16"
+>
 	<div class="space-y-8">
 		<Card>
 			<CardHeader>
@@ -54,10 +67,23 @@
 				<CardDescription>why dude</CardDescription>
 			</CardHeader>
 			<CardContent class="space-y-4">
-				<p>We ported the entire English Wikipedia and made every word editable.</p>
 				<p>
-					The reason? I saw a lot of complaints about Wikipedia's content on social media and
-					thought "what if we let everyone edit that?" So here we are.
+					We ported <strong>2.1 million</strong> Wikipedia articles and
+					made every word editable.
+				</p>
+				<p>
+					The reason? I saw a lot of complaints about Wikipedia's
+					content on social media and thought "what if we let everyone
+					edit that?" So here we are.
+				</p>
+				<p class="text-xs text-muted-foreground">
+					All article content is from Wikipedia and licensed under
+					<a
+						href="https://creativecommons.org/licenses/by-sa/4.0/"
+						class="text-primary underline">CC BY-SA 4.0</a
+					>. Wikipedia® is a registered trademark of the Wikimedia
+					Foundation, Inc.<br>Bliptext is not affiliated with or endorsed
+					by Wikipedia or the Wikimedia Foundation.
 				</p>
 			</CardContent>
 		</Card>
@@ -68,20 +94,33 @@
 				<CardDescription>who the fuck would do this?</CardDescription>
 			</CardHeader>
 			<CardContent class="space-y-4">
-				<p>
-					Made by <a
+				<p class="flex items-center">
+					Made by
+					<a
 						href="https://youtube.com/facedevstuff"
-						class="inline-flex items-center"
+						class="mx-1 inline-flex items-center"
 						target="_blank"
 					>
-						<span class="flex items-center rounded-md bg-primary/50 px-2 py-1 font-bold">
-							<img src="/images/facedev.png" alt="FaceDev" class="mr-1 size-4 rounded-full" />
+						<span class="flex items-center font-bold">
+							<img
+								src="/images/facedev.png"
+								alt="FaceDev"
+								class="mr-1.5 size-4 rounded-full"
+							/>
 							FaceDev
 						</span>
 					</a>
 					at
-					<a href="https://outpoot.com" class="mx-1 text-primary underline">Outpoot</a>. We’re also
-					behind Lyntr.
+					<a
+						href="https://outpoot.com"
+						class="mx-1 text-primary underline"
+						target="_blank">Outpoot</a
+					>. We're also behind
+					<a
+						href="https://youtu.be/-D2L3gHqcUA"
+						class="mx-1 text-primary underline"
+						target="_blank">Lyntr</a
+					>.
 				</p>
 				<p>The goal? See chaos. I like chaos.</p>
 			</CardContent>
@@ -104,7 +143,12 @@
 				</p>
 				<p>
 					© {new Date().getFullYear()}
-					<a href="https://outpoot.com" class="mx-1 text-primary underline"> Outpoot </a>
+					<a
+						href="https://outpoot.com"
+						class="mx-1 text-primary underline"
+					>
+						Outpoot
+					</a>
 				</p>
 			</CardContent>
 		</Card>

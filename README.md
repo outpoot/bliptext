@@ -136,7 +136,14 @@ If you wish to contribute, you are free to do so. Please keep in mind:
     - We don't want to waste your & our time
 
 # License
-This project is licensed under **Attribution-NonCommercial 2.0 International**.
+This project uses dual licensing:
+
+## 1. Article Content
+All article content derived from Wikipedia is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0). See [LICENSE-CONTENT.md](LICENSE-CONTENT.md) for details.
+
+## 2. Code and Original Content
+The code and original content of this project (excluding Wikipedia-derived content) is licensed under **Attribution-NonCommercial 2.0 International**.
+
 ### You are free to:
 - 📩✅ Share — copy and redistribute the material in any medium or format
 - 🔁✅ Adapt — remix, transform, and build upon the material

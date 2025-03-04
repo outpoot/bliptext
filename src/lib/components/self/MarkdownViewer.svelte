@@ -462,7 +462,7 @@
 
 			if (data.remainingTime) {
 				cooldown.startCooldown(data.remainingTime);
-				}
+			}
 
 			// update UI after successful edit
 			wordProcessor.replaceWord(newWord, selectedElement!, () => {});
@@ -530,6 +530,33 @@
 			{/if}
 			<div class="markdown-content px-4 md:px-0">
 				<Markdown md={content} {plugins} />
+
+				{#if article?.id}
+					<div
+						class="mt-8 border-t pt-4 text-sm text-muted-foreground"
+					>
+						<p>
+							This article is derived from Wikipedia and licensed
+							under
+							<a
+								href="https://creativecommons.org/licenses/by-sa/4.0/"
+								class="text-primary underline">CC BY-SA 4.0</a
+							>. View the
+							<a
+								href={`https://en.wikipedia.org/wiki/${article.title?.replace(/ /g, "_")}`}
+								class="text-primary underline"
+								target="_blank"
+								rel="noopener noreferrer">original article</a
+							>.
+						</p>
+						<p class="mt-2 text-xs">
+							Wikipedia® is a registered trademark of the
+							Wikimedia Foundation, Inc.<br>Bliptext is not
+							affiliated with or endorsed by Wikipedia or the
+							Wikimedia Foundation.
+						</p>
+					</div>
+				{/if}
 			</div>
 		</div>
 
@@ -557,6 +584,30 @@
 		{/if}
 		<div class="markdown-content px-4">
 			<Markdown md={content} {plugins} />
+
+			{#if article?.id}
+				<div class="mt-8 border-t pt-4 text-sm text-muted-foreground">
+					<p>
+						This article is derived from Wikipedia and licensed
+						under
+						<a
+							href="https://creativecommons.org/licenses/by-sa/4.0/"
+							class="text-primary underline">CC BY-SA 4.0</a
+						>. View the
+						<a
+							href={`https://en.wikipedia.org/wiki/${article.title?.replace(/ /g, "_")}`}
+							class="text-primary underline"
+							target="_blank"
+							rel="noopener noreferrer">original article</a
+						>.
+					</p>
+					<p class="mt-2">
+						Wikipedia® is a registered trademark of the Wikimedia
+						Foundation, Inc. Bliptext is not affiliated with or
+						endorsed by Wikipedia or the Wikimedia Foundation.
+					</p>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}
