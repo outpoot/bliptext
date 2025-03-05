@@ -74,6 +74,14 @@
 							</li>
 							<li>Authentication provider used</li>
 						</ul>
+						<p class="mt-2 text-sm">
+							Usernames and profile data are directly sourced from
+							your authentication provider (e.g., Google,
+							Discord). We do not allow edits to this information
+							to preserve attribution integrity. To update your
+							username or email, modify them via your
+							authentication provider account.
+						</p>
 					</div>
 
 					<div>
@@ -145,6 +153,27 @@
 			</Card.Content>
 
 			<Card.Content>
+				<h2 class="mb-4 text-2xl font-semibold">
+					Lawful Basis for Processing
+				</h2>
+				<p>We process data under:</p>
+				<ul class="ml-6 list-disc space-y-2 marker:text-primary">
+					<li>
+						<strong>Contractual necessity</strong>: To provide wiki
+						editing functionality
+					</li>
+					<li>
+						<strong>Legitimate interests</strong>: Security
+						monitoring, abuse prevention
+					</li>
+					<li>
+						<strong>Legal obligations</strong>: Responding to lawful
+						requests
+					</li>
+				</ul>
+			</Card.Content>
+
+			<Card.Content>
 				<h2 class="mb-4 text-2xl font-semibold">3. Data Retention</h2>
 				<div class="space-y-4">
 					<div>
@@ -154,14 +183,10 @@
 						<ul
 							class="ml-6 list-disc space-y-2 marker:text-primary"
 						>
+							<li>User accounts: Deleted upon request</li>
 							<li>
-								User accounts: Retained until deletion is
-								requested by the user.
-							</li>
-							<li>
-								Article content: Retained unless deleted by the
-								user or removed for violating our Terms of
-								Service.
+								Article edit history: Retained indefinitely for
+								content integrity
 							</li>
 						</ul>
 					</div>
@@ -174,16 +199,14 @@
 							class="ml-6 list-disc space-y-2 marker:text-primary"
 						>
 							<li>
-								IP addresses (from sessions): Retained until the
-								session expires (typically 90 days).
+								IP logs: Automatically deleted after 90 days
 							</li>
 							<li>
 								Session tokens: Expire as defined by our system
 								(e.g., after 30 days of inactivity).
 							</li>
 							<li>
-								Auth tokens: Expire at the timestamp specified
-								in our configuration.
+								Auth tokens: Expire at the configured timestamp
 							</li>
 							<li>
 								Verification tokens: Retained until their
@@ -208,9 +231,50 @@
 				<ul class="ml-6 list-disc space-y-2 marker:text-primary">
 					<li>Request deletion of your personal data</li>
 				</ul>
+				<p class="mt-2">For EU users, additionally you may:</p>
+				<ul class="ml-6 list-disc space-y-2 marker:text-primary">
+					<li>
+						Request data correction: If your authentication provider
+						data (e.g., email) is inaccurate, update it directly via
+						your provider.
+					</li>
+					<li>
+						Access personal data: For a copy of your processed data,
+						please contact <a
+							href="mailto:privacy@outpoot.com"
+							class="text-primary hover:underline"
+							target="_blank">privacy@outpoot.com</a
+						>.
+					</li>
+					<li>
+						Delete account: Removes all personal data except
+						anonymized edit history (required for public interest).
+					</li>
+					<li>
+						File complaints with EU authorities; find yours <a
+							href="https://edpb.europa.eu/about-edpb/about-edpb/members_en"
+							class="text-primary hover:underline"
+							target="_blank">here</a
+						>.
+					</li>
+				</ul>
 				<p class="mt-2">
-					To exercise this right, head to your account settings and
-					click "Delete account."
+					Contact <a
+						href="mailto:contact@outpoot.com"
+						class="text-primary hover:underline"
+						target="_blank">privacy@outpoot.com</a
+					> to exercise these rights.
+				</p>
+			</Card.Content>
+
+			<Card.Content>
+				<h2 class="mb-4 text-2xl font-semibold">Public Interest</h2>
+				<p>
+					User contributions (usernames, edits) are retained
+					indefinitely under GDPR Article 17(3)(d) for archival
+					purposes in the public interest. Attribution integrity is
+					critical to maintaining a trustworthy collaborative
+					platform.
 				</p>
 			</Card.Content>
 
@@ -240,13 +304,27 @@
 
 			<Card.Content>
 				<h2 class="mb-4 text-2xl font-semibold">
+					Historical Content Integrity
+				</h2>
+				<p>To maintain wiki integrity, account deletion will:</p>
+				<ul class="ml-6 list-disc space-y-2 marker:text-primary">
+					<li>Remove all personal identifiers (email, username)</li>
+					<li>Retain anonymized edit history via user IDs</li>
+					<li>Preserve article creation credits</li>
+				</ul>
+				<p class="mt-2">
+					We retain this non-personal data under GDPR Article 17(3)(a)
+					- freedom of expression/information.
+				</p>
+			</Card.Content>
+
+			<Card.Content>
+				<h2 class="mb-4 text-2xl font-semibold">
 					7. International Data Transfers
 				</h2>
 				<p>
-					Data is stored and processed in the United States. By using
-					this service, you acknowledge that your data may be
-					transferred to jurisdictions outside your country of
-					residence.
+					Data is stored in the United States using GDPR-approved
+					safeguards including Standard Contractual Clauses.
 				</p>
 			</Card.Content>
 
