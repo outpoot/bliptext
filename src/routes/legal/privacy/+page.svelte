@@ -6,7 +6,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 
-	const LAST_UPDATED = "March 4, 2025";
+	const LAST_UPDATED = "March 5, 2025";
 </script>
 
 <svelte:head>
@@ -38,6 +38,16 @@
 		</div>
 
 		<Separator class="my-6" />
+
+		<Card.Content>
+			<h2 class="mb-4 text-2xl font-semibold">Scope of This Policy</h2>
+			<p>
+				This service is operated by Bliptext. We serve an international
+				audience. Data is processed on servers located in the United
+				States, and our content and services are available to users
+				worldwide.
+			</p>
+		</Card.Content>
 
 		<div class="space-y-8">
 			<Card.Content>
@@ -112,13 +122,26 @@
 
 			<Card.Content>
 				<h2 class="mb-4 text-2xl font-semibold">2. How We Use Data</h2>
+				<p>We process personal data to:</p>
 				<ul class="ml-6 list-disc space-y-2 marker:text-primary">
-					<li>Maintain article revision history and attribution</li>
-					<li>Prevent abuse through IP analysis</li>
-					<li>Calculate user contribution metrics</li>
-					<li>Secure account access through session tracking</li>
-					<li>Deliver core editing functionality</li>
+					<li>
+						Fulfill contractual obligations (e.g., delivering core
+						editing functionality, maintaining revision history).
+					</li>
+					<li>
+						Pursue legitimate business interests (e.g., preventing
+						abuse through IP analysis, securing accounts).
+					</li>
+					<li>
+						Comply with legal requirements (e.g., retaining logs for
+						security investigations).
+					</li>
 				</ul>
+				<p class="mt-4 text-sm text-muted-foreground">
+					All data processing is carried out on a lawful basis (e.g.,
+					consent, contract necessity, legitimate interest as
+					applicable under GDPR).
+				</p>
 			</Card.Content>
 
 			<Card.Content>
@@ -131,26 +154,41 @@
 						<ul
 							class="ml-6 list-disc space-y-2 marker:text-primary"
 						>
-							<li>User accounts: Until deletion request</li>
 							<li>
-								Article content: Indefinitely unless deleted
+								User accounts: Retained until deletion is
+								requested by the user.
 							</li>
 							<li>
-								Revision history: Indefinitely unless deleted
+								Article content: Retained unless deleted by the
+								user or removed for violating our Terms of
+								Service.
 							</li>
 						</ul>
 					</div>
 
 					<div>
 						<h3 class="mb-2 text-lg font-medium">
-							3.2 Technical Logs
+							3.2 Technical Logs & Tokens
 						</h3>
 						<ul
 							class="ml-6 list-disc space-y-2 marker:text-primary"
 						>
-							<li>IP addresses: Until expiration</li>
-							<li>Auth tokens: Until expiration</li>
-							<li>Security logs: Until expiration</li>
+							<li>
+								IP addresses (from sessions): Retained until the
+								session expires (typically 90 days).
+							</li>
+							<li>
+								Session tokens: Expire as defined by our system
+								(e.g., after 30 days of inactivity).
+							</li>
+							<li>
+								Auth tokens: Expire at the timestamp specified
+								in our configuration.
+							</li>
+							<li>
+								Verification tokens: Retained until their
+								designated expiration time.
+							</li>
 						</ul>
 					</div>
 				</div>
@@ -166,9 +204,14 @@
 
 			<Card.Content>
 				<h2 class="mb-4 text-2xl font-semibold">5. Your Rights</h2>
+				<p>You have the right to:</p>
 				<ul class="ml-6 list-disc space-y-2 marker:text-primary">
-					<li>Delete personal account information</li>
+					<li>Request deletion of your personal data</li>
 				</ul>
+				<p class="mt-2">
+					To exercise this right, head to your account settings and
+					click "Delete account."
+				</p>
 			</Card.Content>
 
 			<Card.Content>
@@ -195,12 +238,26 @@
 				</ul>
 			</Card.Content>
 
+			<Card.Content>
+				<h2 class="mb-4 text-2xl font-semibold">
+					7. International Data Transfers
+				</h2>
+				<p>
+					Data is stored and processed in the United States. By using
+					this service, you acknowledge that your data may be
+					transferred to jurisdictions outside your country of
+					residence.
+				</p>
+			</Card.Content>
+
 			<div class="text-sm text-muted-foreground">
 				<p>Last Updated: {LAST_UPDATED}</p>
 				<p>
 					Contact: <a
 						href="mailto:contact@outpoot.com"
-						class="text-primary hover:underline">contact@outpoot.com</a>
+						class="text-primary hover:underline"
+						>contact@outpoot.com</a
+					>
 				</p>
 			</div>
 		</div>
