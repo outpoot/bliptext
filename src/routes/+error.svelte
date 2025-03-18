@@ -3,8 +3,8 @@
     import { Button } from "$lib/components/ui/button";
     import { goto } from "$app/navigation";
     
-    $: status = $page.status;
-    $: message = $page.error?.message || getDefaultMessage(status);
+    const status = $derived($page.status);
+    const message = $derived($page.error?.message || getDefaultMessage(status));
     
     function getDefaultMessage(status) {
         switch(status) {
