@@ -1,5 +1,5 @@
 <img style="width: 128px; height: 128px" src="static/favicon.svg" /><h1 style="font-size: 48px"><a href="https://bliptext.com">Bliptext.com</a> - the wiki where you edit a word every 30 seconds</h1>
-[Privacy Policy](https://bliptext.com/legal/privacy) | [Terms of Service](https://bliptext.com/legal/terms) | [License](LICENSE.md) | [YouTube video](about:blank)
+[Privacy Policy](https://bliptext.com/legal/privacy) | [Terms of Service](https://bliptext.com/legal/terms) | [License](LICENSE.md) | [YouTube video](https://www.youtube.com/watch?v=CosPILI0qrw)
 
 ## About
 We ported **2,112,863** (2.1 million) Wikipedia articles and removed edit restrictions.
