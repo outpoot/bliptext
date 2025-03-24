@@ -1,10 +1,10 @@
 <script>
-    import { page } from "$app/stores";
+    import { page } from "$app/state";
     import { Button } from "$lib/components/ui/button";
     import { goto } from "$app/navigation";
     
-    const status = $derived($page.status);
-    const message = $derived($page.error?.message || getDefaultMessage(status));
+    const status = $derived(page.status);
+    const message = $derived(page.error?.message || getDefaultMessage(status));
     
     function getDefaultMessage(status) {
         switch(status) {
