@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { articles } from '$lib/server/db/schema';
+import { env } from '$env/dynamic/private';
 import { sql } from 'drizzle-orm';
 import { timeQuery } from '$lib/server/db/timing';
 
@@ -56,11 +56,8 @@ function parseSummary(content: string) {
 }
 
 function validateSearchKey(request: Request) {
-    const requireKey = process.env.REQUIRE_SEARCH_KEY === 'true';
-    if (!requireKey) return true;
-
     const key = request.headers.get('x-search-key');
-    return key === process.env.SEARCH_KEY;
+    return key === env.SEARCH_KEY;
 }
 
 export async function GET({ url, request }) {
