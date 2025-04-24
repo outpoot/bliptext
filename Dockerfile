@@ -1,9 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Base Node.js stage
-ARG NODE_VERSION=22.12.0
 FROM node:${NODE_VERSION}-slim AS base-node
-
 WORKDIR /app
 ENV NODE_ENV="production"
 
@@ -29,15 +27,20 @@ RUN npm prune --omit=dev
 
 # Build stage for websocket
 FROM base-bun AS build-websocket
-# Copy package files from websocket directory
-COPY ./websocket/package.json ./websocket/bun.lockb ./
+WORKDIR /app
+
+# Create directory structure
+RUN mkdir -p src/lib/shared
+
+# Copy package files and install dependencies
+COPY websocket/package.json websocket/bun.lockb ./
 RUN bun install
 
-# Copy shared library files
-COPY ./src/lib/shared ./src/lib/shared/
+# Copy shared library files first
+COPY src/lib/shared/*.ts src/lib/shared/
 
 # Copy websocket source files
-COPY ./websocket/src ./src/
+COPY websocket/src/main.ts src/
 
 # Production stage for main app
 FROM base-node AS production-main
@@ -49,29 +52,13 @@ USER node
 EXPOSE 3000
 CMD ["node", "build/index.js"]
 
-FROM base-bun AS build-websocket
-WORKDIR /app
-
-# Create necessary directory structure first
-RUN mkdir -p src/lib/shared
-
-# Copy package files from websocket directory
-COPY ./websocket/package.json ./websocket/bun.lockb ./
-RUN bun install
-
-# Copy shared library files to the correct location
-COPY ./src/lib/shared/*.ts ./src/lib/shared/
-
-# Copy websocket source files, maintaining directory structure
-COPY ./websocket/src/* ./src/
-
 # Production stage for websocket
 FROM base-bun AS production-websocket
 WORKDIR /app
 COPY --from=build-websocket /app/ .
 EXPOSE 8080
 
-# Debug the file structure before running
+# Verify file structure
 RUN ls -la /app/src/lib/shared/
 RUN ls -la /app/src/
 
