@@ -1,16 +1,18 @@
 # syntax = docker/dockerfile:1
 
+# Base Node.js stage
 ARG NODE_VERSION=22.12.0
-FROM node:${NODE_VERSION}-slim AS base
+FROM node:${NODE_VERSION}-slim AS base-node
 
 WORKDIR /app
-
-# Set production environment
 ENV NODE_ENV="production"
 
-# Build stage
-FROM base AS build
+# Base Bun stage for websocket
+FROM oven/bun:latest AS base-bun
+WORKDIR /app
 
+# Build stage for main app
+FROM base-node AS build-main
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     build-essential \
@@ -19,35 +21,33 @@ RUN apt-get update -qq && \
     python-is-python3 && \
     rm -rf /var/lib/apt/lists/*
 
-# Install node modules
 COPY --chown=node:node package*.json ./
 RUN npm ci --include=dev
-
-# Copy entire project
 COPY --chown=node:node . .
-
-# Build application
 RUN npm run build
-
-# Remove development dependencies
 RUN npm prune --omit=dev
 
-# Final production stage
-FROM base AS production
+# Build stage for websocket
+FROM base-bun AS build-websocket
+COPY websocket/package*.json websocket/bun.lockb ./
+RUN bun install
+COPY src/lib/shared src/lib/shared/
+COPY websocket/src src/
 
+# Production stage for main app
+FROM base-node AS production-main
 WORKDIR /app
-
-# Copy only necessary files from build stage
-COPY --from=build --chown=node:node /app/build ./build
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
-COPY --from=build --chown=node:node /app/package.json .
-COPY --from=build --chown=node:node /app/.env .env
-
-# Use node user
+COPY --from=build-main --chown=node:node /app/build ./build
+COPY --from=build-main --chown=node:node /app/node_modules ./node_modules
+COPY --from=build-main --chown=node:node /app/package.json .
+COPY --from=build-main --chown=node:node /app/.env .env
 USER node
-
-# Expose port
 EXPOSE 3000
-
-# Start the application
 CMD ["node", "build/index.js"]
+
+# Production stage for websocket
+FROM base-bun AS production-websocket
+WORKDIR /app
+COPY --from=build-websocket /app/ .
+EXPOSE 8080
+CMD ["bun", "run", "src/main.ts"]
