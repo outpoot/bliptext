@@ -19,7 +19,7 @@ RUN apt-get update -qq && \
     python-is-python3 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY package*.json
+COPY package*.json ./
 RUN npm ci --include=dev
 COPY .env .env
 COPY . . # Removed --chown
