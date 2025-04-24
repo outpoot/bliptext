@@ -49,9 +49,30 @@ USER node
 EXPOSE 3000
 CMD ["node", "build/index.js"]
 
+FROM base-bun AS build-websocket
+WORKDIR /app
+
+# Create necessary directory structure first
+RUN mkdir -p src/lib/shared
+
+# Copy package files from websocket directory
+COPY ./websocket/package.json ./websocket/bun.lockb ./
+RUN bun install
+
+# Copy shared library files to the correct location
+COPY ./src/lib/shared/*.ts ./src/lib/shared/
+
+# Copy websocket source files, maintaining directory structure
+COPY ./websocket/src/* ./src/
+
 # Production stage for websocket
 FROM base-bun AS production-websocket
 WORKDIR /app
 COPY --from=build-websocket /app/ .
 EXPOSE 8080
+
+# Debug the file structure before running
+RUN ls -la /app/src/lib/shared/
+RUN ls -la /app/src/
+
 CMD ["bun", "run", "src/main.ts"]
