@@ -6,7 +6,9 @@ COPY package*.json bun.lockb ./
 
 RUN bun install
 
-COPY ../src/lib ./src/lib/
+RUN mkdir -p src/lib/shared
+
+COPY ../src/lib/shared/*.ts ./src/lib/shared/
 
 COPY . .
 
