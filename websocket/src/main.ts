@@ -1,7 +1,7 @@
 import type { ServerWebSocket } from 'bun';
 import Redis from 'ioredis';
-import { isValidWord } from '../../src/lib/shared/wordMatching';
-import { checkHardcore } from '../../src/lib/shared/moderation';
+import { isValidWord } from './lib/shared/wordMatching';
+import { checkHardcore } from './lib/shared/moderation';
 
 const redisSubscriber = new Redis(process.env.REDIS_URL!);
 const redisPublisher = new Redis(process.env.REDIS_URL!);
