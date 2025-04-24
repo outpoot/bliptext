@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  websocket:
+    build: .
+    ports:
+      - "8089:8080"
+    environment:
+      REDIS_URL: ${REDIS_URL}
+      SITE_URL: ${SITE_URL}
+    restart: always
