@@ -19,10 +19,10 @@ RUN apt-get update -qq && \
     python-is-python3 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --chown=node:node package*.json ./
+COPY package*.json
 RUN npm ci --include=dev
-COPY --chown=node:node .env .env # Copy .env for build
-COPY --chown=node:node . .
+COPY .env .env
+COPY . . # Removed --chown
 RUN npm run build
 RUN npm prune --omit=dev
 
