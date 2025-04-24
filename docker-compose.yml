@@ -4,7 +4,7 @@ services:
       context: .
       target: production-main
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - BETTER_AUTH_SECRET
       - PUBLIC_BETTER_AUTH_URL=http://localhost:3000
