@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Base Node.js stage
-FROM node:${NODE_VERSION}-slim AS base-node
+FROM node:20-slim AS base-node
 WORKDIR /app
 ENV NODE_ENV="production"
 
