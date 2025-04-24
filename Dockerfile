@@ -29,18 +29,18 @@ RUN npm prune --omit=dev
 FROM base-bun AS build-websocket
 WORKDIR /app
 
-# Create directory structure
-RUN mkdir -p src/lib/shared
+# Create proper directory structure for module resolution
+RUN mkdir -p websocket/src/lib/shared
 
 # Copy package files and install dependencies
 COPY websocket/package.json websocket/bun.lockb ./
 RUN bun install
 
-# Copy shared library files first
-COPY src/lib/shared/*.ts src/lib/shared/
+# Copy shared library files to match import path
+COPY src/lib/shared/*.ts websocket/src/lib/shared/
 
 # Copy websocket source files
-COPY websocket/src/main.ts src/
+COPY websocket/src/main.ts websocket/src/
 
 # Production stage for main app
 FROM base-node AS production-main
@@ -55,10 +55,10 @@ CMD ["node", "build/index.js"]
 # Production stage for websocket
 FROM base-bun AS production-websocket
 WORKDIR /app
-COPY --from=build-websocket /app/ .
+COPY --from=build-websocket /app/websocket/src ./src
 EXPOSE 8080
 
-# Verify file structure
+# Debug file structure
 RUN ls -la /app/src/lib/shared/
 RUN ls -la /app/src/
 

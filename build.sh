@@ -1,4 +1,3 @@
 git pull
-docker build -t bliptext .
-docker-compose down --volumes --remove-orphans
-docker-compose up -d
+docker compose build --no-cache
+docker compose up
