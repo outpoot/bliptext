@@ -22,7 +22,7 @@ RUN apt-get update -qq && \
 COPY package*.json ./
 RUN npm ci --include=dev
 COPY .env .env
-COPY . . # Removed --chown
+COPY . .
 RUN npm run build
 RUN npm prune --omit=dev
 
