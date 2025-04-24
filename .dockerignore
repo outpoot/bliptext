@@ -12,4 +12,3 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 serverside_utils
-websocket
