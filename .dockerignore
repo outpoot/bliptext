@@ -1,4 +1,7 @@
 node_modules
+**/node_modules
+
+npm-debug.log
 
 /.svelte-kit
 /build
@@ -9,4 +12,3 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 serverside_utils
-websocket

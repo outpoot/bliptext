@@ -3,9 +3,10 @@
 	import { cooldown } from "$lib/stores/cooldown";
 	import * as Card from "$lib/components/ui/card";
 	import { Separator } from "../ui/separator";
+	import { MAX_WORD_LENGTH } from "$lib/shared/wordMatching";
+	import { debounce } from "$lib/utils/debounce";
 
 	let { inputProps = {}, class: className = "" } = $props();
-
 	let err = $state("");
 
 	async function fetchValidateWord(word: string) {
@@ -23,10 +24,7 @@
 		}
 	}
 
-	async function validateInput(event: Event) {
-		const input = event.target as HTMLInputElement;
-		const value = input.value;
-
+	const debouncedValidate = debounce(async (value: string) => {
 		if (!value) {
 			err = "";
 			return;
@@ -39,6 +37,24 @@
 		} else {
 			err = "";
 		}
+	}, 300);
+
+	function validateInput(event: Event) {
+		const input = event.target as HTMLInputElement;
+		let value = input.value;
+
+		if (!value) {
+			err = "";
+			return;
+		}
+
+		if (value.length > MAX_WORD_LENGTH) {
+			input.value = value.slice(0, MAX_WORD_LENGTH);
+			err = `Maximum length is ${MAX_WORD_LENGTH} characters`;
+			return;
+		}
+
+		debouncedValidate(value);
 	}
 </script>
 

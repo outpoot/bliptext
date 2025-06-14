@@ -86,7 +86,7 @@
 						onclick={() => goto(`/articles/${article.slug}/edit`)}
 						aria-label={`Edit article: ${article.title}`}
 					>
-						<span class="font-medium">{article.title}</span>
+						<span class="font-medium truncate max-w-[200px] sm:max-w-none">{article.title}</span>
 						<div class="flex items-center gap-2">
 							<Users class="h-4 w-4" />
 							<Badge variant="secondary"

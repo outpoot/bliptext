@@ -10,6 +10,8 @@ import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
 import { sendDiscordWebhook } from '$lib/discord';
 import { checkHardcore } from '$lib/shared/moderation';
+import { timeQuery } from '$lib/server/db/timing';
+import { WordProcessor } from '$lib/utils/wordProcessor';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
@@ -21,7 +23,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		if(session.user.isBanned) {
+		if (session.user.isBanned) {
 			return json({ error: 'User is banned' }, { status: 403 });
 		}
 
@@ -34,9 +36,11 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))' }, { status: 400 });
 		}
 
-		const article = await db.query.articles.findFirst({
-			where: eq(articles.slug, params.slug)
-		});
+		const article = await timeQuery('find_article', () =>
+			db.query.articles.findFirst({
+				where: eq(articles.slug, params.slug)
+			})
+		);
 
 		if (!article) {
 			return json({ error: 'Article not found' }, { status: 404 });
@@ -50,20 +54,45 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			}, { status: 429 });
 		}
 
-		// Verify context if provided
+		const tempProcessor = new WordProcessor(article.content);
+		function getWords(content: string): string[] {
+			return tempProcessor.getWordsFromText(content);
+		}
+
+		function normalizeContext(segment: string): string {
+			return segment
+				.replace(/_/g, ' ')
+				.replace(/\s+/g, ' ')
+				.replace(/[^\w\s]/gi, '')
+				.trim()
+				.toLowerCase();
+		}
+
 		if (contextData) {
 			const { before, word, after, index } = contextData;
-			const rawTextWithoutTags = article.content.replace(/:::summary[\s\S]*?:::/g, '');
-			const words = rawTextWithoutTags.match(WORD_MATCH_REGEX) || [];
+			const words = getWords(article.content);
 
-			const actualBefore = words.slice(Math.max(0, index - 2), index).join(' ');
-			const actualWord = words[index];
-			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ');
+			const actualBefore = words.slice(Math.max(0, index - 2), index).join(' ').trim();
+			const actualWord = (words[index] || '').trim();
+			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ').trim();
 
-			if (index !== wordIndex ||
-				before !== actualBefore ||
-				word !== actualWord ||
-				after !== actualAfter) {
+			// console.log("Context check:", {
+			// 	provided: {
+			// 		before: normalizeContext(before),
+			// 		word: normalizeContext(word),
+			// 		after: normalizeContext(after)
+			// 	},
+			// 	computed: {
+			// 		before: normalizeContext(actualBefore),
+			// 		word: normalizeContext(actualWord),
+			// 		after: normalizeContext(actualAfter)
+			// 	}
+			// });
+
+			if (
+				index !== wordIndex ||
+				normalizeContext(before) !== normalizeContext(actualBefore)
+			) {
 				return json({ error: 'Context mismatch, please refresh the page' }, { status: 409 });
 			}
 		}
@@ -75,34 +104,40 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		const updatedContent = replaceWordAtIndex(article.content, wordIndex, newWord);
 
-		const [revision] = await db.insert(revisions)
-			.values({
-				articleId: article.id,
-				content: updatedContent,
-				wordChanged: oldWord,
-				wordIndex,
-				createdBy: session.user.id
-			})
-			.returning();
-
-		await Promise.all([
-			Promise.all([
-				db.update(user)
-					.set({
-						revisionCount: sql`COALESCE(${user.revisionCount}, 0) + 1`
-					})
-					.where(eq(user.id, session.user.id)),
-
-				db.update(articles)
-					.set({
+		await timeQuery('PUT_WORD_update_word_transaction', () =>
+			db.transaction(async (tx) => {
+				const [newRevision] = await tx.insert(revisions)
+					.values({
+						articleId: article.id,
 						content: updatedContent,
-						current_revision: revision.id,
-						updated_at: new Date(),
-						revisionCount: sql`COALESCE(${articles.revisionCount}, 0) + 1`
+						wordChanged: oldWord,
+						wordIndex,
+						createdBy: session.user.id
 					})
-					.where(eq(articles.id, article.id))
-			]),
+					.returning();
 
+				await Promise.all([
+					tx.update(user)
+						.set({
+							revisionCount: sql`COALESCE(${user.revisionCount}, 0) + 1`
+						})
+						.where(eq(user.id, session.user.id)),
+
+					tx.update(articles)
+						.set({
+							content: updatedContent,
+							current_revision: newRevision.id,
+							updated_at: new Date(),
+							revisionCount: sql`COALESCE(${articles.revisionCount}, 0) + 1`
+						})
+						.where(eq(articles.id, article.id))
+				]);
+
+				return [newRevision];
+			})
+		);
+
+		await timeQuery('PUT_WORD_external_operations', () =>
 			Promise.all([
 				redis.publish(
 					`updates:${article.id}`,
@@ -127,7 +162,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 					editorId: session.user.id
 				})
 			])
-		]);
+		);
 
 		cooldownManager.addCooldown(session.user.id);
 

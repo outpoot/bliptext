@@ -1,16 +1,20 @@
-version: '3.8'
 services:
   app:
-    image: bliptext
-    network_mode: host
-    environment:
-      - BETTER_AUTH_SECRET=
-      - PUBLIC_BETTER_AUTH_URL=http://localhost:3000
-      - PUBLIC_WEBSOCKET_URL=ws://localhost:8080
-      - DISCORD_CLIENT_ID=
-      - DISCORD_CLIENT_SECRET=
-      - JWT_SECRET=
-      - REDIS_URL=
-      - SITE_URL=http://localhost:3000
-      - DATABASE_URL=
-      - DISCORD_WEBHOOK_URL=
+    build:
+      context: .
+      target: production-main
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    depends_on:
+      - websocket
+
+  websocket:
+    build:
+      context: .
+      target: production-websocket
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env

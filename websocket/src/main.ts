@@ -1,13 +1,14 @@
 import type { ServerWebSocket } from 'bun';
 import Redis from 'ioredis';
-import { isValidWord } from '../../src/lib/shared/wordMatching';
-import { checkHardcore } from '../../src/lib/shared/moderation';
+import { isValidWord } from './lib/shared/wordMatching';
+import { checkHardcore } from './lib/shared/moderation';
 
 const redisSubscriber = new Redis(process.env.REDIS_URL!);
 const redisPublisher = new Redis(process.env.REDIS_URL!);
 
 const cooldownCache = new Map<string, number>();
 const COOLDOWN_KEY_PREFIX = 'cooldown:edit:';
+const HEARTBEAT_INTERVAL = 30_000;
 
 [redisSubscriber, redisPublisher].forEach((r) => {
 	r.on('error', (err) => {
@@ -37,6 +38,7 @@ type WebSocketData = {
 		image?: string;
 	};
 	connectionType?: 'editor' | 'viewer';
+	lastActivity: number;
 };
 
 const articleUsers = new Map<string, Set<string>>();
@@ -231,6 +233,20 @@ setInterval(() => {
 	}
 }, 500);
 
+function checkConnections() {
+	const now = Date.now();
+	for (const [userId, sockets] of userSockets.entries()) {
+		const staleSockets = Array.from(sockets).filter(ws => now - ws.data.lastActivity > HEARTBEAT_INTERVAL * 2);
+
+		for (const socket of staleSockets) {
+			console.log(`Terminating stale connection for user ${userId}`);
+			socket.terminate();
+		}
+	}
+}
+
+setInterval(checkConnections, HEARTBEAT_INTERVAL);
+
 async function handleWordHover(
 	ws: ServerWebSocket<WebSocketData>,
 	data: { wordIndex: number; newWord: string }
@@ -331,7 +347,8 @@ const server = Bun.serve<WebSocketData>({
 			data: {
 				user: authResult || undefined,
 				articleId: null,
-				connectionType
+				connectionType,
+				lastActivity: Date.now()
 			}
 		});
 
@@ -340,6 +357,8 @@ const server = Bun.serve<WebSocketData>({
 
 	websocket: {
 		async message(ws, msg) {
+			ws.data.lastActivity = Date.now();
+
 			if (typeof msg !== 'string') return;
 
 			try {
@@ -364,6 +383,8 @@ const server = Bun.serve<WebSocketData>({
 							wordIndex: data.wordIndex!
 						});
 						break;
+					case 'pong':
+						break;
 				}
 			} catch (error) {
 				console.error('Message handling error:', error);
@@ -372,11 +393,13 @@ const server = Bun.serve<WebSocketData>({
 		open(ws) {
 			const interval = setInterval(() => {
 				if (ws.readyState === 1) {
+					ws.data.lastActivity = Date.now();
+					ws.send(JSON.stringify({ type: 'ping' }));
 					ws.ping();
 				} else {
 					clearInterval(interval);
 				}
-			}, 30_000);
+			}, HEARTBEAT_INTERVAL);
 		},
 
 		close(ws) {
@@ -418,6 +441,14 @@ const server = Bun.serve<WebSocketData>({
 					}
 				}
 			}
+		},
+
+		ping(ws) {
+			ws.data.lastActivity = Date.now();
+		},
+
+		pong(ws) {
+			ws.data.lastActivity = Date.now();
 		}
 	}
 });

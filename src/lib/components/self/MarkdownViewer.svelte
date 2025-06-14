@@ -134,7 +134,7 @@
 	}
 
 	function handleElementHover(element: HTMLElement, self: boolean = true) {
-		if (self && !selectedWord?.trim()) return;
+		if (self && (!selectedWord?.trim() || $cooldown.isActive)) return;
 
 		element.classList.add("shake");
 
@@ -145,10 +145,8 @@
 			);
 		} else if (self && $cooldown.isActive) {
 			toast.error(
-				`Please wait ${Math.ceil($cooldown.remainingTime / 1000)}s before editing more words.`,
-				{
-					duration: 2000,
-				},
+				`Please wait ${$cooldown.remainingTime}s before editing more words.`,
+				{ duration: 2000 },
 			);
 		}
 	}
@@ -204,7 +202,7 @@
 	}
 
 	function handleElementClick(element: HTMLElement) {
-		if (!selectedWord) return;
+		if (!selectedWord || $cooldown.isActive) return;
 		playSound(clickSound);
 		navigator?.vibrate?.(100);
 
@@ -218,23 +216,34 @@
 			leaveTimeout = null;
 		}
 
-		if (!isReplacing && !$cooldown.isActive) {
-			const actualIndex = wordProcessor.wordIndicesMap.get(element);
-			if (actualIndex !== undefined) {
+		if (isReplacing && selectedElement && selectedElement !== element) {
+			const previousIndex =
+				wordProcessor.wordIndicesMap.get(selectedElement);
+			if (previousIndex !== undefined) {
 				ws.send(
 					JSON.stringify({
 						type: "word_leave",
-						wordIndex: actualIndex,
+						wordIndex: previousIndex,
 					}),
 				);
 			}
+			selectedElement.classList.remove("selected");
 		}
-
-		if (selectedElement) selectedElement.classList.remove("selected");
 
 		selectedElement = element;
 		element.classList.add("selected");
 		isReplacing = true;
+
+		const actualIndex = wordProcessor.wordIndicesMap.get(element);
+		if (actualIndex !== undefined && !$cooldown.isActive) {
+			ws.send(
+				JSON.stringify({
+					type: "word_hover",
+					wordIndex: actualIndex,
+					newWord: selectedWord,
+				}),
+			);
+		}
 
 		const rect = element.getBoundingClientRect();
 		if (rect.width && rect.height) {
@@ -247,13 +256,7 @@
 	}
 
 	function handleHover(element: HTMLElement) {
-		if (
-			!selectedWord ||
-			!article?.slug ||
-			$cooldown.isActive ||
-			isReplacing
-		)
-			return;
+		if (!selectedWord || !article?.slug || $cooldown.isActive) return;
 
 		const actualIndex = wordProcessor.wordIndicesMap.get(element);
 		if (actualIndex === undefined) return;
@@ -277,6 +280,15 @@
 
 			if (data.type === "error") {
 				if (data.data.code === "COOLDOWN") {
+					// Clear any floating words when cooldown starts
+					if (selectedElement) {
+						selectedElement.classList.remove("selected");
+						selectedElement = null;
+						onSelectElement?.(null);
+					}
+					showSubmitButton = false;
+					isReplacing = false;
+					selectedWord = "";
 					cooldown.startCooldown(data.data.remainingTime);
 				} else if (data.data.code === "INVALID_WORD") {
 					toast.error("Invalid word format");
@@ -449,7 +461,9 @@
 				return;
 			}
 
-			// $captchaVerified = false;
+			if (data.remainingTime) {
+				cooldown.startCooldown(data.remainingTime);
+			}
 
 			// update UI after successful edit
 			wordProcessor.replaceWord(newWord, selectedElement!, () => {});
@@ -481,7 +495,7 @@
 <!-- Template -->
 {#if showSidebars}
 	<div class="flex gap-6">
-		<div class="hidden w-64 pt-16 md:block">
+		<div class="hidden ml-6 w-64 pt-16 md:block">
 			<TableOfContents
 				{content}
 				{title}
@@ -505,7 +519,7 @@
 						{article.title || "Untitled"}
 					</h1>
 
-					<div class="ml-auto">
+					<div class="ml-auto mr-3">
 						<Badge variant="outline">
 							<Users class="mr-1.5 h-3 w-3" />
 							<span>{$activeUsers}</span>
@@ -517,6 +531,33 @@
 			{/if}
 			<div class="markdown-content px-4 md:px-0">
 				<Markdown md={content} {plugins} />
+
+				{#if article?.id}
+					<div
+						class="mt-8 border-t pt-4 text-sm text-muted-foreground"
+					>
+						<p>
+							This article is derived from Wikipedia and licensed
+							under
+							<a
+								href="https://creativecommons.org/licenses/by-sa/4.0/"
+								class="text-primary underline">CC BY-SA 4.0</a
+							>. View the
+							<a
+								href={`https://en.wikipedia.org/wiki/${article.title?.replace(/ /g, "_")}`}
+								class="text-primary underline"
+								target="_blank"
+								rel="noopener noreferrer">original article</a
+							>.
+						</p>
+						<p class="mt-2 text-xs">
+							Wikipedia® is a registered trademark of the
+							Wikimedia Foundation, Inc.<br>Bliptext is not
+							affiliated with or endorsed by Wikipedia or the
+							Wikimedia Foundation.
+						</p>
+					</div>
+				{/if}
 			</div>
 		</div>
 
@@ -544,6 +585,30 @@
 		{/if}
 		<div class="markdown-content px-4">
 			<Markdown md={content} {plugins} />
+
+			{#if article?.id}
+				<div class="mt-8 border-t pt-4 text-sm text-muted-foreground">
+					<p>
+						This article is derived from Wikipedia and licensed
+						under
+						<a
+							href="https://creativecommons.org/licenses/by-sa/4.0/"
+							class="text-primary underline">CC BY-SA 4.0</a
+						>. View the
+						<a
+							href={`https://en.wikipedia.org/wiki/${article.title?.replace(/ /g, "_")}`}
+							class="text-primary underline"
+							target="_blank"
+							rel="noopener noreferrer">original article</a
+						>.
+					</p>
+					<p class="mt-2">
+						Wikipedia® is a registered trademark of the Wikimedia
+						Foundation, Inc. Bliptext is not affiliated with or
+						endorsed by Wikipedia or the Wikimedia Foundation.
+					</p>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}
@@ -679,7 +744,7 @@
 		style="left: {submitButtonPosition.x}px; top: {submitButtonPosition.y}px;"
 	>
 		<Button
-			class="transform-gpu"
+			class="transform-gpu plausible-event-name--Word-Edit"
 			disabled={isPending}
 			onclick={async () => {
 				const actualIndex = wordProcessor.wordIndicesMap.get(
@@ -713,15 +778,14 @@
 {/if}
 
 {#each Object.entries(otherUsersHovers) as [_, hover]}
-	{#if true}
-		{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
-		{#if element}
-			<FloatingWord
-				word={hover.word}
-				{element}
-				image={hover.editorImage}
-			/>
-		{/if}
+	{@const element = wordProcessor.getElementByWordIndex(hover.wordIndex)}
+	{#if element}
+		<FloatingWord
+			word={hover.word}
+			{element}
+			image={hover.editorImage}
+			editorName={hover.editorName}
+		/>
 	{/if}
 {/each}
 
@@ -748,14 +812,14 @@
 
 <style>
 	:global(.hv) {
-		display: inline-block;
+		display: inline;
 		padding: 0 2px;
 		border-radius: 2px;
 		cursor: pointer;
 	}
 
 	:global(.shake) {
-		animation: shake 0.5s linear infinite;
+		animation: backgroundTint 1.5s ease-in-out infinite;
 		background: hsl(var(--primary) / 20%);
 	}
 
@@ -772,16 +836,13 @@
 		animation: wordEnter 0.5s ease-out;
 	}
 
-	@keyframes shake {
+	@keyframes backgroundTint {
 		0%,
 		100% {
-			transform: translateX(0);
+			background: hsl(var(--primary) / 20%);
 		}
-		25% {
-			transform: translateX(-1px) rotate(-1deg);
-		}
-		75% {
-			transform: translateX(1px) rotate(1deg);
+		50% {
+			background: hsl(var(--primary) / 10%);
 		}
 	}
 

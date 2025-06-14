@@ -14,14 +14,27 @@
 	import type { RevisionWithUser } from "$lib/utils/revision";
 	import { Badge } from "../ui/badge";
 
-	export let revisions: RevisionWithUser[];
-	export let loading = false;
-	export let hasMore = false;
-	export let onLoadMore: () => void;
-	export let onBanUser: (userId: string) => void;
-	export let showBanButton = true;
+	interface Props {
+		revisions: RevisionWithUser[];
+		loading?: boolean;
+		hasMore?: boolean;
+		onLoadMore: () => void;
+		onBanUser: (userId: string) => void;
+		showBanButton?: boolean;
+		showTimeDifference?: boolean;
+	}
 
-	let container: HTMLElement;
+	let {
+		revisions,
+		loading = false,
+		hasMore = false,
+		onLoadMore,
+		onBanUser,
+		showBanButton = true,
+		showTimeDifference = false,
+	}: Props = $props();
+
+	let container: HTMLElement | undefined = $state();
 
 	function formatDate(date: string) {
 		return new Date(date).toLocaleString();
@@ -38,12 +51,22 @@
 			onLoadMore();
 		}
 	}
+
+	function formatTimeDifference(seconds: number | null): string {
+		if (seconds === null) return "Last edit";
+		if (seconds < 60) return `${seconds.toFixed(1)}s`;
+		const minutes = Math.floor(seconds / 60);
+		if (minutes < 60) return `${minutes}m`;
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return `${hours}h`;
+		return `${Math.floor(hours / 24)}d`;
+	}
 </script>
 
 <div
 	class="max-h-[calc(100vh-8rem)] space-y-3 overflow-y-auto pr-2 sm:space-y-4 sm:pr-4"
 	bind:this={container}
-	on:scroll={handleScroll}
+	onscroll={handleScroll}
 >
 	{#each revisions as revision (revision.id)}
 		<div transition:fade>
@@ -54,7 +77,9 @@
 							src={revision.user.image}
 							alt={revision.user.name}
 						/>
-						<AvatarFallback>{revision.user.name[0]}</AvatarFallback>
+						<AvatarFallback>
+							<img src="/images/unknown.png" alt="Unknown user" />
+						</AvatarFallback>
 					</Avatar>
 					<div class="min-w-0 flex-1">
 						<div
@@ -66,6 +91,14 @@
 							<span
 								class="text-xs text-muted-foreground sm:text-sm"
 							>
+								{#if showTimeDifference && revision.timeDifference !== undefined}
+									<span class="text-orange-600 font-mono">
+										[{formatTimeDifference(
+											revision.timeDifference,
+										)}]
+									</span>
+									&nbsp;
+								{/if}
 								{formatDate(revision.createdAt)}
 							</span>
 						</div>

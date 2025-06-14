@@ -4,20 +4,24 @@
 	import { Separator } from "$lib/components/ui/separator";
 	import { goto } from "$app/navigation";
 
-	export let data: {
-		activeEditors?: Array<{
-			id: string;
-			name: string;
-			image: string;
-			revisionCount: number;
-		}>;
-		topArticles?: Array<{
-			id: string;
-			title: string;
-			slug: string;
-			revisionCount: number;
-		}>;
-	};
+	interface Props {
+		data: {
+			activeEditors?: Array<{
+				id: string;
+				name: string;
+				image: string;
+				revisionCount: number;
+			}>;
+			topArticles?: Array<{
+				id: string;
+				title: string;
+				slug: string;
+				revisionCount: number;
+			}>;
+		};
+	}
+
+	let { data }: Props = $props();
 </script>
 
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -31,8 +35,10 @@
 					<div class="flex items-center justify-between p-2">
 						<div class="flex items-center gap-2">
 							<img
-								src={editor.image.replace(".png", ".webp") +
-									"?size=64"}
+								src={editor.image.includes("embed/avatars")
+									? editor.image + "?size=64"
+									: editor.image.replace(".png", ".webp") +
+										"?size=64"}
 								alt={editor.name}
 								class="h-8 w-8 rounded-full"
 								width="32"

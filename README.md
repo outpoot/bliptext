@@ -1,5 +1,5 @@
 <img style="width: 128px; height: 128px" src="static/favicon.svg" /><h1 style="font-size: 48px"><a href="https://bliptext.com">Bliptext.com</a> - the wiki where you edit a word every 30 seconds</h1>
-[Privacy Policy](https://bliptext.com/legal/privacy) | [Terms of Service](https://bliptext.com/legal/terms) | [License](LICENSE.md) | [YouTube video](about:blank)
+[Privacy Policy](https://bliptext.com/legal/privacy) | [Terms of Service](https://bliptext.com/legal/terms) | [License](LICENSE.md) | [YouTube video](https://www.youtube.com/watch?v=CosPILI0qrw)
 
 ## About
 We ported **2,112,863** (2.1 million) Wikipedia articles and removed edit restrictions.
@@ -52,11 +52,18 @@ cp .env.example .env
 Configure your environment variables in `.env`:
 ```plaintext
 DATABASE_URL="postgres://root:mysecretpassword@localhost:5432/local"
+
 BETTER_AUTH_SECRET=<generate-a-random-string>
 PUBLIC_BETTER_AUTH_URL=http://localhost:3000
+
 PUBLIC_WEBSOCKET_URL=ws://localhost:8080
+
 DISCORD_CLIENT_ID=<your-discord-client-id>
 DISCORD_CLIENT_SECRET=<your-discord-client-secret>
+
+GOOGLE_CLIENT_ID=<your-google-auth-id>
+GOOGLE_CLIENT_SECRET=<your-google-auth-secret>
+
 JWT_SECRET=<generate-a-random-string>
 REDIS_URL=<your-redis-url>
 SITE_URL=http://localhost:3000
@@ -129,7 +136,14 @@ If you wish to contribute, you are free to do so. Please keep in mind:
     - We don't want to waste your & our time
 
 # License
-This project is licensed under **Attribution-NonCommercial 2.0 International**.
+This project uses dual licensing:
+
+## 1. Article Content
+All article content derived from Wikipedia is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0). See [LICENSE-CONTENT.md](LICENSE-CONTENT.md) for details.
+
+## 2. Code and Original Content
+The code and original content of this project (excluding Wikipedia-derived content) is licensed under **Attribution-NonCommercial 2.0 International**.
+
 ### You are free to:
 - 📩✅ Share — copy and redistribute the material in any medium or format
 - 🔁✅ Adapt — remix, transform, and build upon the material

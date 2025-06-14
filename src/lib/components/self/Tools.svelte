@@ -10,9 +10,12 @@
 	import Download from "lucide-svelte/icons/download";
 	import Info from "lucide-svelte/icons/info";
 	import Trash2 from "lucide-svelte/icons/trash-2";
+	import Headphones from "lucide-svelte/icons/headphones";
 	import { currentUser } from "$lib/stores/user";
-	import { goto } from "$app/navigation";
 	import { toast } from "svelte-sonner";
+	import { WordProcessor } from "$lib/utils/wordProcessor";
+	import { onDestroy } from "svelte";
+	import { browser } from "$app/environment";
 
 	import type { Article } from "$lib/server/db/schema";
 	import { styles } from "$lib/utils/styles";
@@ -25,6 +28,19 @@
 	let isCollapsed = $state(false);
 	let showPageInfo = $state(false);
 	let showCopyCheck = $state(false);
+	let isReading = $state(false);
+
+	let synth: SpeechSynthesis | undefined;
+	let currentUtterance: SpeechSynthesisUtterance | null = null;
+
+	if (browser) {
+		synth = window.speechSynthesis;
+		window.addEventListener("beforeunload", () => {
+			if (window.speechSynthesis.speaking) {
+				window.speechSynthesis.cancel();
+			}
+		});
+	}
 
 	$effect(() => {
 		if (showCopyCheck) {
@@ -93,6 +109,60 @@
 		}
 	}
 
+	function handleRead() {
+		if (!content || !synth) {
+			toast.error("Speech synthesis is not supported in your browser");
+			return;
+		}
+
+		if (isReading) {
+			synth.cancel();
+			isReading = false;
+			currentUtterance = null;
+			return;
+		}
+
+		const wordProcessor = new WordProcessor(content);
+		const textWithoutLinks = content.replace(
+			/\[([^\]]+)\]\([^\)]+\)/g,
+			"$1",
+		);
+		const words = wordProcessor.getWordsFromText(
+			textWithoutLinks.replace(/[-_/[()\]#]/g, " "),
+		);
+
+		const cleanContent = words.join(" ");
+
+		currentUtterance = new SpeechSynthesisUtterance(cleanContent);
+		currentUtterance.rate = 0.9;
+
+		currentUtterance.onend = () => {
+			isReading = false;
+			currentUtterance = null;
+		};
+
+		currentUtterance.onerror = () => {
+			isReading = false;
+			currentUtterance = null;
+			toast.info("Speech synthesis stopped");
+		};
+
+		try {
+			isReading = true;
+			synth.speak(currentUtterance);
+		} catch (error) {
+			isReading = false;
+			currentUtterance = null;
+			toast.error("Failed to start speech synthesis");
+		}
+	}
+
+	onDestroy(() => {
+		if (synth && (isReading || currentUtterance)) {
+			synth.cancel();
+		}
+	});
+
 	const buttonClass = "w-full justify-start group";
 </script>
 
@@ -135,6 +205,10 @@
 		</Button>
 		<Button variant="ghost" class={buttonClass} onclick={handleDownload}>
 			<Download class={styles.iconClass} /> Download
+		</Button>
+		<Button variant="ghost" class={buttonClass} onclick={handleRead}>
+			<Headphones class={styles.iconClass} />
+			{isReading ? "Stop reading" : "Read article"}
 		</Button>
 		<Button
 			variant="ghost"

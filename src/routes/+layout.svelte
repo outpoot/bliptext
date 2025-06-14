@@ -13,6 +13,11 @@
 	import { browser } from "$app/environment";
 	import ThemeToggle from "$lib/components/self/ThemeToggle.svelte";
 	import Logo from "$lib/components/self/Logo.svelte";
+	import {
+		Avatar,
+		AvatarImage,
+		AvatarFallback,
+	} from "$lib/components/ui/avatar";
 
 	import {
 		DropdownMenu,
@@ -38,9 +43,9 @@
 	import { invalidateAll } from "$app/navigation";
 	let searchDialogOpen = $state(false);
 
-	async function handleSignIn() {
+	async function handleSignIn(provider: "discord" | "google") {
 		await signIn.social({
-			provider: "discord",
+			provider,
 			callbackURL: `${page.url.pathname}?signIn=1`,
 		});
 	}
@@ -173,11 +178,18 @@
 					{#if $currentUser}
 						<DropdownMenu>
 							<DropdownMenuTrigger>
-								<img
-									src={$currentUser.image}
-									class="h-8 w-8 cursor-pointer rounded-full"
-									alt={`@${$currentUser.name}'s Profile Picture`}
-								/>
+								<Avatar class="h-8 w-8 cursor-pointer">
+									<AvatarImage
+										src={$currentUser.image}
+										alt={`@${$currentUser.name}'s Profile Picture`}
+									/>
+									<AvatarFallback>
+										<img
+											src="/images/unknown.png"
+											alt="Unknown user"
+										/>
+									</AvatarFallback>
+								</Avatar>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem>
@@ -207,6 +219,16 @@
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 
+								<DropdownMenuItem>
+									<a
+										href="/blipper"
+										class="text-primary {styles.buttonClass}"
+									>
+										<Search class={styles.iconClass} />
+										<span>Blipper</span>
+									</a>
+								</DropdownMenuItem>
+
 								{#if $currentUser.isAdmin}
 									<DropdownMenuItem>
 										<a
@@ -230,15 +252,6 @@
 									</DropdownMenuItem>
 									<DropdownMenuItem>
 										<a
-											href="/admin/inspect"
-											class="text-primary {styles.buttonClass}"
-										>
-											<Search class={styles.iconClass} />
-											<span>Inspect</span>
-										</a>
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<a
 											href="/admin/terminator"
 											class="text-primary {styles.buttonClass}"
 										>
@@ -246,9 +259,8 @@
 											<span>Terminator</span>
 										</a>
 									</DropdownMenuItem>
-									<DropdownMenuSeparator />
 								{/if}
-
+								<DropdownMenuSeparator />
 								<DropdownMenuItem>
 									<button
 										type="button"
@@ -269,7 +281,7 @@
 									<button
 										type="button"
 										onclick={handleSignOut}
-										class={styles.buttonClass}
+										class="{styles.buttonClass} plausible-event-name--Sign-Out"
 									>
 										<LogOut class={styles.iconClass} />
 										<span>Sign out</span>
@@ -279,7 +291,7 @@
 									<button
 										type="button"
 										onclick={handleDeleteAccount}
-										class="text-destructive {styles.buttonClass}"
+										class="text-destructive {styles.buttonClass} plausible-event-name--Delete-Account"
 									>
 										<UserX class={styles.iconClass} />
 										<span>Delete account</span>
@@ -290,7 +302,7 @@
 					{:else if $currentUser == undefined}
 						<button
 							onclick={() => (showConfirm = true)}
-							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+							class="rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground plausible-event-name--Sign-In"
 						>
 							Sign in
 						</button>
@@ -330,11 +342,6 @@
 						href="/legal/terms"
 						class="text-sm text-muted-foreground hover:text-foreground"
 						>Terms</a
-					>
-					<a
-						href="https://status.bliptext.com"
-						class="text-sm text-muted-foreground hover:text-foreground"
-						>Status</a
 					>
 				</nav>
 			</div>

@@ -14,6 +14,7 @@
 		type WebSocketManagerHandle,
 	} from "$lib/components/self/WebSocketManager.svelte";
 	import { page } from "$app/state";
+	import { MAX_WORD_LENGTH } from "$lib/shared/wordMatching";
 
 	let { data } = $props<{
 		data: { article: Article | null };
@@ -56,7 +57,7 @@
 
 	function handleInput(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
-		const newWord = input.value.replace(/\s+/g, "").slice(0, 50);
+		const newWord = input.value.replace(/\s+/g, "").slice(0, MAX_WORD_LENGTH);
 		selectedWord = newWord;
 		showFloatingWord = Boolean(newWord);
 	}

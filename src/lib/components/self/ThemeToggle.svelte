@@ -47,7 +47,7 @@
     <DropdownMenuContent align="end">
         {#each themes as t}
             <DropdownMenuItem onclick={() => theme.set(t.name)}>
-                <svelte:component this={t.icon} class="mr-2 h-4 w-4" />
+                <t.icon class="mr-2 h-4 w-4" />
                 <span>{t.label}</span>
             </DropdownMenuItem>
         {/each}

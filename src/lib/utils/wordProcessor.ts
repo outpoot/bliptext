@@ -12,6 +12,7 @@ export class WordProcessor {
     private cleanedWordToIndices: Map<string, number[]>;
     private wordPositions: Map<number, number>;
     private usedIndices: Set<number>;
+    private contentWords: string[];
 
     constructor(
         public content: string,
@@ -23,6 +24,7 @@ export class WordProcessor {
         this.usedIndices = new Set();
 
         const contentWords = this.content.match(WORD_MATCH_REGEX) || [];
+        this.contentWords = contentWords;
         let position = 0;
 
         contentWords.forEach((word, index) => {
@@ -99,12 +101,29 @@ export class WordProcessor {
         return baseSpan;
     }
 
-
-
     public getWordsFromText(text: string): string[] {
         const textWithoutTags = text
             .replace(/:::summary[\s\S]*?:::/g, '');
-        return textWithoutTags.match(WORD_MATCH_REGEX) || [];
+        const words = textWithoutTags.match(WORD_MATCH_REGEX) || [];
+        function removeUrlSuffix(word: string): string {
+            const httpIndex = word.indexOf("http");
+            return httpIndex !== -1 ? word.substring(0, httpIndex) : word;
+        }
+        return words.map(word => removeUrlSuffix(this.cleanContentWord(word)));
+    }
+
+    private applyOriginalFormatting(newWord: string, originalText: string): string {
+        if (originalText.startsWith('**') && originalText.endsWith('**')) {
+            return `**${newWord}**`;
+        } else if (originalText.startsWith('*') && originalText.endsWith('*')) {
+            return `*${newWord}*`;
+        } else if (originalText.startsWith('[') && originalText.includes('](') && originalText.endsWith(')')) {
+            const match = originalText.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+            if (match) {
+                return `[${newWord}](${match[2]})`;
+            }
+        }
+        return newWord;
     }
 
     replaceWord(
@@ -117,7 +136,7 @@ export class WordProcessor {
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
 
-        const words = this.getWordsFromText(this.content);
+        const words = this.contentWords;
         const start = Math.max(0, actualIndex - 2);
         const end = Math.min(words.length, actualIndex + 3);
         const context = {
@@ -130,25 +149,29 @@ export class WordProcessor {
         element = element.closest('a, strong, em') || element;
         element.classList.add('word-exit');
 
+        const originalText = element.textContent || "";
+
         setTimeout(() => {
             const posStr = element.dataset.position;
             if (posStr) {
                 const startPos = parseInt(posStr);
                 const oldLength = element.textContent!.length;
-                const diff = newWord.length - oldLength;
                 const endPos = startPos + oldLength;
-                this.content = this.content.slice(0, startPos) + newWord + this.content.slice(endPos);
+
+                const formattedNewWord = this.applyOriginalFormatting(newWord, originalText);
+                const cleanNewWord = this.cleanContentWord(formattedNewWord);
+
+                this.content = this.content.slice(0, startPos) + cleanNewWord + this.content.slice(endPos);
                 this.wordPositions.forEach((pos, idx) => {
                     if (idx > actualIndex) {
-                        this.wordPositions.set(idx, pos + diff);
+                        this.wordPositions.set(idx, pos + (cleanNewWord.length - oldLength));
                     }
                 });
-
                 this.recalcWordPositions();
             }
-
-            const baseSpan = this.createBaseSpan(this.cleanContentWord(newWord));
-            const replacement = this.determineWordElement(newWord, baseSpan);
+            const formattedNewWord = this.applyOriginalFormatting(newWord, originalText);
+            const baseSpan = this.createBaseSpan(this.cleanContentWord(formattedNewWord));
+            const replacement = this.determineWordElement(formattedNewWord, baseSpan);
             baseSpan.dataset.wordIndex = actualIndex.toString();
             baseSpan.dataset.position = element.dataset.position;
             this.wordIndicesMap.set(baseSpan, actualIndex);
@@ -164,12 +187,26 @@ export class WordProcessor {
 
     private recalcWordPositions() {
         this.wordPositions.clear();
-        const contentWords = this.content.match(WORD_MATCH_REGEX) || [];
-        let position = 0;
-        contentWords.forEach((word, index) => {
-            position = this.content.indexOf(word, position);
-            this.wordPositions.set(index, position);
-            position += word.length;
+        this.contentWords = [];
+        this.cleanedWordToIndices.clear();
+
+        const regex = new RegExp(WORD_MATCH_REGEX.source, WORD_MATCH_REGEX.flags.replace('g', '') + "g");
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(this.content)) !== null) {
+            const word = match[0];
+            this.contentWords.push(word);
+
+            const cleaned = this.cleanContentWord(word);
+            this.cleanedWordToIndices.set(cleaned, [...(this.cleanedWordToIndices.get(cleaned) || []), this.contentWords.length - 1]);
+            this.wordPositions.set(this.contentWords.length - 1, match.index);
+        }
+
+        // update each element's dataset.position using the new positions
+        this.wordIndicesMap.forEach((index, element) => {
+            const pos = this.wordPositions.get(index);
+            if (pos !== undefined) {
+                element.dataset.position = pos.toString();
+            }
         });
     }
 
