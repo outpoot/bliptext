@@ -33,9 +33,9 @@
 	let targetElement = $state<HTMLElement | undefined>(undefined);
 	let isMobile = $state(false);
 
-	async function handleSignIn() {
+	async function handleSignIn(provider: string) {
 		await signIn.social({
-			provider: "discord",
+			provider: provider,
 			callbackURL: page.url.pathname,
 		});
 	}
