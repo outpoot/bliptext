@@ -50,8 +50,8 @@
 			showFloatingWord = true;
 		} else if (e.key === "Escape") {
 			showFloatingWord = false;
-		} else if (e.key === " ") {
-			e.preventDefault(); // Prevent spaces
+		} else if (e.key === " " || e.code === "Space") {
+			e.preventDefault();
 		}
 	}
 
@@ -69,19 +69,21 @@
 	});
 
 	function handleMessage(data: any) {
-		if (data.type === "active_users_update") {
+		if (data?.type === "active_users_update" && data.data && typeof data.data.count === "number") {
 			$activeUsers = data.data.count;
 		}
 	}
 
 	function handleOpen() {
-		wsManager?.send({
-			type: "set_article",
-			article: {
-				id: data.article?.id,
-				slug: data.article?.slug,
-			},
-		});
+		if (wsManager?.send) {
+			wsManager.send({
+				type: "set_article",
+				article: {
+					id: article?.id,
+					slug: article?.slug,
+				},
+			});
+		}
 	}
 
 	function handleClose(event: CloseEvent) {
@@ -110,13 +112,13 @@
 		};
 	});
 
-	const summary =
-		article.content
-			?.split(":::")?.[2]
-			.slice(200)
-			.replace(/\*\*(.*?)\*\*/g, "$1")
-			.replace(/([*_])(.*?)\1/g, "$2")
-			.replace(/\[(.*?)\]\(.*?\)/g, "$1") + "...";
+	const summary = (() => {
+		const content = article?.content ?? "";
+		const parts = content.split(":::");
+		const raw = parts[2] ?? parts[0] ?? "";
+		const cleaned = raw.replace(/\*\*(.*?)\*\*/g, "$1").replace(/([*_])(.*?)\1/g, "$2").replace(/\[(.*?)\]\(.*?\)/g, "$1");
+		return cleaned.length > 200 ? cleaned.slice(0, 200) + "..." : cleaned;
+	})();
 </script>
 
 <svelte:head>
@@ -161,7 +163,8 @@
 				you may <a
 					href="https://discord.gg/cKWNV2uZUP"
 					class="text-primary hover:underline">appeal here</a
-				>. Note that banned accounts may also be restricted from the
+				>.
+				Note that banned accounts may also be restricted from the
 				Discord server.
 			</p>
 			<br />
