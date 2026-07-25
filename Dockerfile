@@ -6,7 +6,7 @@ WORKDIR /app
 ENV NODE_ENV="production"
 
 # Base Bun stage for websocket
-FROM oven/bun:latest AS base-bun
+FROM oven/bun:1.3.14 AS base-bun
 WORKDIR /app
 
 # Build stage for main app
