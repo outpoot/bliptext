@@ -28,7 +28,7 @@ WORKDIR /app/websocket
 
 # Copy package files and install dependencies
 COPY websocket/package*.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 # Copy shared library files
 COPY src/lib/shared /app/src/lib/shared/
@@ -58,4 +58,4 @@ COPY --from=build-websocket /app/websocket/dist ./dist
 
 EXPOSE 8080
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/main.cjs"]

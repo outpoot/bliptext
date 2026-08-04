@@ -9,6 +9,9 @@ services:
       - .env
     depends_on:
       - websocket
+    networks:
+      - default
+      - shared_backend
     restart: unless-stopped
     deploy:
       resources:
@@ -24,9 +27,16 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    networks:
+      - default
+      - shared_backend
     healthcheck:
-      test: ["CMD", "sh", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1"]
+      test: ["CMD", "node", "-e", "require('net').connect(8080, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+networks:
+  shared_backend:
+    external: true
