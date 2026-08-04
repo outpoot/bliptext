@@ -1,9 +1,13 @@
+const slowQueryThreshold = Number(process.env.SLOW_QUERY_MS || 250);
+
 export const timeQuery = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
     const start = performance.now();
     try {
         const result = await fn();
         const duration = Math.round(performance.now() - start);
-        console.log(`[QUERY] ${name} took ${duration}ms`);
+        if (process.env.NODE_ENV !== 'production' || duration >= slowQueryThreshold) {
+            console.log(`[QUERY] ${name} took ${duration}ms`);
+        }
         return result;
     } catch (error) {
         const duration = Math.round(performance.now() - start);

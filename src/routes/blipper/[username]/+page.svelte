@@ -1,6 +1,5 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { page } from "$app/state";
     import { toast } from "svelte-sonner";
     import { Card } from "$lib/components/ui/card";
     import { Button } from "$lib/components/ui/button";
@@ -14,49 +13,27 @@
     import { currentUser } from "$lib/stores/user";
     import type { RevisionWithUser } from "$lib/utils/revision";
     import { Input } from "$lib/components/ui/input/index.js";
+    import type { PageData } from "./$types";
 
-    let userInfo: any = $state(null);
-    let username: string = $state("");
+    let { data }: { data: PageData } = $props();
+    let userInfo: any = $state(data.userInfo);
+    let username: string = $state(data.username);
 
     let loading = $state(false);
-    let error: string | null = $state(null);
+    let error: string | null = $state(data.error);
 
     function getTimeDifferences(
         revisions: RevisionWithUser[],
     ): RevisionWithUser[] {
-        return revisions.map((rev, idx, arr) => {
-            rev.timeDifference =
+        return revisions.map((rev, idx, arr) => ({
+            ...rev,
+            timeDifference:
                 idx < arr.length - 1
                     ? (new Date(rev.createdAt).getTime() -
                           new Date(arr[idx + 1].createdAt).getTime()) /
                       1000
-                    : null;
-            return rev;
-        });
-    }
-
-    async function fetchUser(name: string) {
-        if (!name) return;
-        loading = true;
-        error = null;
-        try {
-            const res = await fetch(
-                `/api/blipper?username=${encodeURIComponent(name)}`,
-            );
-            if (!res.ok && res.status === 404)
-                throw new Error("User not found");
-            userInfo = await res.json();
-            if ($currentUser?.isAdmin) {
-                userInfo.revisions = getTimeDifferences(userInfo.revisions);
-            }
-        } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : "Failed to fetch user",
-            );
-            userInfo = null;
-        } finally {
-            loading = false;
-        }
+                    : null,
+        }));
     }
 
     async function banUser() {
@@ -85,16 +62,25 @@
                 return;
             }
             loading = true;
-            goto(`/blipper/@${cleanUsername}`);
+            try {
+                await goto(`/blipper/@${cleanUsername}`);
+            } finally {
+                loading = false;
+            }
         }
     }
 
     $effect(() => {
-        const { username: pathUsername } = page.params;
-        if (pathUsername) {
-            const cleanUsername = pathUsername.replace(/^@/, "");
-            username = cleanUsername;
-            fetchUser(cleanUsername);
+        username = data.username;
+        error = data.error;
+        const nextUserInfo = data.userInfo;
+        if ($currentUser?.isAdmin && nextUserInfo) {
+            userInfo = {
+                ...nextUserInfo,
+                revisions: getTimeDifferences(nextUserInfo.revisions),
+            };
+        } else {
+            userInfo = nextUserInfo;
         }
     });
 </script>

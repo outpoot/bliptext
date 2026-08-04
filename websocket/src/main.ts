@@ -1,7 +1,8 @@
-import type { ServerWebSocket } from 'bun';
+import { createServer } from 'node:http';
 import Redis from 'ioredis';
-import { isValidWord } from './lib/shared/wordMatching';
-import { checkHardcore } from './lib/shared/moderation';
+import WebSocket, { WebSocketServer, type RawData } from 'ws';
+import { isValidWord } from '../../src/lib/shared/wordMatching';
+import { checkHardcore } from '../../src/lib/shared/moderation';
 
 const redisSubscriber = new Redis(process.env.REDIS_URL!);
 const redisPublisher = new Redis(process.env.REDIS_URL!);
@@ -42,10 +43,71 @@ type WebSocketData = {
 };
 
 const articleUsers = new Map<string, Set<string>>();
-const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
-const editorSockets = new Map<string, ServerWebSocket<WebSocketData>>();
+type AppWebSocket = WebSocket & { data: WebSocketData };
 
-async function validateAuth(request: Request): Promise<{ id: string; isBanned: boolean; name?: string; image?: string } | null> {
+const userSockets = new Map<string, Set<AppWebSocket>>();
+const editorSockets = new Map<string, AppWebSocket>();
+const ARTICLE_METADATA_TTL = 5 * 60_000;
+const articleMetadataCache = new Map<
+	string,
+	{
+		title: string;
+		slug: string;
+		expiresAt: number;
+	}
+>();
+const articleMetadataRequests = new Map<
+	string,
+	Promise<{
+		title: string;
+		slug: string;
+	} | null>
+>();
+
+async function getArticleMetadata(articleId: string): Promise<{
+	title: string;
+	slug: string;
+} | null> {
+	const cached = articleMetadataCache.get(articleId);
+	if (cached && cached.expiresAt > Date.now()) {
+		return cached;
+	}
+
+	const pending = articleMetadataRequests.get(articleId);
+	if (pending) return pending;
+
+	const request = (async () => {
+		try {
+			const response = await fetch(`${process.env.SITE_URL}/api/articles/${articleId}?byId=true`);
+			if (!response.ok) return null;
+
+			const article = (await response.json()) as {
+				title: string;
+				slug: string;
+			};
+			articleMetadataCache.set(articleId, {
+				...article,
+				expiresAt: Date.now() + ARTICLE_METADATA_TTL
+			});
+			return article;
+		} catch (error) {
+			console.error('Failed to fetch article:', error);
+			return null;
+		} finally {
+			articleMetadataRequests.delete(articleId);
+		}
+	})();
+
+	articleMetadataRequests.set(articleId, request);
+	return request;
+}
+
+async function validateAuth(request: Request): Promise<{
+	id: string;
+	isBanned: boolean;
+	name?: string;
+	image?: string;
+} | null> {
 	const url = new URL(request.url);
 	const token = url.searchParams.get('token');
 
@@ -77,10 +139,7 @@ async function broadcastUserCount(articleId: string): Promise<void> {
 		.forEach((socket) => socket.send(message));
 }
 
-async function handleSetArticle(
-	ws: ServerWebSocket<WebSocketData>,
-	articleId: string
-): Promise<void> {
+async function handleSetArticle(ws: AppWebSocket, articleId: string): Promise<void> {
 	const userId = ws.data.user?.id;
 	if (!userId) {
 		ws.close(4001, 'Authentication required');
@@ -133,29 +192,20 @@ async function handleSetArticle(
 	}
 }
 
-async function handleGetActiveArticles(ws: ServerWebSocket<WebSocketData>): Promise<void> {
+async function handleGetActiveArticles(ws: AppWebSocket): Promise<void> {
 	const activeArticles = await Promise.all(
 		Array.from(articleUsers.entries())
 			.filter(([, users]) => users.size > 0)
 			.slice(0, 10)
 			.map(async ([articleId]) => {
-				try {
-					const response = await fetch(
-						`${process.env.SITE_URL}/api/articles/${articleId}?byId=true`
-					).catch(() => null);
+				const article = await getArticleMetadata(articleId);
+				if (!article) return null;
 
-					if (!response?.ok) return null;
-
-					const article = await response.json();
-					return {
-						title: article.title,
-						slug: article.slug,
-						activeUsers: articleUsers.get(articleId)?.size ?? 0
-					};
-				} catch (error) {
-					console.error('Failed to fetch article:', error);
-					return null;
-				}
+				return {
+					title: article.title,
+					slug: article.slug,
+					activeUsers: articleUsers.get(articleId)?.size ?? 0
+				};
 			})
 	);
 
@@ -236,7 +286,7 @@ setInterval(() => {
 function checkConnections() {
 	const now = Date.now();
 	for (const [userId, sockets] of userSockets.entries()) {
-		const staleSockets = Array.from(sockets).filter(ws => now - ws.data.lastActivity > HEARTBEAT_INTERVAL * 2);
+		const staleSockets = Array.from(sockets).filter((ws) => now - ws.data.lastActivity > HEARTBEAT_INTERVAL * 2);
 
 		for (const socket of staleSockets) {
 			console.log(`Terminating stale connection for user ${userId}`);
@@ -248,7 +298,7 @@ function checkConnections() {
 setInterval(checkConnections, HEARTBEAT_INTERVAL);
 
 async function handleWordHover(
-	ws: ServerWebSocket<WebSocketData>,
+	ws: AppWebSocket,
 	data: { wordIndex: number; newWord: string }
 ): Promise<void> {
 	const { wordIndex, newWord } = data;
@@ -260,25 +310,29 @@ async function handleWordHover(
 	}
 
 	if (typeof wordIndex !== 'number' || !newWord?.trim() || !isValidWord(newWord) || checkHardcore(newWord)) {
-		ws.send(JSON.stringify({
-			type: 'error',
-			data: {
-				code: 'INVALID_WORD',
-				message: 'Invalid word format or content'
-			}
-		}));
+		ws.send(
+			JSON.stringify({
+				type: 'error',
+				data: {
+					code: 'INVALID_WORD',
+					message: 'Invalid word format or content'
+				}
+			})
+		);
 		return;
 	}
 
 	if (await isUserOnCooldown(userId)) {
-		ws.send(JSON.stringify({
-			type: 'error',
-			data: {
-				code: 'COOLDOWN',
-				message: 'Please wait before making more edits',
-				remainingTime: await getRemainingCooldownTime(userId)
-			}
-		}));
+		ws.send(
+			JSON.stringify({
+				type: 'error',
+				data: {
+					code: 'COOLDOWN',
+					message: 'Please wait before making more edits',
+					remainingTime: await getRemainingCooldownTime(userId)
+				}
+			})
+		);
 		return;
 	}
 
@@ -291,16 +345,13 @@ async function handleWordHover(
 				wordIndex,
 				editorId: userId,
 				editorName: ws.data.user!.name,
-				editorImage: ws.data.user!.image,
+				editorImage: ws.data.user!.image
 			}
 		})
 	);
 }
 
-async function handleWordLeave(
-	ws: ServerWebSocket<WebSocketData>,
-	data: { wordIndex: number }
-): Promise<void> {
+async function handleWordLeave(ws: AppWebSocket, data: { wordIndex: number }): Promise<void> {
 	const { wordIndex } = data;
 	const userId = ws.data.user?.id;
 	const articleId = ws.data.articleId;
@@ -321,136 +372,93 @@ async function handleWordLeave(
 	);
 }
 
-const server = Bun.serve<WebSocketData>({
-	port: Number(process.env.PORT) || 8080,
+const websocketServer = new WebSocketServer({ noServer: true });
 
-	async fetch(request, server) {
-		const authResult = await validateAuth(request);
-		const url = new URL(request.url);
-
-		if (authResult?.isBanned) {
-			return new Response('User is banned', { status: 403 });
+websocketServer.on('connection', (socket) => {
+	const ws = socket as AppWebSocket;
+	const interval = setInterval(() => {
+		if (ws.readyState === WebSocket.OPEN) {
+			ws.data.lastActivity = Date.now();
+			ws.send(JSON.stringify({ type: 'ping' }));
+			ws.ping();
+		} else {
+			clearInterval(interval);
 		}
+	}, HEARTBEAT_INTERVAL);
 
-		const connectionType = authResult
-			? url.searchParams.get('type') === 'editor' ? 'editor' : 'viewer'
-			: undefined;
+	ws.on('message', async (message: RawData, isBinary) => {
+		ws.data.lastActivity = Date.now();
+		if (isBinary) return;
 
-		if (authResult && connectionType === 'editor') {
-			const existingEditorSocket = editorSockets.get(authResult.id);
-			if (existingEditorSocket) {
-				existingEditorSocket.close(4000, 'New editor connection opened elsewhere');
+		try {
+			const data = JSON.parse(message.toString()) as {
+				type: string;
+				article?: { id: string };
+				wordIndex?: number;
+				newWord?: string;
+			};
+			switch (data.type) {
+				case 'set_article':
+					if (data.article) await handleSetArticle(ws, data.article.id);
+					break;
+				case 'get_active_articles': await handleGetActiveArticles(ws); break;
+				case 'word_hover': await handleWordHover(ws, { wordIndex: data.wordIndex!, newWord: data.newWord! }); break;
+				case 'word_leave': await handleWordLeave(ws, { wordIndex: data.wordIndex! }); break;
 			}
+		} catch (error) {
+			console.error('Message handling error:', error);
 		}
+	});
 
-		const upgraded = server.upgrade(request, {
-			data: {
-				user: authResult || undefined,
-				articleId: null,
-				connectionType,
-				lastActivity: Date.now()
-			}
+	ws.on('pong', () => { ws.data.lastActivity = Date.now(); });
+	ws.on('close', () => {
+		clearInterval(interval);
+		if (!ws.data.articleId || !ws.data.user) return;
+		const userId = ws.data.user.id;
+		if (ws.data.connectionType === 'editor' && editorSockets.get(userId) === ws) editorSockets.delete(userId);
+		const sockets = userSockets.get(userId);
+		if (!sockets) return;
+		sockets.delete(ws);
+		if (sockets.size > 0) return;
+		userSockets.delete(userId);
+		const users = articleUsers.get(ws.data.articleId);
+		if (!users) return;
+		users.delete(userId);
+		if (users.size === 0) articleUsers.delete(ws.data.articleId);
+		void broadcastUserCount(ws.data.articleId);
+		const message = JSON.stringify({ type: 'user_disconnected', data: { editorId: userId } });
+		Array.from(users).flatMap((uid) => Array.from(userSockets.get(uid) || [])).forEach((socket) => {
+			if (socket !== ws) socket.send(message);
 		});
-
-		return upgraded ? undefined : new Response('Upgrade failed', { status: 500 });
-	},
-
-	websocket: {
-		async message(ws, msg) {
-			ws.data.lastActivity = Date.now();
-
-			if (typeof msg !== 'string') return;
-
-			try {
-				const data = JSON.parse(msg) as { type: string; article?: any; wordIndex?: number; newWord?: string };
-				switch (data.type) {
-					case 'set_article':
-						if (data.article) {
-							await handleSetArticle(ws, data.article.id);
-						}
-						break;
-					case 'get_active_articles':
-						await handleGetActiveArticles(ws);
-						break;
-					case 'word_hover':
-						await handleWordHover(ws, {
-							wordIndex: data.wordIndex!,
-							newWord: data.newWord!
-						});
-						break;
-					case 'word_leave':
-						await handleWordLeave(ws, {
-							wordIndex: data.wordIndex!
-						});
-						break;
-					case 'pong':
-						break;
-				}
-			} catch (error) {
-				console.error('Message handling error:', error);
-			}
-		},
-		open(ws) {
-			const interval = setInterval(() => {
-				if (ws.readyState === 1) {
-					ws.data.lastActivity = Date.now();
-					ws.send(JSON.stringify({ type: 'ping' }));
-					ws.ping();
-				} else {
-					clearInterval(interval);
-				}
-			}, HEARTBEAT_INTERVAL);
-		},
-
-		close(ws) {
-			if (ws.data.articleId && ws.data.user) {
-				const userId = ws.data.user.id;
-
-				if (ws.data.connectionType === 'editor') {
-					const currentEditorSocket = editorSockets.get(userId);
-					if (currentEditorSocket === ws) {
-						editorSockets.delete(userId);
-					}
-				}
-
-				const sockets = userSockets.get(userId);
-				if (sockets) {
-					sockets.delete(ws);
-					if (sockets.size === 0) {
-						userSockets.delete(userId);
-						const users = articleUsers.get(ws.data.articleId);
-						if (users) {
-							users.delete(userId);
-							if (users.size === 0) {
-								articleUsers.delete(ws.data.articleId);
-							}
-
-							broadcastUserCount(ws.data.articleId);
-
-							const message = JSON.stringify({
-								type: 'user_disconnected',
-								data: { editorId: userId }
-							});
-
-							Array.from(users)
-								.flatMap((uid) => Array.from(userSockets.get(uid) || []))
-								.forEach((socket) => {
-									if (socket !== ws) socket.send(message);
-								});
-						}
-					}
-				}
-			}
-		},
-
-		ping(ws) {
-			ws.data.lastActivity = Date.now();
-		},
-
-		pong(ws) {
-			ws.data.lastActivity = Date.now();
-		}
-	}
+	});
 });
 
-console.log(`WebSocket server is running on port ${server.port}`);
+const server = createServer((_, response) => {
+	response.writeHead(426, { 'Content-Type': 'text/plain' });
+	response.end('WebSocket upgrade required');
+});
+
+server.on('upgrade', (request, socket, head) => {
+	void (async () => {
+		const authResult = await validateAuth(new Request(`http://${request.headers.host}${request.url}`));
+		const url = new URL(request.url || '/', `http://${request.headers.host}`);
+		if (authResult?.isBanned) {
+			socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+			socket.destroy();
+			return;
+		}
+		const connectionType = authResult ? (url.searchParams.get('type') === 'editor' ? 'editor' : 'viewer') : undefined;
+		if (authResult && connectionType === 'editor') editorSockets.get(authResult.id)?.close(4000, 'New editor connection opened elsewhere');
+		websocketServer.handleUpgrade(request, socket, head, (upgradedSocket) => {
+			const ws = upgradedSocket as AppWebSocket;
+			ws.data = { user: authResult || undefined, connectionType, lastActivity: Date.now() };
+			websocketServer.emit('connection', ws, request);
+		});
+	})().catch((error) => {
+		console.error('WebSocket upgrade failed:', error);
+		socket.destroy();
+	});
+});
+
+const port = Number(process.env.PORT) || 8080;
+server.listen(port, () => console.log(`WebSocket server is running on port ${port}`));

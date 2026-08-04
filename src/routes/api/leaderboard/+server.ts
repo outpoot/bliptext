@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { user, articles, revisions } from '$lib/server/db/schema';
+import { user, articles } from '$lib/server/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { timeQuery } from '$lib/server/db/timing';
 
@@ -8,12 +8,13 @@ export async function GET() {
     try {
         const [activeEditors, topArticles] = await Promise.all([
             timeQuery('LEADERBOARD_fetch_active_editors', () =>
-                db.select({
-                    id: user.id,
-                    name: user.name,
-                    image: user.image,
-                    revisionCount: user.revisionCount
-                })
+                db
+                    .select({
+                        id: user.id,
+                        name: user.name,
+                        image: user.image,
+                        revisionCount: user.revisionCount
+                    })
                     .from(user)
                     .where(eq(user.isBanned, false))
                     .orderBy(desc(user.revisionCount))
@@ -21,12 +22,13 @@ export async function GET() {
             ),
 
             timeQuery('LEADERBOARD_fetch_top_articles', () =>
-                db.select({
-                    id: articles.id,
-                    title: articles.title,
-                    slug: articles.slug,
-                    revisionCount: articles.revisionCount
-                })
+                db
+                    .select({
+                        id: articles.id,
+                        title: articles.title,
+                        slug: articles.slug,
+                        revisionCount: articles.revisionCount
+                    })
                     .from(articles)
                     .where(sql`${articles.revisionCount} > 0`)
                     .orderBy(desc(articles.revisionCount))
@@ -41,7 +43,7 @@ export async function GET() {
 
         return json(result, {
             headers: {
-                'Cache-Control': 'public, max-age=30'
+                'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=300'
             }
         });
     } catch (error) {

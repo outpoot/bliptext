@@ -19,19 +19,29 @@ export const GET: RequestHandler = async () => {
     }
 
     const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
-    const recentArticles = await db.select().from(articlesTable)
+    const recentArticles = await db
+        .select({
+            slug: articlesTable.slug,
+            createdAt: articlesTable.created_at,
+            updatedAt: articlesTable.updated_at
+        })
+        .from(articlesTable)
         .where(gt(articlesTable.updated_at, oneDayAgo))
         .orderBy(desc(articlesTable.updated_at))
         .limit(3000);
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    ${recentArticles.map(article => `
+    ${recentArticles
+        .map(
+            (article) => `
     <url>
       <loc>https://bliptext.com/articles/${article.slug}</loc>
-      <lastmod>${(article.updated_at || article.created_at).toISOString()}</lastmod>
+      <lastmod>${(article.updatedAt || article.createdAt).toISOString()}</lastmod>
       <changefreq>hourly</changefreq>
-    </url>`).join('')}
+    </url>`
+        )
+        .join('')}
   </urlset>`;
 
     cachedSitemap = xml;

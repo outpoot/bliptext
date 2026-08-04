@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { articles, revisions, user } from '$lib/server/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { getWordAtIndex, replaceWordAtIndex } from '$lib/utils';
-import { WORD_MATCH_REGEX, isValidWord } from '$lib/shared/wordMatching';
+import { isValidWord } from '$lib/shared/wordMatching';
 import { auth } from '$lib/auth';
 import { redis } from '$lib/server/redis';
 import { cooldownManager } from '$lib/server/cooldown';
@@ -30,10 +30,13 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const { wordIndex, newWord, context } = await request.json();
 		const contextData = context ? JSON.parse(context) : null;
 
-		console.log('Received request:', { wordIndex, newWord, context });
-
 		if (!isValidWord(newWord) || checkHardcore(newWord)) {
-			return json({ error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))' }, { status: 400 });
+			return json(
+				{
+					error: 'Word must be 50 chars & either plain text, bold (**word**), italic (*word*), or a link ([word](url))'
+				},
+				{ status: 400 }
+			);
 		}
 
 		const article = await timeQuery('find_article', () =>
@@ -48,10 +51,13 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		if (await cooldownManager.isOnCooldown(session.user.id)) {
 			const remainingTime = cooldownManager.getRemainingTime(session.user.id);
-			return json({
-				error: "Please wait before making more edits",
-				remainingTime
-			}, { status: 429 });
+			return json(
+				{
+					error: 'Please wait before making more edits',
+					remainingTime
+				},
+				{ status: 429 }
+			);
 		}
 
 		const tempProcessor = new WordProcessor(article.content);
@@ -69,13 +75,13 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		}
 
 		if (contextData) {
-			const { before, word, after, index } = contextData;
+			const { before, index } = contextData;
 			const words = getWords(article.content);
 
-			const actualBefore = words.slice(Math.max(0, index - 2), index).join(' ').trim();
-			const actualWord = (words[index] || '').trim();
-			const actualAfter = words.slice(index + 1, Math.min(words.length, index + 3)).join(' ').trim();
-
+			const actualBefore = words
+				.slice(Math.max(0, index - 2), index)
+				.join(' ')
+				.trim();
 			// console.log("Context check:", {
 			// 	provided: {
 			// 		before: normalizeContext(before),
@@ -89,10 +95,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			// 	}
 			// });
 
-			if (
-				index !== wordIndex ||
-				normalizeContext(before) !== normalizeContext(actualBefore)
-			) {
+			if (index !== wordIndex || normalizeContext(before) !== normalizeContext(actualBefore)) {
 				return json({ error: 'Context mismatch, please refresh the page' }, { status: 409 });
 			}
 		}
@@ -106,7 +109,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		await timeQuery('PUT_WORD_update_word_transaction', () =>
 			db.transaction(async (tx) => {
-				const [newRevision] = await tx.insert(revisions)
+				const [newRevision] = await tx
+					.insert(revisions)
 					.values({
 						articleId: article.id,
 						content: updatedContent,
@@ -114,16 +118,18 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 						wordIndex,
 						createdBy: session.user.id
 					})
-					.returning();
+					.returning({ id: revisions.id });
 
 				await Promise.all([
-					tx.update(user)
+					tx
+						.update(user)
 						.set({
 							revisionCount: sql`COALESCE(${user.revisionCount}, 0) + 1`
 						})
 						.where(eq(user.id, session.user.id)),
 
-					tx.update(articles)
+					tx
+						.update(articles)
 						.set({
 							content: updatedContent,
 							current_revision: newRevision.id,

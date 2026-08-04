@@ -11,26 +11,28 @@ export async function GET({ params, url }) {
     const searchById = url.searchParams.get('byId') === 'true';
     const noCache = url.searchParams.get('noCache') === 'true';
     const index = searchById ? 'id' : 'slug';
-    // const cacheKey = `${index}:${slug}`;
-    // const now = Date.now();
-
-    // if (!noCache && articleCache.has(cacheKey)) {
-    //     const cached = articleCache.get(cacheKey);
-    //     if (cached.expiry > now) {
-    //         return json(cached.data, {
-    //             headers: {
-    //                 'Cache-Control': 'public, s-maxage=60'
-    //             }
-    //         });
-    //     }
-
-    //     articleCache.delete(cacheKey);
-    // }
 
     try {
         const article = await timeQuery('ARTICLE_GET_fetch_article', () =>
             db.query.articles.findFirst({
-                where: eq(articles[index], slug)
+                where: eq(articles[index], slug),
+                columns: searchById
+                    ? {
+                          id: true,
+                          title: true,
+                          slug: true
+                      }
+                    : {
+                          id: true,
+                          title: true,
+                          slug: true,
+                          content: true,
+                          current_revision: true,
+                          created_by: true,
+                          created_at: true,
+                          updated_at: true,
+                          revisionCount: true
+                      }
             })
         );
 
@@ -38,21 +40,19 @@ export async function GET({ params, url }) {
             throw error(404, 'Article not found');
         }
 
-        // if (!noCache) {
-        //     articleCache.set(cacheKey, {
-        //         data: article,
-        //         expiry: now + 60000
-        //     });
-
-        //     return json(article, {
-        //         headers: {
-        //             'Cache-Control': 'public, s-maxage=60'
-        //         }
-        //     });
-        // }
-
-        return json(article);
+        return json(article, {
+            headers: {
+                'Cache-Control': noCache
+                    ? 'private, no-store'
+                    : searchById
+                      ? 'public, max-age=300, s-maxage=3600'
+                      : 'public, max-age=30, s-maxage=60, stale-while-revalidate=300'
+            }
+        });
     } catch (err) {
+        if (typeof err === 'object' && err && 'status' in err) {
+            throw err;
+        }
         console.error('Error fetching article:', err);
         throw error(500, 'Failed to fetch article');
     }

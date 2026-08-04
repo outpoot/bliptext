@@ -15,6 +15,13 @@
       "when": 1738962824156,
       "tag": "0001_melted_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785844818092,
+      "tag": "0002_glamorous_wallflower",
+      "breakpoints": true
     }
   ]
 }

@@ -11,6 +11,9 @@ export const load = (async ({ fetch, params }) => {
         const data = await response.json();
         return data;
     } catch (err) {
+        if (typeof err === 'object' && err && 'status' in err) {
+            throw err;
+        }
         console.error('Failed to load history:', err);
         throw error(500, 'Failed to load history');
     }

@@ -5,10 +5,6 @@ FROM node:20-slim AS base-node
 WORKDIR /app
 ENV NODE_ENV="production"
 
-# Base Bun stage for websocket
-FROM oven/bun:1.3.14 AS base-bun
-WORKDIR /app
-
 # Build stage for main app
 FROM base-node AS build-main
 RUN apt-get update -qq && \
@@ -27,18 +23,20 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Build stage for websocket
-FROM base-bun AS build-websocket
-WORKDIR /app
+FROM base-node AS build-websocket
+WORKDIR /app/websocket
 
 # Copy package files and install dependencies
-COPY websocket/package.json websocket/bun.lockb ./
-RUN bun install --production # Install only production deps
+COPY websocket/package*.json ./
+RUN npm ci
 
 # Copy shared library files
-COPY src/lib/shared ./src/lib/shared/
+COPY src/lib/shared /app/src/lib/shared/
 
 # Copy websocket source files
-COPY websocket/src ./websocket/src/
+COPY websocket/src ./src/
+RUN npm run build
+RUN npm prune --omit=dev
 
 # Production stage for main app
 FROM base-node AS production-main
@@ -51,23 +49,13 @@ EXPOSE 3000
 CMD ["node", "build/index.js"]
 
 # Production stage for websocket
-FROM base-bun AS production-websocket
+FROM base-node AS production-websocket
 WORKDIR /app
 
 # Copy dependencies from build stage
-COPY --from=build-websocket /app/node_modules ./node_modules
-
-# Copy shared library files
-COPY --from=build-websocket /app/src/lib/shared ./src/lib/shared/
-
-# Copy websocket source files into /app/src
-COPY --from=build-websocket /app/websocket/src ./src/
+COPY --from=build-websocket /app/websocket/node_modules ./node_modules
+COPY --from=build-websocket /app/websocket/dist ./dist
 
 EXPOSE 8080
 
-# Debug file structure (optional, can be removed after verification)
-RUN ls -la /app/src/lib/shared/
-RUN ls -la /app/src/
-
-# Command should now work with the updated import path in main.ts
-CMD ["bun", "run", "src/main.ts"]
+CMD ["node", "dist/main.js"]

@@ -10,9 +10,10 @@
 	} from "$lib/components/self/WebSocketManager.svelte";
 	import { page } from "$app/state";
 	import Leaderboard from "$lib/components/self/Leaderboard.svelte";
+	import type { PageData } from "./$types";
 
+	let { data }: { data: PageData } = $props();
 	let activeArticles = $state<any[]>([]);
-	let leaderboardData = $state<any>();
 	let wsManager = $state<WebSocketManagerHandle | undefined>();
 	let interval = $state<ReturnType<typeof setInterval>>();
 
@@ -30,16 +31,9 @@
 	}
 
 	onMount(() => {
-		(async () => {
-			const response = await fetch("/api/leaderboard");
-			if (response.ok) {
-				leaderboardData = await response.json();
-			}
-
-			interval = setInterval(() => {
-				wsManager?.send({ type: "get_active_articles" });
-			}, 5000);
-		})();
+		interval = setInterval(() => {
+			wsManager?.send({ type: "get_active_articles" });
+		}, 15000);
 
 		return () => {
 			if (interval) clearInterval(interval);
@@ -104,7 +98,7 @@
 		{/if}
 	</div>
 
-	{#if leaderboardData}
-		<Leaderboard data={leaderboardData} />
+	{#if data.leaderboard}
+		<Leaderboard data={data.leaderboard} />
 	{/if}
 </div>

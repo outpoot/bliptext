@@ -4,6 +4,7 @@ import { articles, revisions, user } from '$lib/server/db/schema';
 import { eq, desc, and, lt } from 'drizzle-orm';
 import { auth } from '$lib/auth';
 import { timeQuery } from '$lib/server/db/timing';
+import { getWordAtIndex } from '$lib/utils';
 
 export async function GET({ params, url, request }) {
     const { slug } = params;
@@ -18,7 +19,12 @@ export async function GET({ params, url, request }) {
     try {
         const article = await timeQuery('HISTORY_find_article', () =>
             db.query.articles.findFirst({
-                where: eq(articles.slug, slug)
+                where: eq(articles.slug, slug),
+                columns: {
+                    id: true,
+                    slug: true,
+                    title: true
+                }
             })
         );
 
@@ -27,10 +33,7 @@ export async function GET({ params, url, request }) {
         }
 
         const whereClause = cursor
-            ? and(
-                eq(revisions.articleId, article.id),
-                lt(revisions.createdAt, new Date(cursor))
-            )
+            ? and(eq(revisions.articleId, article.id), lt(revisions.createdAt, new Date(cursor)))
             : eq(revisions.articleId, article.id);
 
         const userSelection = {
@@ -41,14 +44,15 @@ export async function GET({ params, url, request }) {
         };
 
         const history = await timeQuery('HISTORY_fetch_history', () =>
-            db.select({
-                id: revisions.id,
-                wordChanged: revisions.wordChanged,
-                newWord: revisions.content,
-                wordIndex: revisions.wordIndex,
-                createdAt: revisions.createdAt,
-                user: userSelection
-            })
+            db
+                .select({
+                    id: revisions.id,
+                    wordChanged: revisions.wordChanged,
+                    newWord: revisions.content,
+                    wordIndex: revisions.wordIndex,
+                    createdAt: revisions.createdAt,
+                    user: userSelection
+                })
                 .from(revisions)
                 .leftJoin(user, eq(revisions.createdBy, user.id))
                 .where(whereClause)
@@ -57,22 +61,31 @@ export async function GET({ params, url, request }) {
         );
 
         const hasMore = history.length > limit;
-        const items = history.slice(0, limit);
+        const items = history.slice(0, limit).map((revision) => ({
+            ...revision,
+            newWord: getWordAtIndex(revision.newWord, revision.wordIndex) || ''
+        }));
         const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
 
-        return json({
-            history: items,
-            article,
-            hasMore,
-            nextCursor
-        }, {
-            headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-                'Pragma': 'no-cache',
-                'Expires': '0'
+        return json(
+            {
+                history: items,
+                article,
+                hasMore,
+                nextCursor
+            },
+            {
+                headers: {
+                    'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+                    Pragma: 'no-cache',
+                    Expires: '0'
+                }
             }
-        });
+        );
     } catch (err) {
+        if (typeof err === 'object' && err && 'status' in err) {
+            throw err;
+        }
         console.error('Error fetching history:', err);
         throw error(500, 'Failed to fetch history');
     }

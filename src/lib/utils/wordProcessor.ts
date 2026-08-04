@@ -8,6 +8,7 @@ type WordEventHandlers = {
 
 export class WordProcessor {
     public wordIndicesMap = new Map<HTMLElement, number>();
+    private wordElementsMap = new Map<number, HTMLElement>();
     private eventHandlers: WordEventHandlers;
     private cleanedWordToIndices: Map<string, number[]>;
     private wordPositions: Map<number, number>;
@@ -30,7 +31,12 @@ export class WordProcessor {
         contentWords.forEach((word, index) => {
             position = this.content.indexOf(word, position);
             const cleaned = this.cleanContentWord(word);
-            this.cleanedWordToIndices.set(cleaned, [...(this.cleanedWordToIndices.get(cleaned) || []), index]);
+            const indices = this.cleanedWordToIndices.get(cleaned);
+            if (indices) {
+                indices.push(index);
+            } else {
+                this.cleanedWordToIndices.set(cleaned, [index]);
+            }
             this.wordPositions.set(index, position);
             position += word.length;
         });
@@ -62,9 +68,9 @@ export class WordProcessor {
 
     private attachEventListeners(element: HTMLElement) {
         const { onHover, onLeave, onClick } = this.eventHandlers;
-        onHover && element.addEventListener('mouseenter', () => onHover(element));
-        onLeave && element.addEventListener('mouseleave', () => onLeave(element));
-        onClick && element.addEventListener('click', () => onClick(element));
+        if (onHover) element.addEventListener('mouseenter', () => onHover(element));
+        if (onLeave) element.addEventListener('mouseleave', () => onLeave(element));
+        if (onClick) element.addEventListener('click', () => onClick(element));
     }
 
     private createWrapperElement(tagName: 'strong' | 'em' | 'a', span: HTMLElement, url?: string): HTMLElement {
@@ -135,6 +141,7 @@ export class WordProcessor {
 
         const actualIndex = this.wordIndicesMap.get(element);
         if (actualIndex === undefined) return;
+        const indexedElement = element;
 
         const words = this.contentWords;
         const start = Math.max(0, actualIndex - 2);
@@ -175,7 +182,8 @@ export class WordProcessor {
             baseSpan.dataset.wordIndex = actualIndex.toString();
             baseSpan.dataset.position = element.dataset.position;
             this.wordIndicesMap.set(baseSpan, actualIndex);
-            this.wordIndicesMap.delete(element);
+            this.wordIndicesMap.delete(indexedElement);
+            this.wordElementsMap.set(actualIndex, baseSpan);
             this.attachEventListeners(baseSpan);
             element.replaceWith(replacement);
             baseSpan.classList.add('word-enter');
@@ -197,7 +205,12 @@ export class WordProcessor {
             this.contentWords.push(word);
 
             const cleaned = this.cleanContentWord(word);
-            this.cleanedWordToIndices.set(cleaned, [...(this.cleanedWordToIndices.get(cleaned) || []), this.contentWords.length - 1]);
+            const indices = this.cleanedWordToIndices.get(cleaned);
+            if (indices) {
+                indices.push(this.contentWords.length - 1);
+            } else {
+                this.cleanedWordToIndices.set(cleaned, [this.contentWords.length - 1]);
+            }
             this.wordPositions.set(this.contentWords.length - 1, match.index);
         }
 
@@ -221,6 +234,7 @@ export class WordProcessor {
         if (actualIndex !== -1) {
             this.usedIndices.add(actualIndex);
             this.wordIndicesMap.set(baseSpan, actualIndex);
+            this.wordElementsMap.set(actualIndex, baseSpan);
             baseSpan.dataset.wordIndex = actualIndex.toString();
             const position = this.wordPositions.get(actualIndex);
             if (position !== undefined) {
@@ -275,7 +289,12 @@ export class WordProcessor {
     }
 
     getElementByWordIndex(index: number): HTMLElement | null {
-        return Array.from(this.wordIndicesMap.entries())
-            .find(([, wordIndex]) => wordIndex === index)?.[0] || null;
+        return this.wordElementsMap.get(index) || null;
+    }
+
+    clearMappings(): void {
+        this.wordIndicesMap.clear();
+        this.wordElementsMap.clear();
+        this.usedIndices.clear();
     }
 }

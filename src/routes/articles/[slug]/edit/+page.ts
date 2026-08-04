@@ -1,6 +1,5 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { client } from '$lib/auth-client';
 
 export const load = (async ({ fetch, params }) => {
     try {
@@ -13,6 +12,9 @@ export const load = (async ({ fetch, params }) => {
         const article = await response.json();
         return { article };
     } catch (err) {
+        if (typeof err === 'object' && err && 'status' in err) {
+            throw err;
+        }
         console.error('Failed to load article:', err);
         throw error(500, 'Failed to load article');
     }

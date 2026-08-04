@@ -4,29 +4,11 @@
 	import { Label } from '$lib/components/ui/label';
 
 	import ArrowLeft from 'lucide-svelte/icons/arrow-left';
+	import type { PageData } from './$types';
 
-	import type { Article } from '$lib/server/db/schema';
-
-	let query = $derived(page.url.searchParams.get('q') || '');
-	let results = $state<Article[]>([]);
-	let isLoading = $state(false);
-
-	$effect(() => {
-		if (query) {
-			searchArticles(query);
-		}
-	});
-
-	async function searchArticles(searchQuery: string) {
-		isLoading = true;
-		try {
-			const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
-			const data = await response.json();
-			results = data.results;
-		} finally {
-			isLoading = false;
-		}
-	}
+	let { data }: { data: PageData } = $props();
+	let query = $derived(data.query);
+	let results = $derived(data.results);
 
 	function handleBack(e: MouseEvent) {
 		e.preventDefault();
@@ -56,11 +38,7 @@
 	</div>
 
 	<div class="space-y-4">
-		{#if isLoading}
-			<div class="rounded-lg border p-4">
-				<p class="text-muted-foreground">Searching...</p>
-			</div>
-		{:else if results.length === 0}
+		{#if results.length === 0}
 			<div class="rounded-lg border p-4">
 				<p class="text-muted-foreground">No results found for "{query}"</p>
 			</div>

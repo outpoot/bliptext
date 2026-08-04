@@ -1,15 +1,17 @@
 {
   "name": "bliptext-ws",
-  "module": "src/main.ts",
+  "scripts": {
+    "build": "esbuild ./src/main.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/main.js"
+  },
   "type": "module",
   "devDependencies": {
-    "@flydotio/dockerfile": "^0.7.2",
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+    "@types/node": "^22.13.9",
+    "@types/ws": "^8.5.14",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.2"
   },
   "dependencies": {
-    "ioredis": "^5.4.2"
+    "ioredis": "^5.4.2",
+    "ws": "^8.18.0"
   }
 }

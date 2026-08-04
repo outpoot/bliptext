@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { Card } from "$lib/components/ui/card";
     import { Badge } from "$lib/components/ui/badge";
     import {
@@ -8,7 +7,7 @@
         AvatarFallback,
     } from "$lib/components/ui/avatar";
     import { goto } from "$app/navigation";
-    import { toast } from "svelte-sonner";
+    import type { PageData } from "./$types";
 
     type UserData = {
         id: string;
@@ -24,8 +23,8 @@
         users: UserData[];
     };
 
-    let ipGroups: IPGroup[] = $state([]);
-    let loading = $state(true);
+    let { data }: { data: PageData } = $props();
+    let ipGroups: IPGroup[] = $derived(data.ipGroups);
 
     function formatDate(date: string) {
         return new Date(date).toLocaleString();
@@ -35,18 +34,6 @@
         goto(`/blipper/${userName}`);
     }
 
-    onMount(async () => {
-        try {
-            const response = await fetch("/api/admin/terminator");
-            if (!response.ok) throw new Error("Failed to fetch data");
-            ipGroups = await response.json();
-        } catch (err) {
-            toast.error("Failed to load data");
-            console.error(err);
-        } finally {
-            loading = false;
-        }
-    });
 </script>
 
 <svelte:head>
@@ -65,9 +52,7 @@
         </p>
     </div>
 
-    {#if loading}
-        <div class="text-center">Loading...</div>
-    {:else if ipGroups.length === 0}
+    {#if ipGroups.length === 0}
         <Card class="p-4">
             <p class="text-center text-sm text-muted-foreground">
                 No suspicious IP patterns found

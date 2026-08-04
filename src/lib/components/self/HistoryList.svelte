@@ -6,7 +6,6 @@
 		AvatarImage,
 		AvatarFallback,
 	} from "$lib/components/ui/avatar";
-	import { getWordAtIndex } from "$lib/utils";
 	import { fade } from "svelte/transition";
 	import Gavel from "lucide-svelte/icons/gavel";
 	import { currentUser } from "$lib/stores/user";
@@ -115,10 +114,7 @@
 								>
 								<span class="text-muted-foreground">→</span>
 								<span class="break-all text-primary"
-									>{getWordAtIndex(
-										revision.newWord,
-										revision.wordIndex,
-									)}</span
+									>{revision.newWord}</span
 								>
 							</div>
 						</div>

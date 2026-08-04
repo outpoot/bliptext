@@ -19,6 +19,13 @@ const FILLER_WORDS = new Set([
     'career', 'background', 'meaning', 'explanation', 'summary', 'details',
 ]);
 
+type FindResult = {
+    slug: string;
+    title: string;
+    score: number;
+    content: string | null;
+};
+
 function sanitizeMarkdown(text: string): string {
     return text
         .replace(/^#\s+/, '')
@@ -74,27 +81,40 @@ export async function GET({ url, request }) {
             .filter(word => !FILLER_WORDS.has(word.toLowerCase()))
             .join(' ');
 
-        console.log('Searching with query:', searchQuery);
-
-        const searchResults: any = await timeQuery('FIND_search_articles', () =>
-            db.execute(sql`
-                SELECT 
-                    slug,
-                    title,
-                    ts_rank_cd(search_vector, query) * 2 + 
-                    CASE 
-                        WHEN title ILIKE ${searchQuery} THEN 2
-                        WHEN title ILIKE ${searchQuery + '%'} THEN 1
-                        ELSE 0
-                    END - 
-                    (length(title) * 0.001) as score
-                FROM 
-                    articles,
-                    websearch_to_tsquery('english', ${searchQuery}) query
-                WHERE 
-                    search_vector @@ query
-                ORDER BY score DESC
-                LIMIT 10
+        const searchResults = await timeQuery('FIND_search_articles', () =>
+            db.execute<FindResult>(sql`
+                WITH ranked AS MATERIALIZED (
+                    SELECT
+                        slug,
+                        title,
+                        ts_rank_cd(search_vector, query) * 2 +
+                        CASE
+                            WHEN title ILIKE ${searchQuery} THEN 2
+                            WHEN title ILIKE ${searchQuery + '%'} THEN 1
+                            ELSE 0
+                        END -
+                        (length(title) * 0.001) AS score
+                    FROM articles, websearch_to_tsquery('english', ${searchQuery}) query
+                    WHERE search_vector @@ query
+                    ORDER BY score DESC
+                    LIMIT 10
+                ),
+                best AS (
+                    SELECT slug
+                    FROM ranked
+                    WHERE score >= 0.1
+                    ORDER BY score DESC
+                    LIMIT 1
+                )
+                SELECT
+                    ranked.slug,
+                    ranked.title,
+                    ranked.score,
+                    CASE WHEN ranked.slug = best.slug THEN articles.content END AS content
+                FROM ranked
+                LEFT JOIN best ON ranked.slug = best.slug
+                LEFT JOIN articles ON articles.slug = best.slug
+                ORDER BY ranked.score DESC
             `)
         );
 
@@ -102,29 +122,23 @@ export async function GET({ url, request }) {
             return json({ scores: [], bestMatch: null });
         }
 
+        const scores = searchResults.map(({ slug, title, score }) => ({ slug, title, score }));
         const bestScore = searchResults[0];
         let bestMatch = null;
 
         if (bestScore.score >= 0.1) {
-            const [article]: any = await timeQuery('FIND_fetch_best_match', () =>
-                db.execute(sql`
-                    SELECT slug, title, content
-                    FROM articles
-                    WHERE slug = ${bestScore.slug}
-                    LIMIT 1
-                `)
-            );
-
-            if (article) {
+            if (bestScore.content) {
                 bestMatch = {
-                    ...article,
-                    summary: parseSummary(article.content)
+                    slug: bestScore.slug,
+                    title: bestScore.title,
+                    content: bestScore.content,
+                    summary: parseSummary(bestScore.content)
                 };
             }
         }
 
         return json({
-            scores: searchResults,
+            scores,
             bestMatch
         });
     } catch (error) {
