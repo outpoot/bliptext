@@ -14,6 +14,8 @@ import { timeQuery } from '$lib/server/db/timing';
 import { WordProcessor } from '$lib/utils/wordProcessor';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
+	let claimedCooldownFor: string | null = null;
+	let editSucceeded = false;
 	try {
 		const session = await auth.api.getSession({
 			headers: request.headers
@@ -49,8 +51,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Article not found' }, { status: 404 });
 		}
 
-		if (await cooldownManager.isOnCooldown(session.user.id)) {
-			const remainingTime = cooldownManager.getRemainingTime(session.user.id);
+		if (!(await cooldownManager.tryClaim(session.user.id))) {
+			const remainingTime = await cooldownManager.getRemainingTime(session.user.id);
 			return json(
 				{
 					error: 'Please wait before making more edits',
@@ -59,6 +61,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 				{ status: 429 }
 			);
 		}
+		claimedCooldownFor = session.user.id;
 
 		const tempProcessor = new WordProcessor(article.content);
 		function getWords(content: string): string[] {
@@ -170,11 +173,14 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			])
 		);
 
-		cooldownManager.addCooldown(session.user.id);
-
+		editSucceeded = true;
 		return json({ success: true, newContent: updatedContent });
 	} catch (error) {
 		console.error('Failed to update word:', error);
 		return json({ error: 'Failed to update word' }, { status: 500 });
+	} finally {
+		if (claimedCooldownFor && !editSucceeded) {
+			await cooldownManager.clearCooldown(claimedCooldownFor).catch(() => undefined);
+		}
 	}
 };

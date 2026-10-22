@@ -297,6 +297,21 @@ function checkConnections() {
 
 setInterval(checkConnections, HEARTBEAT_INTERVAL);
 
+const messageBuckets = new WeakMap<object, { count: number; windowStart: number }>();
+function allowMessage(ws: object, limit = 20, windowMs = 1000): boolean {
+	const now = Date.now();
+	const bucket = messageBuckets.get(ws);
+	if (!bucket || now - bucket.windowStart >= windowMs) {
+		messageBuckets.set(ws, { count: 1, windowStart: now });
+		return true;
+	}
+	bucket.count++;
+	return bucket.count <= limit;
+}
+function validWordIndex(index: unknown): index is number {
+	return Number.isInteger(index) && (index as number) >= 0 && (index as number) < 1_000_000;
+}
+
 async function handleWordHover(
 	ws: AppWebSocket,
 	data: { wordIndex: number; newWord: string }
@@ -309,7 +324,11 @@ async function handleWordHover(
 		return;
 	}
 
-	if (typeof wordIndex !== 'number' || !newWord?.trim() || !isValidWord(newWord) || checkHardcore(newWord)) {
+	if (!allowMessage(ws)) {
+		return;
+	}
+
+	if (!validWordIndex(wordIndex) || typeof newWord !== 'string' || newWord.length > 100 || !newWord.trim() || !isValidWord(newWord) || checkHardcore(newWord)) {
 		ws.send(
 			JSON.stringify({
 				type: 'error',
@@ -360,6 +379,14 @@ async function handleWordLeave(ws: AppWebSocket, data: { wordIndex: number }): P
 		return;
 	}
 
+	if (!allowMessage(ws)) {
+		return;
+	}
+
+	if (!validWordIndex(wordIndex)) {
+		return;
+	}
+
 	await redisPublisher.publish(
 		`updates:${articleId}`,
 		JSON.stringify({
@@ -372,7 +399,7 @@ async function handleWordLeave(ws: AppWebSocket, data: { wordIndex: number }): P
 	);
 }
 
-const websocketServer = new WebSocketServer({ noServer: true });
+const websocketServer = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 
 websocketServer.on('connection', (socket) => {
 	const ws = socket as AppWebSocket;

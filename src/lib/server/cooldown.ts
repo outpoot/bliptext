@@ -30,6 +30,13 @@ class RedisCooldownManager {
         await redis.set(key, expiry.toString(), 'PX', duration);
     }
 
+    async tryClaim(userId: string, duration: number = this.DEFAULT_COOLDOWN, type: 'hover' | 'edit' = 'edit'): Promise<boolean> {
+        const key = `${this.keyPrefix}${type}:${userId}`;
+        const expiry = Date.now() + duration;
+        const result = await redis.set(key, expiry.toString(), 'PX', duration, 'NX');
+        return result === 'OK';
+    }
+
     async clearCooldown(userId: string, type: 'hover' | 'edit' = 'edit'): Promise<void> {
         const key = `${this.keyPrefix}${type}:${userId}`;
         await redis.del(key);
